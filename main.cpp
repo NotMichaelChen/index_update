@@ -6,6 +6,7 @@
 #include "stringencoder.h"
 #include "block.h"
 #include "graph.h"
+#include "distancetable.h"
 
 using namespace std;
 
@@ -13,7 +14,6 @@ using namespace std;
  * 
  * refactor longestPath
  * maybe check for memory leaks using a debugger?
- * Create data structures to make graph more clear
  * 
  */
 
@@ -83,35 +83,25 @@ int main(int argc, char **argv) {
     }
     cout << counter << endl;
     
-    map<Block*, vector<Block*>> G = makeGraph(commonblocks);
-    for(auto iter = G.begin(); iter != G.end(); iter++) {
-        if(iter->first != nullptr)
-            cout << (iter->first)->oldloc << "-" << (iter->first)->newloc << endl;
-        else
-            cout << "S" << endl;
+    BlockGraph G(commonblocks);
+    vector<Block*> vertices = G.getAllVertices();
+    for(Block* i : vertices) {
+        cout << i->oldloc << "-" << i->newloc << endl;
         
-        for(auto edgeiter = iter->second.begin(); edgeiter != iter->second.end(); edgeiter++)
-            cout << "\t" << (*edgeiter)->oldloc << "-" << (*edgeiter)->newloc << endl;
+        vector<Block*> edges = G.getAdjacencyList(i);
+        for(Block* j : vertices)
+            cout << "\t" << j->oldloc << "-" << j->newloc << endl;
     }
     cout << endl;
+    
     vector<Block*> topsort = topologicalSort(G);
     for(Block* b : topsort) {
-        if(b == nullptr) continue;
         cout << b->oldloc << "-" << b->newloc << " ";
     }
     cout << endl;
     
-    auto disttable = getDistanceTable(blocks, G, topsort);
-    vector<Block*> path = findBestPath(disttable);
-    
-    int weight = 0;
-    for(Block* i : path) {
-        if(i != nullptr) {
-            cout << i->oldloc << "-" << i->newloc << "-" << i->run.size() << endl;
-            weight += i->run.size();
-        }
-    }
-    cout << weight << endl;
+    DistanceTable disttable(blocks, G, topsort);
+    vector<pair<int, Block*>> bestlist = disttable.findAllBestPaths();
     
     return 0;
 }

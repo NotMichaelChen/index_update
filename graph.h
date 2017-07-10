@@ -34,9 +34,7 @@ private:
     std::vector<Block*> vertices;
 };
 
-std::vector<Block*> topologicalSort(const BlockGraph& graph);
-void explore(const BlockGraph& graph, Block* current, std::set<Block*>& visited, std::vector<Block*>& toporder);
-std::map<Block*, std::vector<std::pair<int, Block*>>> getDistanceTable(int steps, std::map<Block*, std::vector<Block*>>& G, std::vector<Block*>& toporder);
-std::vector<Block*> findBestPath(std::map<Block*, std::vector<std::pair<int, Block*>>>& disttable);
+std::vector<Block*> topologicalSort(BlockGraph& graph);
+void explore(BlockGraph& graph, Block* current, std::set<Block*>& visited, std::vector<Block*>& toporder);
 
 #endif
