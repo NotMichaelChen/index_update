@@ -10,6 +10,8 @@ struct Block {
     //Indicates where in each file the block begins (end can be found using block.length)
     int oldloc;
     int newloc;
+    
+    void printloc();
 };
 
 //Compare blocks based on location in old file

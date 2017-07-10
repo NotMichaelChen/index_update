@@ -14,6 +14,10 @@ bool compareNew(const Block* lhs, const Block* rhs) {
     return lhs->newloc < rhs->newloc;
 }
 
+void Block::printloc() {
+    cout << oldloc << "-" << newloc << "-" << run.size() << endl;
+}
+
 //Gets all common blocks between the two files of length minsize
 vector<Block*> getCommonBlocks(int minsize, const vector<int>& oldfile, const vector<int>& newfile) {
     map<unsigned int, Block*> allblocks;
