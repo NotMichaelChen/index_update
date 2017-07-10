@@ -66,13 +66,15 @@ void explore(map<Block*, vector<Block*>>& G, Block* current, set<Block*>& visite
     toporder.push_back(current);
 }
 
-//Find the longest path through a graph given k steps
-int longestPath(int steps, map<Block*, vector<Block*>>& G, vector<Block*>& toporder) {
+//Creates a table of the best distances up to a certain block using k steps
+//block -> {distance, prev}(k=1) , {distance, prev}(k=2), ...
+map<Block*, vector<pair<int, Block*>>> getDistanceTable(int steps, map<Block*, vector<Block*>>& G, vector<Block*>& toporder) {
     //Table of best distances ending at a given block using k steps
-    map<Block*, vector<int>> disttable;
+    //Also stores previous block to find the optimal path
+    map<Block*, vector<pair<int, Block*>>> disttable;
     //Insert "source" into the dist table
-    vector<int> dist;
-    dist.push_back(0);
+    vector<pair<int, Block*>> dist;
+    dist.emplace_back(0, nullptr);
     disttable[nullptr] = dist;
     
     //Fill out the dist table for each vertex
@@ -81,23 +83,26 @@ int longestPath(int steps, map<Block*, vector<Block*>>& G, vector<Block*>& topor
             int weight = neighbor->run.size();
             //initialize vertex if not found
             if(disttable.find(neighbor) == disttable.end()) {
-                vector<int> initdist;
+                vector<pair<int, Block*>> initdist;
                 //No need to worry about distance; since S points to everything
                 //all nodes will have their weight at k=1
-                initdist.push_back(weight);
+                initdist.emplace_back(weight, vertex);
                 disttable[neighbor] = initdist;
             }
             else {
                 //If neighbor's disttable is not large enough for comparing, resize it
                 if(disttable[neighbor].size() < disttable[vertex].size()+1)
-                    disttable[neighbor].resize(disttable[vertex].size()+1, 0);
+                    disttable[neighbor].resize(disttable[vertex].size()+1, make_pair(0, nullptr));
                 
                 for(size_t i = 0; i < disttable[vertex].size(); i++) {
-                    if(disttable[vertex][i] == 0)
+                    if(disttable[vertex][i].first == 0)
                         continue;
                     
-                    if(disttable[vertex][i] + weight > disttable[neighbor][i+1])
-                        disttable[neighbor][i+1] = disttable[vertex][i] + weight;
+                    if(disttable[vertex][i].first + weight > disttable[neighbor][i+1].first)
+                    {
+                        disttable[neighbor][i+1].first = disttable[vertex][i].first + weight;
+                        disttable[neighbor][i+1].second = vertex;
+                    }
                 }
                 
                 if(disttable[neighbor].size() > steps)
@@ -106,20 +111,43 @@ int longestPath(int steps, map<Block*, vector<Block*>>& G, vector<Block*>& topor
         }
     }
     
+    return disttable;
+}
+
+//Finds the best (longest) path through the graph
+vector<Block*> findBestPath(map<Block*, vector<pair<int, Block*>>>& disttable) {
     int greatest = 0;
-    //find the longest distance and return it
+    int steps = 0;
+    Block* ending = nullptr;
+    //find the longest distance
     for(auto iter = disttable.begin(); iter != disttable.end(); iter++) {
         if(iter->first != nullptr)
             cout << (iter->first)->oldloc << "-" << (iter->first)->newloc << endl;
         else
             cout << "S" << endl;
-        vector<int> table = iter->second;
+        
+        vector<pair<int, Block*>> table = iter->second;
         for(size_t i = 0; i < table.size(); i++) {
-            cout << "\t" << table[i] << endl;
-            if(table[i] > greatest)
-                greatest = table[i];
+            if(table[i].second != nullptr)
+                cout << "\t" << table[i].first << " " << (table[i].second)->oldloc << "-" << (table[i].second)->newloc << endl;
+            if(table[i].first > greatest) {
+                ending = table[i].second;
+                greatest = table[i].first;
+                steps = i;
+            }
         }
     }
     
-    return greatest;
+    //find the path leading to the longest distance
+    vector<Block*> path;
+    path.push_back(ending);
+    steps--;
+    Block* next = ending;
+    while(steps > 0) {
+        next = disttable[next][steps].second;
+        path.push_back(next);
+        steps--;
+    }
+    
+    return path;
 }

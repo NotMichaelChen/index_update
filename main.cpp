@@ -13,6 +13,7 @@ using namespace std;
  * 
  * refactor longestPath
  * maybe check for memory leaks using a debugger?
+ * Create data structures to make graph more clear
  * 
  */
 
@@ -100,9 +101,17 @@ int main(int argc, char **argv) {
     }
     cout << endl;
     
-    int length = longestPath(blocks, G, topsort);
+    auto disttable = getDistanceTable(blocks, G, topsort);
+    vector<Block*> path = findBestPath(disttable);
     
-    cout << length << endl;
+    int weight = 0;
+    for(Block* i : path) {
+        if(i != nullptr) {
+            cout << i->oldloc << "-" << i->newloc << "-" << i->run.size() << endl;
+            weight += i->run.size();
+        }
+    }
+    cout << weight << endl;
     
     return 0;
 }
