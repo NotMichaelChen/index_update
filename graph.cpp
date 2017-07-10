@@ -11,19 +11,13 @@
 
 using namespace std;
 
-//Constructs a graph from a list of blocks
-//Each vertex is a block, and each edge represents a valid vertex to take
-map<Block*, vector<Block*>> makeGraph(vector<Block*>& commonblocks) {
+BlockGraph::BlockGraph(vector<Block*>& commonblocks) {
     //Sort based on old locations
     sort(commonblocks.begin(), commonblocks.end(), compareOld);
-    
-    map<Block*, vector<Block*>> graph;
     
     //Create adjacency list for every block
     for(int i = 0; i < commonblocks.size(); i++) {
         Block* current = commonblocks[i];
-        
-        vector<Block*> edges;
         
         //All potential neighbors will be strictly after the current block
         for(size_t neighborindex = i+1; neighborindex < commonblocks.size(); neighborindex++) {
@@ -32,36 +26,64 @@ map<Block*, vector<Block*>> makeGraph(vector<Block*>& commonblocks) {
             if(neighbor->oldloc >= current->oldloc + (current->run).size() &&
                 neighbor->newloc >= current->newloc + (current->run).size())
             {
-                edges.push_back(neighbor);
+                this->insertNeighbor(current, neighbor);
             }
         }
-        
-        graph[current] = edges;
     }
     
-    //Insert "source" node that is connected to everything
-    graph[nullptr] = commonblocks;
-    
-    return graph;
+    vertices = commonblocks;
 }
 
-//Create a topological ordering of G via DFS
-vector<Block*> topologicalSort(map<Block*, vector<Block*>>& G) {
+vector<Block*> BlockGraph::getAdjacencyList(Block* V) {
+    //if V is found
+    if(G.find(V) != G.end()) {
+        G[V];
+    }
+    else {
+        return vector<Block*>();
+    }
+}
+
+void BlockGraph::insertNeighbor(Block* V, Block* neighbor) {
+    //if V is found
+    if(G.find(V) != G.end()) {
+        G[V].push_back(neighbor);
+    }
+    else {
+        vector<Block*> edges;
+        edges.push_back(neighbor);
+        G[V] = edges;
+        vertices.push_back(V);
+    }
+}
+
+const vector<Block*>& BlockGraph::getAllVertices() const {
+    return vertices;
+}
+
+//Create a topological ordering of graph via DFS
+vector<Block*> topologicalSort(BlockGraph& graph) {
     vector<Block*> toporder;
     set<Block*> visited;
-    explore(G, nullptr, visited, toporder);
+    const vector<Block*> vertices = graph.getAllVertices();
+    for(Block* i : vertices)
+        explore(graph, i, visited, toporder);
+    
     reverse(toporder.begin(), toporder.end());
     return toporder;
 }
 
 //Helper function for topologicalSort, explores all vertices connected to current
-void explore(map<Block*, vector<Block*>>& G, Block* current, set<Block*>& visited, vector<Block*>& toporder) {
+void explore(BlockGraph& graph, Block* current, set<Block*>& visited, vector<Block*>& toporder) {
+    //do not explore if already visited
+    if(visited.find(current) != visited.end())
+        return;
     visited.insert(current);
-    vector<Block*> adjacent = G[current];
+    vector<Block*> adjacent = graph.getAdjacencyList(current);
     for(Block* i : adjacent) {
         //Not visited yet
         if(visited.find(i) == visited.end())
-            explore(G, i, visited, toporder);
+            explore(graph, i, visited, toporder);
     }
     toporder.push_back(current);
 }
