@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "block.h"
+#include "distancetable.h"
 
 using namespace std;
 
@@ -37,12 +38,12 @@ BlockGraph::BlockGraph(vector<Block*>& commonblocks) {
 vector<Block*> BlockGraph::getAdjacencyList(Block* V) {
     //if V is found
     if(G.find(V) != G.end()) {
-        G[V];
+        return G[V];
     }
     else {
         return vector<Block*>();
     }
-}
+}                
 
 void BlockGraph::insertNeighbor(Block* V, Block* neighbor) {
     //if V is found
@@ -86,54 +87,6 @@ void explore(BlockGraph& graph, Block* current, set<Block*>& visited, vector<Blo
             explore(graph, i, visited, toporder);
     }
     toporder.push_back(current);
-}
-
-//Creates a table of the best distances up to a certain block using k steps
-//block -> {distance, prev}(k=1) , {distance, prev}(k=2), ...
-map<Block*, vector<pair<int, Block*>>> getDistanceTable(int steps, map<Block*, vector<Block*>>& G, vector<Block*>& toporder) {
-    //Table of best distances ending at a given block using k steps
-    //Also stores previous block to find the optimal path
-    map<Block*, vector<pair<int, Block*>>> disttable;
-    //Insert "source" into the dist table
-    vector<pair<int, Block*>> dist;
-    dist.emplace_back(0, nullptr);
-    disttable[nullptr] = dist;
-    
-    //Fill out the dist table for each vertex
-    for(Block* vertex : toporder) {
-        for(Block* neighbor : G[vertex]) {
-            int weight = neighbor->run.size();
-            //initialize vertex if not found
-            if(disttable.find(neighbor) == disttable.end()) {
-                vector<pair<int, Block*>> initdist;
-                //No need to worry about distance; since S points to everything
-                //all nodes will have their weight at k=1
-                initdist.emplace_back(weight, vertex);
-                disttable[neighbor] = initdist;
-            }
-            else {
-                //If neighbor's disttable is not large enough for comparing, resize it
-                if(disttable[neighbor].size() < disttable[vertex].size()+1)
-                    disttable[neighbor].resize(disttable[vertex].size()+1, make_pair(0, nullptr));
-                
-                for(size_t i = 0; i < disttable[vertex].size(); i++) {
-                    if(disttable[vertex][i].first == 0)
-                        continue;
-                    
-                    if(disttable[vertex][i].first + weight > disttable[neighbor][i+1].first)
-                    {
-                        disttable[neighbor][i+1].first = disttable[vertex][i].first + weight;
-                        disttable[neighbor][i+1].second = vertex;
-                    }
-                }
-                
-                if(disttable[neighbor].size() > steps)
-                    disttable[neighbor].pop_back();
-            }
-        }
-    }
-    
-    return disttable;
 }
 
 //Finds the best (longest) path through the graph
