@@ -10,23 +10,15 @@
 
 using namespace std;
 
-/* Thing to do
- * 
- * refactor longestPath
- * maybe check for memory leaks using a debugger?
- * 
- */
-
 int main(int argc, char **argv) {
-    char k = -1;
-    string oldfilename, newfilename;
+    string k, oldfilename, newfilename;
     bool isold = false, isnew = false;
     
     int opt;
     while((opt = getopt(argc, argv, "k:o:n:")) != -1) {
         switch(opt) {
         case 'k':
-            k = *optarg;
+            k = optarg;
             break;
         case 'o':
             oldfilename = optarg;
@@ -40,10 +32,9 @@ int main(int argc, char **argv) {
     }
     
     int blocks = 0;
-    if(isdigit(k)) {
-        blocks = k - '0';
-    }
-    else {
+    size_t checker;
+    blocks = stoi(k, &checker, 10);
+    if(checker != k.size()) {
         cout << "Error: Invalid number of blocks specified" << endl;
         exit(EXIT_FAILURE);
     }
@@ -105,7 +96,7 @@ int main(int argc, char **argv) {
     for(size_t i = 0; i < bestlist.size(); ++i) {
         if(bestlist[i].first == 0) break;
         vector<Block*> path = disttable.tracePath(bestlist[i].second, i+1);
-        cout << i << "\t" << bestlist[i].first << "\t";
+        cout << i+1 << "\t" << bestlist[i].first << "\t";
         for(Block* j : path) {
             //cout << j;
             j->printloc();

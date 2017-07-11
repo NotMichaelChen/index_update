@@ -5,7 +5,7 @@ SRC = $(wildcard *.cpp)
 OBJ = $(SRC:.cpp=.o)
 
 %.o: %.cpp $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS) -g
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 LBS: $(OBJ)
 	$(CC) -o ./exe/$@ $^ $(CFLAGS)
