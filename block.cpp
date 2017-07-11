@@ -15,7 +15,7 @@ bool compareNew(const Block* lhs, const Block* rhs) {
 }
 
 void Block::printloc() {
-    cout << oldloc << "-" << newloc << "-" << run.size() << endl;
+    cout << oldloc << "-" << newloc << "-" << run.size();
 }
 
 //Gets all common blocks between the two files of length minsize

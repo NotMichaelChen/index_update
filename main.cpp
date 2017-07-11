@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     vector<int> newstream = se.encodeFile(newfile);
     
     //Find common blocks between the two files
-    vector<Block*> commonblocks = getCommonBlocks(5, oldstream, newstream);
+    vector<Block*> commonblocks = getCommonBlocks(10, oldstream, newstream);
     
     extendBlocks(commonblocks, oldstream, newstream);
     resolveIntersections(commonblocks);
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
         cout << i->oldloc << "-" << i->newloc << endl;
         
         vector<Block*> edges = G.getAdjacencyList(i);
-        for(Block* j : vertices)
+        for(Block* j : edges)
             cout << "\t" << j->oldloc << "-" << j->newloc << endl;
     }
     cout << endl;
@@ -102,6 +102,17 @@ int main(int argc, char **argv) {
     
     DistanceTable disttable(blocks, G, topsort);
     vector<pair<int, Block*>> bestlist = disttable.findAllBestPaths();
+    for(size_t i = 0; i < bestlist.size(); ++i) {
+        if(bestlist[i].first == 0) break;
+        vector<Block*> path = disttable.tracePath(bestlist[i].second, i+1);
+        cout << i << "\t" << bestlist[i].first << "\t";
+        for(Block* j : path) {
+            //cout << j;
+            j->printloc();
+            cout << " ";
+        }
+        cout << endl;
+    }
     
     return 0;
 }

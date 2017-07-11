@@ -19,6 +19,7 @@ BlockGraph::BlockGraph(vector<Block*>& commonblocks) {
     //Create adjacency list for every block
     for(int i = 0; i < commonblocks.size(); i++) {
         Block* current = commonblocks[i];
+        G[current] = vector<Block*>();
         
         //All potential neighbors will be strictly after the current block
         for(size_t neighborindex = i+1; neighborindex < commonblocks.size(); neighborindex++) {

@@ -1,5 +1,6 @@
 #include "distancetable.h"
 
+#include <algorithm>
 #include <vector>
 #include <map>
 #include <iostream>
@@ -40,8 +41,12 @@ vector<pair<int, Block*>> DistanceTable::findAllBestPaths() {
         for(size_t i = 0; i < testlist.size(); i++) {
             if(testlist[i].second != nullptr)
                 cout << "\t" << testlist[i].first << " " << (testlist[i].second)->oldloc << "-" << (testlist[i].second)->newloc << endl;
+            else
+                cout << "\t" << testlist[i].first << " S" << endl;
             if(testlist[i].first > bestlist[i].first) {
-                bestlist[i] = testlist[i];
+                //The list should contain the ending vertex, not the prev vertex
+                bestlist[i].first = testlist[i].first;
+                bestlist[i].second = iter->first;
             }
         }
     }
@@ -49,10 +54,7 @@ vector<pair<int, Block*>> DistanceTable::findAllBestPaths() {
     return bestlist;
 }
 
-vector<Block*> DistanceTable::tracePath(Block* ending) {
-    //keeps track of which entry in the distlist we need to get next
-    int steps = maxsteps;
-    
+vector<Block*> DistanceTable::tracePath(Block* ending, int steps) {
     vector<Block*> path;
     path.push_back(ending);
     steps--;
@@ -65,6 +67,8 @@ vector<Block*> DistanceTable::tracePath(Block* ending) {
         path.push_back(next);
         steps--;
     }
+    
+    reverse(path.begin(), path.end());
     
     return path;
 }
@@ -83,7 +87,7 @@ void DistanceTable::mergeIntoNext(Block* prev, Block* next) {
         
         if(table[prev][i].first + weight > table[next][i+1].first)
         {
-            table[prev][i+1].first = table[prev][i].first + weight;
+            table[next][i+1].first = table[prev][i].first + weight;
             table[next][i+1].second = prev;
         }
     }
@@ -97,7 +101,7 @@ void DistanceTable::initVertex(Block* V) {
     if(table.find(V) == table.end()) {
         vector<pair<int, Block*>> initdist;
         //We can assume that nullptr refers to the source node
-        initdist.emplace_back(V->run.size(), nullptr);
+        initdist.emplace_back(V->run.size(), V);
         table[V] = initdist;
     }
 }

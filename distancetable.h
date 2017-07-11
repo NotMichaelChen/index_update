@@ -16,8 +16,9 @@ public:
     std::vector<std::pair<int, Block*>> findAllBestPaths();
     
     //Fills a vector with a path that ends at ending
-    //ending is included in the path as the first entry
-    std::vector<Block*> tracePath(Block* ending);
+    //path is in order of graph traversal
+    //ending is included in the path as the last entry
+    std::vector<Block*> tracePath(Block* ending, int steps);
     
 private:
     //Initialize a vertex in the table
