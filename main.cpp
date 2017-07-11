@@ -66,10 +66,7 @@ int main(int argc, char **argv) {
     
     int counter = 0;
     for(Block* i : commonblocks){
-        vector<string> block = se.decodeStream(i->run);
-        for(string j : block)
-            cout << j << " ";
-        cout << endl << i->oldloc << "-" << i->newloc << "-" << i->run.size() << endl;
+        cout << *i << endl;
         counter++;
     }
     cout << counter << endl;
@@ -77,30 +74,31 @@ int main(int argc, char **argv) {
     BlockGraph G(commonblocks);
     vector<Block*> vertices = G.getAllVertices();
     for(Block* i : vertices) {
-        cout << i->oldloc << "-" << i->newloc << endl;
+        cout << *i << endl;
         
         vector<Block*> edges = G.getAdjacencyList(i);
         for(Block* j : edges)
-            cout << "\t" << j->oldloc << "-" << j->newloc << endl;
+            cout << "\t" << *j << endl;
     }
     cout << endl;
     
     vector<Block*> topsort = topologicalSort(G);
     for(Block* b : topsort) {
-        cout << b->oldloc << "-" << b->newloc << " ";
+        cout << *b;
     }
     cout << endl;
     
     DistanceTable disttable(blocks, G, topsort);
     vector<pair<int, Block*>> bestlist = disttable.findAllBestPaths();
+    
+    cout << "Steps\tWeight\tPath" << endl;
     for(size_t i = 0; i < bestlist.size(); ++i) {
         if(bestlist[i].first == 0) break;
         vector<Block*> path = disttable.tracePath(bestlist[i].second, i+1);
         cout << i+1 << "\t" << bestlist[i].first << "\t";
         for(Block* j : path) {
             //cout << j;
-            j->printloc();
-            cout << " ";
+            cout << *j << " ";
         }
         cout << endl;
     }

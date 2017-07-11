@@ -7,15 +7,16 @@
 
 using namespace std;
 
+ostream& operator<<(ostream& os, const Block& bl) {
+    os << bl.oldloc << "-" << bl.newloc << "-" << bl.run.size();
+    return os;
+}
+
 bool compareOld(const Block* lhs, const Block* rhs) {
     return lhs->oldloc < rhs->oldloc;
 }
 bool compareNew(const Block* lhs, const Block* rhs) {
     return lhs->newloc < rhs->newloc;
-}
-
-void Block::printloc() {
-    cout << oldloc << "-" << newloc << "-" << run.size();
 }
 
 //Gets all common blocks between the two files of length minsize

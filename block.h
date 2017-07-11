@@ -2,6 +2,7 @@
 #define BLOCK_H
 
 #include <vector>
+#include <iostream>
 
 //Represents a block of text which may be common between the two files
 struct Block {
@@ -10,9 +11,9 @@ struct Block {
     //Indicates where in each file the block begins (end can be found using block.length)
     int oldloc;
     int newloc;
-    
-    void printloc();
 };
+
+std::ostream& operator<<(std::ostream& os, const Block& bl);
 
 //Compare blocks based on location in old file
 bool compareOld(const Block* lhs, const Block* rhs);
