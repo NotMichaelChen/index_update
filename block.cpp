@@ -21,37 +21,46 @@ bool compareNew(const Block* lhs, const Block* rhs) {
 
 //Gets all common blocks between the two files of length minsize
 vector<Block*> getCommonBlocks(int minsize, const vector<int>& oldfile, const vector<int>& newfile) {
-    map<unsigned int, Block*> allblocks;
     vector<Block*> commonblocks;
+    
+    //Represents all possible blocks from the old file
+    //Last element of vector is oldloc
+    //<hash, block>
+    //Hash is computed without oldloc in vector
+    multimap<unsigned int, vector<int>> potentialblocks;
     
     //Get all possible blocks in the old file
     for(size_t i = 0; i <= oldfile.size() - minsize; i++) {
-        Block* newblock = new Block;
-        newblock->run = vector<int>(&oldfile[i], &oldfile[i+minsize]);
-        newblock->oldloc = i;
-        unsigned int key = hashVector(newblock->run);
-        allblocks[key] = newblock;
+        vector<int> newblock(&oldfile[i], &oldfile[i+minsize]);
+        //hash the block before inserting oldloc
+        unsigned int blockhash = hashVector(newblock);
+        newblock.push_back(i);
+        potentialblocks.insert(make_pair(blockhash, newblock));
     }
     
     //Check each block in the new file for a match with a block in the old file
     for(size_t i = 0; i <= newfile.size() - minsize; i++) {
         vector<int> blockcheck(&newfile[i], &newfile[i+minsize]);
-        unsigned int key = hashVector(blockcheck);
+        unsigned int blockhash = hashVector(blockcheck);
         
-        auto blockmatch = allblocks.find(key);
-        //We found the block again, double check for equality
-        if(blockmatch != allblocks.end() && blockcheck == (*blockmatch).second->run) {
-            (*blockmatch).second->newloc = i;
-            commonblocks.push_back((*blockmatch).second);
-            allblocks.erase(blockmatch);
+        //Get all blocks that match the current block's hash
+        auto blockmatchrange = potentialblocks.equal_range(blockhash);
+        for(auto iter = blockmatchrange.first; iter != blockmatchrange.second; ++iter) {
+            //Remove oldloc before confirming equality
+            int oldloc = (*iter).second.back();
+            (*iter).second.pop_back();
+            if(blockcheck == (*iter).second) {
+                Block* newblock = new Block;
+                newblock->run = blockcheck;
+                newblock->oldloc = oldloc;
+                newblock->newloc = i;
+                
+                commonblocks.push_back(newblock);
+            }
+            //Put oldloc back for later use
+            (*iter).second.push_back(oldloc);
         }
     }
-    
-    //delete all blocks without matches
-    for(auto iter = allblocks.begin(); iter != allblocks.end(); iter++) {
-        delete iter->second;
-    }
-    //no need to clear allblocks, will go out of scope anyways
     
     return commonblocks;
 }
@@ -120,6 +129,7 @@ void resolveIntersections(vector<Block*>& allblocks) {
             //We know that A.end > B.begin (is our breaking condition)
             //Thus we only need to check B.end > A.end
             if(allblocks[j]->oldloc + allblocks[j]->run.size()-1 > allblocks[i]->oldloc + allblocks[i]->run.size()-1) {
+                cout << "intersect";
                 //calculate how much the current block needs to shrink by
                 int shrunksize = allblocks[j]->oldloc - allblocks[i]->oldloc;
                 Block* shrunkblock = new Block;
@@ -140,6 +150,7 @@ void resolveIntersections(vector<Block*>& allblocks) {
                 break;
             
             if(allblocks[j]->newloc + allblocks[j]->run.size()-1 > allblocks[i]->newloc + allblocks[i]->run.size()-1) {
+                cout << "intersect";
                 int shrunksize = allblocks[j]->newloc - allblocks[i]->newloc;
                 Block* shrunkblock = new Block;
                 shrunkblock->run = vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize);
