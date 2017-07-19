@@ -3,30 +3,29 @@
 
 #include <string>
 #include <vector>
-using namespace std;
 
-class dictionary{
+class Dictionary{
 private:
 	struct vocabulary{
-		string term;
+		std::string term;
 		int termID;
 		long location; //starto location in the posting list
 		int length; //length of the block in the posting list
 	};
 
-	vector<vocabulary> dict;
+	std::vector<vocabulary> dict;
 	int termID = 0;
 
 public:
-	vocabulary* find(string term);
+	vocabulary* find(std::string term);
 
 	vocabulary *find(int id);
 
-	void add(string term, int termID);
+	void add(std::string term, int termID);
 
-	int update(string voc);
+	int update(std::string voc);
 
-	void update(string term, long loc, int len);
+	void update(std::string term, long loc, int len);
 
 	void display();
 	

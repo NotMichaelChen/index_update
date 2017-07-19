@@ -1,8 +1,20 @@
-buildCollection: index.o dictionary.o
-	g++ buildCollection.cpp -std=c++11
+PROG = buildCollection
+CC = g++
+FLAGS = -g -Wall -std=c++11
+OGJS = index.o dictionary.o buildCollection.o
 
-index.o:
-	g++ index.cpp -std=c++11
+$(PROG): $(OGJS)
+	$(CC) $(FLAGS) -o $(PROG) $(OGJS)
 
-dictionary.o:
-	g++ dictionary.cpp -std=c++11
+buildCollection.o: index.hpp dictionary.hpp
+	$(CC) $(FLAGS) -c buildCollection.cpp
+
+index.o: index.hpp
+	$(CC) $(FLAGS) -c index.cpp
+
+dictionary.o: dictionary.hpp
+	$(CC) $(FLAGS) -c dictionary.cpp
+
+.PHONY: clean
+clean:
+	rm -rf *.o

@@ -1,11 +1,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "index.hpp"
 using namespace std;
+#include "index.hpp"
 
-void index::update(int termID, unsigned int docID, unsigned int position){
-	vector<index::postingList>::iterator findterm = index::find(termID);
+
+void Index::update(int termID, unsigned int docID, unsigned int position){
+	vector<Index::postingList>::iterator findterm = Index::find(termID);
 	if (findterm != ind.end()) {
 		(findterm->postings).push_back(docID);
 		(findterm->pos).push_back(position);
@@ -24,7 +25,7 @@ void index::update(int termID, unsigned int docID, unsigned int position){
 	}
 }
 
-vector<index::postingList>::iterator index::find(int termID){
+vector<Index::postingList>::iterator Index::find(int termID){
 	vector<postingList>::iterator it;
 	for(it = ind.begin(); it != ind.end(); ++ it){
 		if(it->termID == termID){
@@ -34,8 +35,8 @@ vector<index::postingList>::iterator index::find(int termID){
 	return it;
 }
 
-void index::display(){
-	for(vector<index::postingList>::iterator it = ind.begin(); it != ind.end(); ++ it){
+void Index::display(){
+	for(vector<Index::postingList>::iterator it = ind.begin(); it != ind.end(); ++ it){
 		cout << it->termID << ' ';
 		for(vector<unsigned int>::iterator intit = (it->postings).begin(); intit != (it->postings).end(); ++intit){
 			cout<< *intit << " ";

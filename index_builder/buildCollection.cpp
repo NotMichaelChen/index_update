@@ -33,8 +33,8 @@ string readFile(string dir) {
 
 int main(){
 	unsigned int docId = 0;
-	dictionary dictionary;
-	index index;
+	Dictionary dictionary;
+	Index index;
 	DIR *dir;
 	struct dirent *ent;
 
