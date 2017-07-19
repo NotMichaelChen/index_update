@@ -3,13 +3,46 @@
 #include <boost/tokenizer.hpp>
 #include <string>
 #include <vector>
+#include <sstream>
 #include "dirent.h"
 #include "index.hpp"
 #include "dictionary.hpp"
+#define TEST_DATA "./test_data"
 using namespace std;
 using namespace boost;
 
-vector<std::string> tokenize(string text) {
+
+
+int main(){
+	unsigned int docId = 0;
+	Dictionary dictionary;
+	Index index;
+
+	ifstream docs;
+	ifstream info;
+	docs.open(TEST_DATA + compressedIndex, ifstream::binary);
+	info.open(TEST_DATA + docInfo);
+
+	string line;
+	int fileNum = 0;
+	while(getline(info, line) && fileNum < 10){
+		stringstream lineStream(line);
+        string fileName;
+        int docID;
+        int offset;
+        int size;
+        int docLength;
+        lineStream >> fileName >> docID >> offset >> size >> docLength;
+        
+        fileNUM ++;
+	}
+
+
+	
+
+	return 0;
+}
+/*vector<std::string> tokenize(string text) {
 	std::string s = text;
 	tokenizer<> tok(s);
 	vector<std::string> vocabulary;
@@ -30,15 +63,10 @@ string readFile(string dir) {
 	myFile.close();
 	return result;
 }
-
-int main(){
-	unsigned int docId = 0;
-	Dictionary dictionary;
-	Index index;
-	DIR *dir;
+DIR *dir;
 	struct dirent *ent;
 
-	if ((dir = opendir("./test_html")) != NULL) {
+	if ((dir = opendir(TEST_DATA)) != NULL) {
 		/* print all the files and directories within directory */
 		while ((ent = readdir(dir)) != NULL) {
 			string dir = ent->d_name;
@@ -55,9 +83,6 @@ int main(){
 					index.update(termId, docId, pos);
 					pos ++;
 				}
-				
-				//buildPList(voc, docId, index);
-				//buildPageTable(fileDir, docId, pageTable);
 			}
 		}
 		//dictionary.display();
@@ -67,14 +92,12 @@ int main(){
 		displayPList(postingList);
 		writetoDisk(postingList, dic);
 		displayDic(dic);
-		*/
+		
 	}
 	else {
-		/* could not open directory */
+		/* could not open directory 
 		perror("Cannot open directory.");
 		return EXIT_FAILURE;
 	}
 
-
-	return 0;
-}
+*/

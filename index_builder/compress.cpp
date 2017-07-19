@@ -1,7 +1,36 @@
 #include <iostream>
 #include <fstream>
-#include "index.hpp"
 using namespace std;
+
+class Posting{
+public:
+	Posting(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0){
+		docID = d;
+		fragID = f;
+		pos = p;
+	}
+
+private:
+	unsigned int termID;
+	unsigned int docID;
+	unsigned int fragID;
+	unsigned int pos;
+};
+
+class PostingList{
+public:
+	PostingList(int id){
+		termID = id;
+	}
+
+	void add(Posting p){
+		pl.push_back(p);
+	}
+
+private:
+	int termID;
+	vector<Posting> pl;
+};
 
 class Compressor{
 public:
@@ -10,64 +39,88 @@ public:
 	}
 
 	vector<int> VBEncode(int num){
-
+		vector<int> result;
+		
+		while ((num) > 127) {
+			result.push_back(1);
+			std::vector<int>::iterator it = result.end();
+			result.insert(it, 7, 1);
+			num -= 127;
+		}
+		mybits += '1';
+		mybits += std::bitset<7>(*it).to_string();
+		buffer += mybits;
+	return buffer;
 	}
 
-	vector<int> encode(vector<int>){}
-
-
-	mData compress(Index::postingList pl; ofstream& diskIndex; int method = 1){
-		std::vector<int> binaryVec;//compressed integer
-		std::vector<int> ID_block;//uncompressed IDs
-		std::victor<int> freq_block;//uncompressed freqs
-		std::vector<int> ID_biv;//compressed IDs
-		std::victor<int> freq_biv;//compressed freqs
-		std::vector<int> last_id_biv;//metadata doc ID
-		std::vector<int> doc_size_biv;
-		std::vector<int> freq_size_biv;
-
-		std::vector<unsigned int>::iterator = itID;
-		std::vector<unsigned int>::iterator = itfreq;
-		int doc_size = 0;
-		int frep_size = 0;
-
-		while(itID != pl->postings.end()){
-			int size_blocks = 0;
-			ID_block.clear();
-			freq_block.clear();
-
-			while(size_blocks < 64 && itID != pl->postings.end()){
-				ID_block.push_back(*itID);
-				freq_block.push_back(*itfreq);
-				size_blocks ++;
-				itID++;
-				itfreq++;
-			}
-
-			//compress ID and freq:
-			binaryVec = Compressor::encode(ID_block);
-			ID_biv.insert(ID_biv.end(), binaryVec.begin(), binaryVec.end());
-			binaryVec = Compressor::encode(freq_block);
-			freq_biv.insert(freq_biv.end(), binaryVec.begin(), binaryVec.end());
-
-			//compress metadata:
-			binaryVec = Compressor::VBEncode(*it);
-			last_id_biv.insert(last_id_biv.end(), binaryVec.begin(), binaryVec.end());
-			doc_size = ID_biv.size() - doc_size;
-			freq_size = freq_biv.size() - freq_size;
-			binaryVec = Compressor::VBEncode(doc_size);
-			doc_size_biv.insert(doc_size_biv.end(), binaryVec.begin(), binaryVec.end());
-			binaryVec = Compressor::VBEncode(freq_size);
-			freq_size_biv.insert(freq_size_biv.end(), binaryVec.begin(), binaryVec.end());
+	vector<int> encode(vector<unsigned int> uncomp){
+		vector<int> biv;
+		vector<int> result;
+		for (vector<unsigned int>::iterator it = uncomp.begin(); it != uncomp.end(); ++it) {
+			biv = Compressor::VBEncode(*it);
+			result.insert(result.end(), biv.start(), biv.end());
+			biv.clear();
 		}
-		Compressor::mData.posting_start = diskIndex.tellp();
-		Compressor::writetoDisk(diskIndex, last_id_biv);
-		Compressor::writetoDisk(diskIndex, doc_size_biv);
-		Compressor::writetoDisk(diskIndex, freq_size_biv);
-		Compressor::mData.ID_offset = diskIndex.tellp();
-		Compressor::writetoDisk(diskIndex, ID_biv);
-		Compressor::mData.freq_offset = diskIndex.tellp();
-		Compressor::writetoDisk(diskIndex, freq_biv);
+		return result;
+	}
+
+	vector<int> compress(std::vector<unsigned int> field; int method; int sort; vector<unsigned int>& last_element = {}){
+		if(method){
+			std::vector<unsigned int> block;
+			std::vector<unsigned int>::iterator it = field.begin();
+			std::vector<int> field_biv;
+			std::vector<int> biv;
+
+			if(sort){
+				int prev = 0;
+				while(it != field.end()){
+					int size_block = 0;
+					block.clear();
+
+					while(size_block < 64 && it != field.end()){
+						block.push_back(*it - prev);
+						prev = *it;
+						size_block ++;
+						it ++;
+					}
+					biv = encode(field);
+					last_element.push_back(prev);
+					field_biv.insert(field_biv.end(), biv.begin(), biv.end());
+				}
+
+				return field_biv;
+
+			}else{
+
+			}
+		}
+	}
+	
+
+	mData compress(std::vector<Index::Posting> index; ofstream& diskIndex){
+		std::vector<unsigned int> v_docID;
+		std::vector<unsigned int> v_fragID;
+		std::vector<unsigned int> v_pos;
+		std::vector<unsigned int> v_last_id;
+		std::vector<int> last_id_biv;
+		std::vector<int> biv;
+
+		for(std::vector<Index::Posting>::iterator it = index.begin(); it != index.end(); it++){
+			v_docID.push_back(it->docID);
+			v_fragID.push_back(it->fragID);
+			v_pos.push_back(it->pos);
+		}
+
+		biv = compress(v_docID, 1, 1, v_last_id);
+		last_id_biv = encode(v_last_id);
+
+
+		if(v_fragID.size() != 0){
+			compress(v_fragID, 1, 0);
+		}
+		if(v_pos.size() != 0){
+			compress(v_pos, 1, 0);
+		}
 
 		
 	}
@@ -78,7 +131,6 @@ private:
 		int num_posting;
 		long posting_start;
 		long ID_offset;
-		long freq_offset;
 	};
 };
 
