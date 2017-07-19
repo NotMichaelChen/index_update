@@ -7,6 +7,7 @@
 #include "block.h"
 #include "graph.h"
 #include "distancetable.h"
+#include "translate.h"
 
 using namespace std;
 
@@ -101,6 +102,19 @@ int main(int argc, char **argv) {
             cout << *j << " ";
         }
         cout << endl;
+    }
+    
+    vector<Block*> finalpath = disttable.tracePath(bestlist.back().second, bestlist.size());
+    
+    //Get file lengths
+    oldfile.seekg(0, ios::end);
+    int oldlength = oldfile.tellg();
+    newfile.seekg(0, ios::end);
+    int newlength = newfile.tellg();
+    vector<Translation> translist = getTranslations(oldlength, newlength, finalpath);
+    
+    for(Translation t : translist) {
+        cout << t.loc << endl;
     }
     
     return 0;
