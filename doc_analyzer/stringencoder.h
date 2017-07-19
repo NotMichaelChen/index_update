@@ -12,6 +12,7 @@ public:
     StringEncoder();
     std::vector<int> encodeFile(std::ifstream& file);
     std::vector<std::string> decodeStream(std::vector<int>& stream);
+    std::string decodeNum(int num);
     
 private:
     //Assigns words to numbers

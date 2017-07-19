@@ -2,7 +2,6 @@
 
 #include <map>
 #include <iostream>
-#include <string.h>
 #include <fstream>
 #include <vector>
 #include <algorithm>
@@ -18,35 +17,23 @@ vector<int> StringEncoder::encodeFile(ifstream& file) {
         exit(EXIT_FAILURE);
     }
     
-    string line;
-    while(getline(file, line)) {
-        //Make the line of text lowercase
-        transform(line.begin(), line.end(), line.begin(), ::tolower);
+    //Assume given file is already parsed
+    
+    string word;
+    while(file >> word) {
+        //Make the word lowercase
+        transform(word.begin(), word.end(), word.begin(), ::tolower);
         
-        //Parse out any non-alphanumeric characters
-        //Leave ' and -
-        char* cstr = new char [line.length()+1];
-        strcpy(cstr, line.c_str());
-
-        char* p = strtok(cstr," ()`~!@#$%^&*+=|\\{}[]:;\"<>,.?/");
-        while(p != 0)
-        {
-            string word(p);
-            //Add the token/word into the dictionary if it's not in there yet,
-            //giving it a unique identifier as indicated by nextcode
-            if(dictionary.find(word) == dictionary.end()) {
-                dictionary[word] = nextcode;
-                lookup.push_back(word);
-                nextcode++;
-            }
-            
-            //Add the integer representation of the word into the list of ints
-            encodedlist.push_back(dictionary[word]);
-            
-            p = strtok(NULL," ()`~!@#$%^&*+=|\\{}[]:;\"<>,.?/");
+        //Add the token/word into the dictionary if it's not in there yet,
+        //giving it a unique identifier as indicated by nextcode
+        if(dictionary.find(word) == dictionary.end()) {
+            dictionary[word] = nextcode;
+            lookup.push_back(word);
+            nextcode++;
         }
-
-        delete[] cstr;
+        
+        //Add the integer representation of the word into the list of ints
+        encodedlist.push_back(dictionary[word]);
     }
     
     return encodedlist;
@@ -64,4 +51,12 @@ vector<string> StringEncoder::decodeStream(vector<int>& stream) {
     }
     
     return decodedlist;
+}
+
+//Decode an individual int
+//An unknown int returns ??
+string StringEncoder::decodeNum(int num) {
+    if(num < lookup.size())
+        return lookup[num];
+    else return "??";
 }
