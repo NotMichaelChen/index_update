@@ -97,15 +97,8 @@ vector<Block*> findBestPath(map<Block*, vector<pair<int, Block*>>>& disttable) {
     Block* ending = nullptr;
     //find the longest distance
     for(auto iter = disttable.begin(); iter != disttable.end(); iter++) {
-        if(iter->first != nullptr)
-            cout << (iter->first)->oldloc << "-" << (iter->first)->newloc << endl;
-        else
-            cout << "S" << endl;
-        
         vector<pair<int, Block*>> table = iter->second;
         for(size_t i = 0; i < table.size(); i++) {
-            if(table[i].second != nullptr)
-                cout << "\t" << table[i].first << " " << (table[i].second)->oldloc << "-" << (table[i].second)->newloc << endl;
             if(table[i].first > greatest) {
                 ending = table[i].second;
                 greatest = table[i].first;

@@ -49,3 +49,12 @@ vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<Block
     
     return translist;
 }
+
+int applyTranslation(int oldindex, Translation t) {
+    if(index < t.loc)
+        return index;
+    else if(index > t.loc + t.oldlen)
+        return index + (t.newlen - t.oldlen);
+    else
+        return -1;
+}

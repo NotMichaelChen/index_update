@@ -129,7 +129,6 @@ void resolveIntersections(vector<Block*>& allblocks) {
             //We know that A.end > B.begin (is our breaking condition)
             //Thus we only need to check B.end > A.end
             if(allblocks[j]->oldloc + allblocks[j]->run.size()-1 > allblocks[i]->oldloc + allblocks[i]->run.size()-1) {
-                cout << "intersect";
                 //calculate how much the current block needs to shrink by
                 int shrunksize = allblocks[j]->oldloc - allblocks[i]->oldloc;
                 Block* shrunkblock = new Block;
@@ -150,7 +149,6 @@ void resolveIntersections(vector<Block*>& allblocks) {
                 break;
             
             if(allblocks[j]->newloc + allblocks[j]->run.size()-1 > allblocks[i]->newloc + allblocks[i]->run.size()-1) {
-                cout << "intersect";
                 int shrunksize = allblocks[j]->newloc - allblocks[i]->newloc;
                 Block* shrunkblock = new Block;
                 shrunkblock->run = vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize);
