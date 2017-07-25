@@ -1,146 +1,364 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <bitset>
+#include <cmath>
+#include <algorithm>
+#include <sstream>
+#define DATA "./test"
+#define NO_DOC 10
+#define INDEX "/home/qi/forwardIndex/compressedIndex"
+#define INFO "/home/qi/forwardIndex/docInfo"
 using namespace std;
 
 class Posting{
 public:
 	Posting(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0){
+		termID = id;
 		docID = d;
 		fragID = f;
 		pos = p;
 	}
 
-private:
 	unsigned int termID;
 	unsigned int docID;
 	unsigned int fragID;
 	unsigned int pos;
 };
-
+/*
 class PostingList{
 public:
-	PostingList(int id){
-		termID = id;
+	PostingList(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0){
+		Posting p(id, d, f, p);
+		pl.push_back(p);
 	}
 
 	void add(Posting p){
 		pl.push_back(p);
 	}
 
-private:
-	int termID;
 	vector<Posting> pl;
+};
+*/
+struct mData{
+	//need number of blocks?
+	int num_posting;//number of postings
+	long start_pos;
+	long meta_doc_start;
+	long meta_frag_start;
+	long meta_pos_start;
+	long posting_start;
+	long frag_start;
+	long pos_start;
+	//long ID_offset;
+};
+
+struct less_than_key
+{
+    inline bool operator() (const Posting& p1, const Posting& p2)
+    {
+        if(p1.termID == p2.termID){
+        	if(p1.docID == p2.docID){
+        		if(p1.fragID == p2.fragID){
+        			return (p1.pos < p2.pos);
+        		}else{
+        			return (p1.fragID < p2.fragID);
+        		}
+        	}else{
+        		return (p1.docID < p2.docID);
+        	}
+        }else{
+        	return (p1.termID < p2.termID);
+        }
+    }
 };
 
 class Compressor{
 public:
-	void writetoDisk(){
-
-	}
-
-	vector<int> VBEncode(int num){
-		vector<int> result;
-		
-		while ((num) > 127) {
-			result.push_back(1);
-			std::vector<int>::iterator it = result.end();
-			result.insert(it, 7, 1);
-			num -= 127;
+	void write(vector<uint8_t> num, ofstream& ofile){
+		for(vector<uint8_t>::iterator it = num.begin(); it != num.end(); it++){
+			ofile.write(reinterpret_cast<const char*>(&(*it)), 1);
 		}
-		mybits += '1';
-		mybits += std::bitset<7>(*it).to_string();
-		buffer += mybits;
-	return buffer;
 	}
 
-	vector<int> encode(vector<unsigned int> uncomp){
-		vector<int> biv;
-		vector<int> result;
-		for (vector<unsigned int>::iterator it = uncomp.begin(); it != uncomp.end(); ++it) {
-			biv = Compressor::VBEncode(*it);
-			result.insert(result.end(), biv.start(), biv.end());
-			biv.clear();
+	std::vector<char> read_com(ifstream& infile){
+		char c;
+		vector<char> result;
+		while(infile.get(c)){
+			result.push_back(c);
 		}
 		return result;
 	}
 
-	vector<int> compress(std::vector<unsigned int> field; int method; int sort; vector<unsigned int>& last_element = {}){
+	std::vector<uint8_t> VBEncode(unsigned int num){
+		ofstream ofile;
+		ofile.open(DATA, ios::binary);
+		vector<uint8_t> result;
+		uint8_t b;
+		while(num >= 128){
+			int a = num % 128;
+			bitset<8> byte(a);
+			byte.flip(7);
+			num = (num - a) / 128;
+			b = byte.to_ulong();
+			cout << byte << endl;
+			result.push_back(b);
+		}
+		int a = num % 128;
+		bitset<8> byte(a);
+		cout << byte << endl;
+		b = byte.to_ulong();
+		result.push_back(b);
+		return result;
+	}
+
+	std::vector<uint8_t> VBEncode(vector<unsigned int> nums){
+		vector<uint8_t> biv;
+		vector<uint8_t> result;
+		for( vector<unsigned int>::iterator it = nums.begin(); it != nums.end(); it ++){
+			biv = VBEncode(*it);
+			result.insert(result.end(), biv.begin(), biv.end());
+		}
+	}
+
+	vector<uint8_t> compress(std::vector<unsigned int> field, int method, int sort, vector<uint8_t> &meta_data_biv, vector<uint8_t> &last_id_biv){
 		if(method){
 			std::vector<unsigned int> block;
 			std::vector<unsigned int>::iterator it = field.begin();
-			std::vector<int> field_biv;
-			std::vector<int> biv;
+			std::vector<uint8_t> field_biv;
+			std::vector<uint8_t> biv;
+			
+			int prev;
+			int size_block;
+			while(it != field.end()){
+				size_block = 0;
+				block.clear();
+				
 
-			if(sort){
-				int prev = 0;
-				while(it != field.end()){
-					int size_block = 0;
-					block.clear();
-
-					while(size_block < 64 && it != field.end()){
-						block.push_back(*it - prev);
-						prev = *it;
-						size_block ++;
-						it ++;
-					}
-					biv = encode(field);
-					last_element.push_back(prev);
-					field_biv.insert(field_biv.end(), biv.begin(), biv.end());
+				while(size_block < 64 && it != field.end()){
+					block.push_back(*it - prev);
+					prev = *it;
+					size_block ++;
+					it ++;
 				}
-
-				return field_biv;
-
-			}else{
-
+				biv = VBEncode(block);
+				last_id_biv.push_back(prev);//the first element of every block needs to be stored
+				field_biv.insert(field_biv.end(), biv.begin(), biv.end());
+				meta_data_biv.push_back(biv.size());//meta data stores the number of bytes after compression
 			}
+			return field_biv;
+		}
+	}
+
+	vector<uint8_t> compress(std::vector<unsigned int> field, int method, int sort, vector<uint8_t> &meta_data_biv){
+		if(method){
+			std::vector<unsigned int> block;
+			std::vector<unsigned int>::iterator it = field.begin();
+			std::vector<uint8_t> field_biv;
+			std::vector<uint8_t> biv;
+
+			
+			int prev;
+			int size_block;
+			while(it != field.end()){
+				size_block = 0;
+				block.clear();
+				prev = 0;//the first element of every block needs to be renumbered
+
+				while(size_block < 64 && it != field.end()){
+					block.push_back(*it - prev);
+					prev = *it;
+					size_block ++;
+					it ++;
+				}
+				biv = encode(block);
+
+				field_biv.insert(field_biv.end(), biv.begin(), biv.end());
+				meta_data_biv.push_back(biv.size());//meta data stores the number of bytes after compression
+			}
+			return field_biv;
 		}
 	}
 	
 
-	mData compress(std::vector<Index::Posting> index; ofstream& diskIndex){
+	mData compress_p(std::vector<Posting> pList){
+		//pass in forward index of same termID
+		//compress positional index
+		ofstream ofile;//positional inverted index
+		ofile.open("./positional");
+
 		std::vector<unsigned int> v_docID;
 		std::vector<unsigned int> v_fragID;
 		std::vector<unsigned int> v_pos;
 		std::vector<unsigned int> v_last_id;
-		std::vector<int> last_id_biv;
-		std::vector<int> biv;
 
-		for(std::vector<Index::Posting>::iterator it = index.begin(); it != index.end(); it++){
+		std::vector<uint8_t> docID_biv;
+		std::vector<uint8_t> fragID_biv;
+		std::vector<uint8_t> pos_biv;
+
+		std::vector<uint8_t> last_id_biv;
+		std::vector<uint8_t> size_doc_biv;
+		std::vector<uint8_t> size_frag_biv;
+		std::vector<uint8_t> size_pos_biv;
+
+		unsigned int prev_id = pList[0].docID;
+		int freq = 0;
+		for(std::vector<Posting>::iterator it = pList.begin(); it != pList.end(); it++){
 			v_docID.push_back(it->docID);
 			v_fragID.push_back(it->fragID);
 			v_pos.push_back(it->pos);
 		}
 
-		biv = compress(v_docID, 1, 1, v_last_id);
-		last_id_biv = encode(v_last_id);
+		docID_biv = compress(v_docID, 1, 1, size_doc_biv, v_last_id);
+		last_id_biv = VBEncode(v_last_id);
 
+		fragID_biv = compress(v_fragID, 1, 0, size_frag_biv);
+		pos_biv = compress(v_pos, 1, 0, size_pos_biv);
+		
+		mData meta;
+		meta.start_pos = ofile.tellp();
+		write(last_id_biv, ofile);
+		meta.meta_doc_start = ofile.tellp();
+		write(size_doc_biv, ofile);
+		meta.meta_frag_start = ofile.tellp();
+		write(size_frag_biv, ofile);
 
-		if(v_fragID.size() != 0){
-			compress(v_fragID, 1, 0);
-		}
-		if(v_pos.size() != 0){
-			compress(v_pos, 1, 0);
-		}
+		meta.meta_pos_start = ofile.tellp();
+		write(size_pos_biv, ofile);
 
+		meta.posting_start = ofile.tellp();
+		write(docID_biv, ofile);
+
+		meta.frag_start = ofile.tellp();
+		write(fragID_biv, ofile);
+
+		meta.pos_start = ofile.tellp();
+		write(pos_biv, ofile);
+
+		ofile.close();
+	}
+
+	mData compress_np(std::vector<Posting> pList){
+		//compress non-positional index
+		ofstream np_index;
+		np_index.open("");
+
+	}
+
+	mData compress_p(&fowardIndex, &docInfo){
 		
 	}
 
-private:
-	struct mData{
-		int num_block;
-		int num_posting;
-		long posting_start;
-		long ID_offset;
-	};
+
+	std::vector<Posting> read_forward_index(){
+		vector<Posting> invert_index;
+		ifstream index;
+		ifstream info;
+		index.open(INDEX);
+		info.open(INFO);
+
+		string line;
+		string value;
+		vector<string> vec;
+		char c;
+		int p;
+		int num;
+
+		for(int i = 0; i < NO_DOC; i ++){	
+			vec.clear();
+			getline(info, line);//read docInfo
+			stringstream lineStream(line);
+			unsigned int pos = 0;
+
+			while(lineStream >> value){
+				vec.push_back(value);
+			}
+
+			index.seekg(stoi(vec[2]));
+			while(index.tellg() != (stoi(vec[2]) + stoi(vec[3]))){
+				//for every document, do
+				index.get(c);
+				bitset<8> byte(c);
+				num = 0;
+				p = 0;
+				while(byte[7] == 1){
+					byte.flip(7);
+					num += byte.to_ulong()*pow(128, p);
+					p++;
+					index.get(c);
+					byte = bitset<8>(c);
+				}
+				num += (byte.to_ulong())*pow(128, p);
+				pos ++;
+
+				Posting p(num, stoul(vec[1]), 0, pos);
+				invert_index.push_back(p);
+			}
+
+		}
+		index.close();
+		info.close();
+
+		std::sort(invert_index.begin(), invert_index.end(), less_than_key());
+
+		return invert_index;
+	}
+	
 };
 
 class Reader{
 public:
-	int VBDecode(){
 
+	std::vector<char> read_com(ifstream& infile){
+		char c;
+		vector<char> result;
+		while(infile.get(c)){
+			result.push_back(c);
+		}
+		return result;
 	}
 
-	NextGQ(){
+	std::vector<int> VBDecode(string filename){
+		ifstream ifile;
+		ifile.open(filename, ios::binary);
+		char c;
+		int num;
+		int p;
+		vector<int> result;
+		vector<char> vec = read_com(ifile);
+
+		for(vector<char>::iterator it = vec.begin(); it != vec.end(); it++){
+			c = *it;
+			bitset<8> byte(c);
+			num = 0;
+			p = 0;
+			while(byte[7] == 1){
+				byte.flip(7);
+				num += byte.to_ulong()*pow(128, p);
+				cout << "num " << num << endl;
+				p++;
+				it ++;
+				c = *it;
+				byte = bitset<8>(c);
+			}
+			num += (byte.to_ulong())*pow(128, p);
+
+			result.push_back(num);
+		}
+		return result;
+	}
+
+		
+
+	Posting NextGQ(){
 
 	}
 };
+
+int main(){
+	Compressor comp;
+	vector<Posting> inverted_ind = comp.read_forward_index();
+	comp.compress_p(inverted_ind);
+
+	return 0;
+}
