@@ -124,7 +124,7 @@ vector<ProtoPosting> getPostings(vector<Block*> commonblocks, int doc_id, vector
     postingslist.reserve(postingsmap.size());
     
     for(auto kv : postingsmap) {
-        postingslist.push_back(kv.second);  
+        postingslist.push_back(kv.second);
     }
     
     return postingslist;
