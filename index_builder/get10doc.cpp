@@ -30,7 +30,7 @@ int main(){
 	for(int i = 0; i < NO_DOC; i ++){	
 		vec.clear();
 		getline(info, line);//read docInfo
-		newinfo << line;
+		newinfo << line << endl;
 		stringstream lineStream(line);
 		unsigned int pos = 0;
 
