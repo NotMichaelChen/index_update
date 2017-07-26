@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
+#include <utility>
 
 #include "stringencoder.h"
 #include "block.h"
@@ -52,21 +53,19 @@ void makePosts(string& url, int doc_id, ifstream& oldpage, ifstream& newpage) {
     vector<pair<int, Block*>> bestlist = disttable.findAllBestPaths();
     vector<Block*> finalpath = disttable.tracePath(bestlist.back().second, bestlist.size());
     
-    //Get file lengths
-    oldpage.seekg(0, ios::end);
-    int oldlength = oldpage.tellg();
-    newpage.seekg(0, ios::end);
-    int newlength = newpage.tellg();
-    vector<Translation> translist = getTranslations(oldlength, newlength, finalpath);
+    //Get the translation and posting list
+    vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);
+    vector<ProtoPosting> postingslist = getPostings(commonblocks, doc_id, oldstream, newstream, se);
 
     //-generate postings and translation statements, and return them. (Question: how do we know the previous largest fragid for this document, so we know what to use as the next fragid? Maybe store with did in the tuple store?)
 }
 
-//TODO: Make fragid assignment correct
-vector<ProtoPosting> getPostings(vector<Block*> commonblocks, int doc_id, vector<int>& oldstream, vector<int>& newstream, StringEncoder& se) {
+pair<vector<NonPositionalPosting>, vector<PositionalPosting>>
+getPostings(vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& oldstream, vector<int>& newstream, StringEncoder& se) {
     //Which block to skip next
     int blockindex = 0;
-    unordered_map<string, ProtoPosting> postingsmap;
+    unordered_map<string, NonPositionalPosting> nppostingsmap;
+    unordered_map<string, PositionalPosting> ppostingsmap;
     
     size_t index = 0
     
@@ -83,12 +82,12 @@ vector<ProtoPosting> getPostings(vector<Block*> commonblocks, int doc_id, vector
             
             string decodedword = se.decodeNum(oldstream[index]);
             //Word already indexed
-            if(postingsmap.find(decodedword) != postingsmap.end()) {
-                postingsmap[decodedword].freq -= 1;
+            if(nppostingsmap.find(decodedword) != nppostingsmap.end()) {
+                nppostingsmap[decodedword].freq -= 1;
             }
             else {
-                ProtoPosting newposting(decodedword, doc_id, -1, 0);
-                postingsmap[decodedword] = newposting;
+                NonPositionalPosting newposting(decodedword, doc_id, -1);
+                nppostingsmap[decodedword] = newposting;
             }
             ++index;
         }
@@ -106,26 +105,31 @@ vector<ProtoPosting> getPostings(vector<Block*> commonblocks, int doc_id, vector
         else {
             //Edited sections in new file are considered "inserted"
             string decodedword = se.decodeNum(oldstream[index]);
-            //Word already indexed
-            if(postingsmap.find(decodedword) != postingsmap.end()) {
-                postingsmap[decodedword].freq += 1;
-                postingsmap[decodedword].insertPos(i);
+            //Word already indexed in nonpositional map
+            if(nppostingsmap.find(decodedword) != nppostingsmap.end()) {
+                nppostingsmap[decodedword].freq += 1;
             }
             else {
-                ProtoPosting newposting(decodedword, doc_id, 1, 0);
-                newposting.insertPos(i);
-                postingsmap[decodedword] = newposting;
+                NonPositionalPosting newposting(decodedword, doc_id, 1);
+                nppostingsmap[decodedword] = newposting;
             }
+            //Always insert positional posting for a word
+            PositionalPosting newposting(decodedword, doc_id, 0, index);
             ++index;
         }
     }
     
-    vector<ProtoPosting> postingslist;
-    postingslist.reserve(postingsmap.size());
+    vector<NonPositionalPosting> nppostingslist;
+    nppostingslist.reserve(nppostingsmap.size());
+    vector<PositionalPosting> ppostingslist;
+    ppostingslist.reserve(ppostingsmap.size());
     
-    for(auto kv : postingsmap) {
-        postingslist.push_back(kv.second);
+    for(auto kv : nppostingsmap) {
+        nppostingslist.push_back(kv.second);
+    }
+    for(auto kv : ppostingsmap) {
+        ppostingslist.push_back(kv.second);
     }
     
-    return postingslist;
+    return make_pair(nppostingslist, ppostingslist);
 }
