@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <utility>
+#include <algorithm>
 
 #include "stringencoder.h"
 #include "block.h"
@@ -55,7 +56,7 @@ void makePosts(string& url, int doc_id, ifstream& oldpage, ifstream& newpage) {
     
     //Get the translation and posting list
     vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);
-    vector<ProtoPosting> postingslist = getPostings(commonblocks, doc_id, oldstream, newstream, se);
+    auto postingslist = getPostings(commonblocks, doc_id, 0, oldstream, newstream, se);
 
     //-generate postings and translation statements, and return them. (Question: how do we know the previous largest fragid for this document, so we know what to use as the next fragid? Maybe store with did in the tuple store?)
 }
@@ -67,7 +68,7 @@ getPostings(vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& o
     unordered_map<string, NonPositionalPosting> nppostingsmap;
     unordered_map<string, PositionalPosting> ppostingsmap;
     
-    size_t index = 0
+    size_t index = 0;
     
     //Sort blocks based on oldindex first
     sort(commonblocks.begin(), commonblocks.end(), compareOld);
@@ -83,11 +84,11 @@ getPostings(vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& o
             string decodedword = se.decodeNum(oldstream[index]);
             //Word already indexed
             if(nppostingsmap.find(decodedword) != nppostingsmap.end()) {
-                nppostingsmap[decodedword].freq -= 1;
+                nppostingsmap.at(decodedword).freq -= 1;
             }
             else {
                 NonPositionalPosting newposting(decodedword, doc_id, -1);
-                nppostingsmap[decodedword] = newposting;
+                nppostingsmap.insert(make_pair(decodedword, newposting));
             }
             ++index;
         }
@@ -107,14 +108,15 @@ getPostings(vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& o
             string decodedword = se.decodeNum(oldstream[index]);
             //Word already indexed in nonpositional map
             if(nppostingsmap.find(decodedword) != nppostingsmap.end()) {
-                nppostingsmap[decodedword].freq += 1;
+                nppostingsmap.at(decodedword).freq += 1;
             }
             else {
                 NonPositionalPosting newposting(decodedword, doc_id, 1);
-                nppostingsmap[decodedword] = newposting;
+                nppostingsmap.insert(make_pair(decodedword, newposting));
             }
             //Always insert positional posting for a word
             PositionalPosting newposting(decodedword, doc_id, 0, index);
+            ppostingsmap.insert(make_pair(decodedword, newposting));
             ++index;
         }
     }

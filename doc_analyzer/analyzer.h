@@ -5,6 +5,9 @@
 #include <vector>
 #include <utility>
 
+#include "block.h"
+#include "stringencoder.h"
+
 //General posting type used by the analyzer, to be further parsed by the index 
 //Contains both position and nonpositional data and uses the actual word instead of a termid
 //pos.size and freq may not exactly match due to deletions reducing freq without affecting pos
@@ -59,6 +62,6 @@ void indexUpdate(std::string& url, std::ifstream& newpage);
 void makePosts(std::string& url, int doc_id, std::ifstream& oldpage, std::ifstream& newpage);
 //Specifically generates postings given a vector of blocks
 std::pair<std::vector<NonPositionalPosting>, std::vector<PositionalPosting>>
-getPostings(std::vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& oldstream, vector<int>& newstream, StringEncoder& se)
+getPostings(std::vector<Block*>& commonblocks, int doc_id, int fragID, std::vector<int>& oldstream, std::vector<int>& newstream, StringEncoder& se);
 
 #endif
