@@ -108,7 +108,6 @@ public:
 	}
 
 	std::vector<uint8_t> VBEncode(vector<unsigned int>& nums){
-		cout << "Encoding vector ... " << endl;
 		vector<uint8_t> biv;
 		vector<uint8_t> result;
 		for( vector<unsigned int>::iterator it = nums.begin(); it != nums.end(); it ++){
@@ -132,6 +131,9 @@ public:
 				block.clear();
 
 				while(size_block < 64 && it != field.end()){
+					/*if(*it < prev){
+						cout << "Wrong" << endl;
+					}*/
 					block.push_back(*it - prev);
 					prev = *it;
 					size_block ++;
@@ -202,6 +204,8 @@ public:
 			v_fragID.push_back(it->fragID);
 			v_pos.push_back(it->pos);
 		}
+
+		//mData.num_posting = v_docID.size();
 
 		docID_biv = compress(v_docID, 1, 1, size_doc_biv, v_last_id);
 		last_id_biv = VBEncode(v_last_id);
@@ -275,7 +279,7 @@ public:
 				pos ++;
 
 				Posting p(num, stoul(vec[1]), 0, pos);
-				cout << num << ' ' << endl;
+				//cout << num << ' ' << endl;
 				invert_index.push_back(p);
 			}
 
@@ -284,6 +288,10 @@ public:
 		info.close();
 
 		std::sort(invert_index.begin(), invert_index.end(), less_than_key());
+
+		for(vector<Posting>::iterator it = invert_index.begin(); it != invert_index.end(); it ++){
+			cout << it->termID << ' ' << it->docID << ' '<< it->pos << endl;
+		}
 
 		return invert_index;
 	}
@@ -319,7 +327,6 @@ public:
 			while(byte[7] == 1){
 				byte.flip(7);
 				num += byte.to_ulong()*pow(128, p);
-				cout << "num " << num << endl;
 				p++;
 				it ++;
 				c = *it;
@@ -331,8 +338,6 @@ public:
 		}
 		return result;
 	}
-
-		
 
 	Posting NextGQ(){
 
