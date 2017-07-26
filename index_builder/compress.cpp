@@ -121,14 +121,14 @@ public:
 		}
 	}
 
-	vector<uint8_t> compress(std::vector<unsigned int> field, int method, int sort, vector<uint8_t> &meta_data_biv, vector<uint8_t> &last_id_biv){
+	vector<uint8_t> compress(std::vector<unsigned int> field, int method, int sort, vector<uint8_t> &meta_data_biv, vector<unsigned int> &last_id_biv){
 		if(method){
 			std::vector<unsigned int> block;
 			std::vector<unsigned int>::iterator it = field.begin();
 			std::vector<uint8_t> field_biv;
 			std::vector<uint8_t> biv;
 			
-			int prev;
+			unsigned int prev;
 			int size_block;
 			while(it != field.end()){
 				size_block = 0;
@@ -171,7 +171,7 @@ public:
 					size_block ++;
 					it ++;
 				}
-				biv = encode(block);
+				biv = VBEncode(block);
 
 				field_biv.insert(field_biv.end(), biv.begin(), biv.end());
 				meta_data_biv.push_back(biv.size());//meta data stores the number of bytes after compression
@@ -236,17 +236,6 @@ public:
 		write(pos_biv, ofile);
 
 		ofile.close();
-	}
-
-	mData compress_np(std::vector<Posting> pList){
-		//compress non-positional index
-		ofstream np_index;
-		np_index.open("");
-
-	}
-
-	mData compress_p(&fowardIndex, &docInfo){
-		
 	}
 
 
