@@ -8,6 +8,7 @@
 #define NO_DOC 10
 #define INDEX "./test_data/compressedIndex"
 #define INFO "./test_data/docInfo"
+#define PDIR "./disk_index/positional/" 
 #define MEMORY_LIMIT 4096
 using namespace std;
 
@@ -42,6 +43,7 @@ public:
 */
 struct mData{
 	//need number of blocks?
+	int index_num;//in which static index is the postinglist stored
 	int num_posting;//number of postings
 	long start_pos;
 	long meta_doc_start;
@@ -75,6 +77,46 @@ struct less_than_key
 
 class Compressor{
 public:
+	std::vector<std::string> read_directory( std::string& path ){
+		std::vector <std::string> result;
+		dirent* de;
+		DIR* dp;
+		errno = 0;
+		dp = opendir( path.empty() ? "." : path.c_str() );
+  		if (dp){
+    		while (true){
+      			errno = 0;
+      			de = readdir( dp );
+      			if (de == NULL) break;
+      			result.push_back( std::string( de->d_name ) );
+      		}
+			closedir( dp );
+    	}
+  		return result;
+  	}
+
+	void merge(indexnum){
+		ifstream filez;
+		ifstream fileI;
+		filez.open(PDIR + "Z" + to_string(indexnum));
+		filei.open(PDIR + "I" + to_string(indexnum));
+
+		vector<Posting> indexz = Reader::read(filez);
+		vector<Posting> indexi = Reader::read(filei);
+	}
+
+	void merge_test(PDIR){
+		int indexnum = 0;
+		vector<string> files = read_directory(PDIR);
+
+		while(!none_of(begin(files), std::end(files), "I" + to_string(indexnum))){
+			//if In exists already, merge In with Zn
+			merge(indexnum);
+
+			indexnum ++;
+		}
+	}
+
 	void write(vector<uint8_t> num, ofstream& ofile){
 		for(vector<uint8_t>::iterator it = num.begin(); it != num.end(); it++){
 			ofile.write(reinterpret_cast<const char*>(&(*it)), 1);
@@ -178,7 +220,11 @@ public:
 	
 	mData compress_p(std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
 		ofstream ofile;//positional inverted index
-		ofile.open("./disk_index/positional");
+		ofile.open(PDIR + "Z0", ios::ate | ios::binary);
+		if(ofile.tellg() != 0){
+			ofile.close();
+			ofile.open(PDIR + "I0", ios::ate | ios::binary);
+		}
 
 		std::vector<unsigned int> v_last_id;
 		std::vector<uint8_t> docID_biv;
@@ -219,6 +265,9 @@ public:
 		write(pos_biv, ofile);
 
 		ofile.close();
+
+		merge_test();
+
 	}
 
 	void compress_p(std::vector<Posting>& pList){
