@@ -8,6 +8,7 @@
 #define NO_DOC 10
 #define INDEX "./test_data/compressedIndex"
 #define INFO "./test_data/docInfo"
+#define MEMORY_LIMIT 4096
 using namespace std;
 
 class Posting{
@@ -124,16 +125,13 @@ public:
 			std::vector<uint8_t> field_biv;
 			std::vector<uint8_t> biv;
 
-			unsigned int prev;
+			unsigned int prev = *it;
 			int size_block;
 			while(it != field.end()){
 				size_block = 0;
 				block.clear();
 
 				while(size_block < 64 && it != field.end()){
-					/*if(*it < prev){
-						cout << "Wrong" << endl;
-					}*/
 					block.push_back(*it - prev);
 					prev = *it;
 					size_block ++;
@@ -178,18 +176,11 @@ public:
 		}
 	}
 	
-
-	mData compress_p(std::vector<Posting>& pList){
-		//pass in forward index of same termID
-		//compress positional index
+	mData compress_p(std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
 		ofstream ofile;//positional inverted index
 		ofile.open("./disk_index/positional");
 
-		std::vector<unsigned int> v_docID;
-		std::vector<unsigned int> v_fragID;
-		std::vector<unsigned int> v_pos;
 		std::vector<unsigned int> v_last_id;
-
 		std::vector<uint8_t> docID_biv;
 		std::vector<uint8_t> fragID_biv;
 		std::vector<uint8_t> pos_biv;
@@ -198,14 +189,6 @@ public:
 		std::vector<uint8_t> size_doc_biv;
 		std::vector<uint8_t> size_frag_biv;
 		std::vector<uint8_t> size_pos_biv;
-
-		for(std::vector<Posting>::iterator it = pList.begin(); it != pList.end(); it++){
-			v_docID.push_back(it->docID);
-			v_fragID.push_back(it->fragID);
-			v_pos.push_back(it->pos);
-		}
-
-		//mData.num_posting = v_docID.size();
 
 		docID_biv = compress(v_docID, 1, 1, size_doc_biv, v_last_id);
 		last_id_biv = VBEncode(v_last_id);
@@ -216,8 +199,10 @@ public:
 		mData meta;
 		meta.start_pos = ofile.tellp();
 		write(last_id_biv, ofile);
+
 		meta.meta_doc_start = ofile.tellp();
 		write(size_doc_biv, ofile);
+
 		meta.meta_frag_start = ofile.tellp();
 		write(size_frag_biv, ofile);
 
@@ -234,6 +219,47 @@ public:
 		write(pos_biv, ofile);
 
 		ofile.close();
+	}
+
+	void compress_p(std::vector<Posting>& pList){
+		//pass in forward index of same termID
+		//compress positional index
+
+		std::vector<unsigned int> v_docID;
+		std::vector<unsigned int> v_fragID;
+		std::vector<unsigned int> v_pos;
+		mData mmData;
+		unsigned int num_of_p = 0;
+		bool finished = true;
+
+		unsigned int currID = pList[0].termID;//the ID of the term that is currently processing
+		for(std::vector<Posting>::iterator it = pList.begin(); it != pList.end(); it++){
+			while(it->termID == currID){
+				if(v_docID.size() < MEMORY_LIMIT){
+					v_docID.push_back(it->docID);
+					v_fragID.push_back(it->fragID);
+					v_pos.push_back(it->pos);
+					it ++;
+					num_of_p ++;
+				}
+				else{
+					finished = false;
+					break;
+				}
+			}
+			currID = it->termID;
+			mmData = compress_p(v_docID, v_fragID, v_pos);
+			if (finished){
+				mmData.num_posting = num_of_p;
+				num_of_p = 0;
+			}
+			finished = true;
+			//To-Do: add mmdata to the dictionary of corresponding term
+			v_docID.clear();
+			v_fragID.clear();
+			v_pos.clear();
+			it --;
+		}
 	}
 
 
@@ -279,7 +305,6 @@ public:
 				pos ++;
 
 				Posting p(num, stoul(vec[1]), 0, pos);
-				//cout << num << ' ' << endl;
 				invert_index.push_back(p);
 			}
 
@@ -288,10 +313,11 @@ public:
 		info.close();
 
 		std::sort(invert_index.begin(), invert_index.end(), less_than_key());
-
+		/*
 		for(vector<Posting>::iterator it = invert_index.begin(); it != invert_index.end(); it ++){
 			cout << it->termID << ' ' << it->docID << ' '<< it->pos << endl;
 		}
+		*/
 
 		return invert_index;
 	}
