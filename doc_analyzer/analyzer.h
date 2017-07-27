@@ -61,7 +61,8 @@ void indexUpdate(std::string& url, std::ifstream& newpage);
 //Generates new postings and translations from the new page
 void makePosts(std::string& url, int doc_id, std::ifstream& oldpage, std::ifstream& newpage);
 //Specifically generates postings given a vector of blocks
+//fragID refers to the next ID to use
 std::pair<std::vector<NonPositionalPosting>, std::vector<PositionalPosting>>
-getPostings(std::vector<Block*>& commonblocks, int doc_id, int fragID, std::vector<int>& oldstream, std::vector<int>& newstream, StringEncoder& se);
+    getPostings(std::vector<Block*>& commonblocks, int doc_id, int fragID, std::vector<int>& oldstream, std::vector<int>& newstream, StringEncoder& se);
 
 #endif

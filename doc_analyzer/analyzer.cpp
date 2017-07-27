@@ -16,6 +16,19 @@
 
 using namespace std;
 
+/* TODO
+ * max fragid can be found by looking at the translation list's size for the given document
+ * decide whether to store max fragid in document store or use above trick
+ * are the translation lists/document store global or passed in?
+ * find out where posting structs should be defined
+ * implement document store
+ * implement block selection count calculation
+ * does the matching algorithm work with edge cases? (eg completely replaced, completely deleted, not changed)
+ * does indexUpdate assume the page given is actually "new"?
+ * time to start merging code with Fengyuan?
+ * refactor everything
+ */
+
 void indexUpdate(string& url, ifstream& newpage) {
     //-fetch the previous version, and the did of the document, from a tuple store or database (TBD)
 
@@ -30,8 +43,10 @@ void indexUpdate(string& url, ifstream& newpage) {
 
 void makePosts(string& url, int doc_id, ifstream& oldpage, ifstream& newpage) {
     //-check if there was a previous version, if not create postings with fragid = 0
-    if(!newpage.is_open()) {
-        
+    int fragID;
+    
+    if(!oldpage.is_open()) {
+        fragID = 0;
     }
 
     //-else, run the graph based matching algorithm on the two versions
@@ -50,17 +65,20 @@ void makePosts(string& url, int doc_id, ifstream& oldpage, ifstream& newpage) {
     vector<Block*> topsort = topologicalSort(G);
     
     //Get the optimal set of blocks to select
-    DistanceTable disttable(blocks, G, topsort);
+    //TODO: make function to find number of blocks to select
+    DistanceTable disttable(7, G, topsort);
     vector<pair<int, Block*>> bestlist = disttable.findAllBestPaths();
     vector<Block*> finalpath = disttable.tracePath(bestlist.back().second, bestlist.size());
     
     //Get the translation and posting list
     vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);
-    auto postingslist = getPostings(commonblocks, doc_id, 0, oldstream, newstream, se);
+    //TODO: get the maximum fragid and pass it in
+    auto postingslist = getPostings(commonblocks, doc_id, fragID, oldstream, newstream, se);
 
     //-generate postings and translation statements, and return them. (Question: how do we know the previous largest fragid for this document, so we know what to use as the next fragid? Maybe store with did in the tuple store?)
 }
 
+//TODO: refactor and decide if this should be one or two functions
 pair<vector<NonPositionalPosting>, vector<PositionalPosting>>
 getPostings(vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& oldstream, vector<int>& newstream, StringEncoder& se) {
     //Which block to skip next
@@ -115,8 +133,9 @@ getPostings(vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& o
                 nppostingsmap.insert(make_pair(decodedword, newposting));
             }
             //Always insert positional posting for a word
-            PositionalPosting newposting(decodedword, doc_id, 0, index);
+            PositionalPosting newposting(decodedword, doc_id, fragID, index);
             ppostingsmap.insert(make_pair(decodedword, newposting));
+            ++fragID;
             ++index;
         }
     }

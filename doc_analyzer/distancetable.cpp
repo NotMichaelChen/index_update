@@ -56,6 +56,9 @@ vector<pair<int, Block*>> DistanceTable::findAllBestPaths() {
 
 vector<Block*> DistanceTable::tracePath(Block* ending, int steps) {
     vector<Block*> path;
+    if(ending == nullptr)
+        return path;
+    
     path.push_back(ending);
     steps--;
     Block* next = ending;

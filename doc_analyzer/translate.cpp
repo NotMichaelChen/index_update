@@ -8,6 +8,8 @@ using namespace std;
 
 vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<Block*> commonblocks) {
     vector<Translation> translist;
+    if(commonblocks.size() == 0)
+        return translist;
     
     int oldlast = oldfilelen - 1;
     int newlast = newfilelen - 1;
