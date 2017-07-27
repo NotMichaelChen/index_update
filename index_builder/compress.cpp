@@ -5,11 +5,14 @@
 #include <cmath>
 #include <algorithm>
 #include <sstream>
-#define NO_DOC 10
+#include <map>
+
+#define NO_DOC 10 //temporary use
+#define POSTING_LIMIT 1000 //make sure doesn't exceed memory limit
 #define INDEX "./test_data/compressedIndex"
 #define INFO "./test_data/docInfo"
-#define PDIR "./disk_index/positional/" 
-#define MEMORY_LIMIT 4096
+#define PDIR "./disk_index/positional/"
+
 using namespace std;
 
 class Posting{
@@ -41,10 +44,19 @@ public:
 	vector<Posting> pl;
 };
 */
+
+struct fileinfo{//a file that contains a part (or whole) postinglist
+	string filename;
+	long start_pos;
+	long end_pos;
+};
+
 struct mData{
 	//need number of blocks?
 	int index_num;//in which static index is the postinglist stored
 	int num_posting;//number of postings
+
+	std::vector<fileinfo> file_info;//how a postinglist is stored in multiple files
 	long start_pos;
 	long meta_doc_start;
 	long meta_frag_start;
@@ -95,14 +107,30 @@ public:
   		return result;
   	}
 
+  	void update_meta(string s1, string s2){
+
+  	}
+
 	void merge(indexnum){
 		ifstream filez;
 		ifstream fileI;
+		ofstream ofile;
 		filez.open(PDIR + "Z" + to_string(indexnum));
 		filei.open(PDIR + "I" + to_string(indexnum));
 
+		ofile.open(PDIR + "Z" + to_string(indexnum + 1), ios::ate | ios::binary);
+		if(ofile.tellg() != 0){
+			ofile.close();
+			ofile.open(PDIR + "I0", ios::ate | ios::binary);
+		}
+
+		update_meta(PDIR + "Z" + to_string(indexnum), PDIR + "I" + to_string(indexnum));
+
 		vector<Posting> indexz = Reader::read(filez);
 		vector<Posting> indexi = Reader::read(filei);
+		//assume postinglist can be loaded into memory entirely
+
+		
 	}
 
 	void merge_test(PDIR){
@@ -218,14 +246,8 @@ public:
 		}
 	}
 	
-	mData compress_p(std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
-		ofstream ofile;//positional inverted index
-		ofile.open(PDIR + "Z0", ios::ate | ios::binary);
-		if(ofile.tellg() != 0){
-			ofile.close();
-			ofile.open(PDIR + "I0", ios::ate | ios::binary);
-		}
-
+	mData compress_p(ofstream& ofile, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
+		
 		std::vector<unsigned int> v_last_id;
 		std::vector<uint8_t> docID_biv;
 		std::vector<uint8_t> fragID_biv;
@@ -243,6 +265,8 @@ public:
 		pos_biv = compress(v_pos, 1, 0, size_pos_biv);
 		
 		mData meta;
+		fileinfo fi;
+		fi.start_pos = ofile.tellp();
 		meta.start_pos = ofile.tellp();
 		write(last_id_biv, ofile);
 
@@ -264,55 +288,59 @@ public:
 		meta.pos_start = ofile.tellp();
 		write(pos_biv, ofile);
 
-		ofile.close();
-
-		merge_test();
-
+		fi.end_pos = ofile.tellp();
+		meta.file_info.push_back(fi);//store the start and end position of postinglist in this file
 	}
 
-	void compress_p(std::vector<Posting>& pList){
+	void compress_p(std::vector<Posting>& pList, std::map<string, vector<int>>& filemeta){
 		//pass in forward index of same termID
 		//compress positional index
+		ofstream ofile;//positional inverted index
+		string filename = PDIR + "Z0";
+		ofile.open(filename, ios::ate | ios::binary);
+		if(ofile.tellg() != 0){
+			ofile.close();
+			fielname = PDIR + "I0";
+		}
+		ofile.open(filename, ios::ate | ios::binary);
+		vector<int> termIDs;
 
 		std::vector<unsigned int> v_docID;
 		std::vector<unsigned int> v_fragID;
 		std::vector<unsigned int> v_pos;
 		mData mmData;
-		unsigned int num_of_p = 0;
-		bool finished = true;
+		unsigned int num_of_p = 0;//number of posting of a certain term
 
 		unsigned int currID = pList[0].termID;//the ID of the term that is currently processing
 		for(std::vector<Posting>::iterator it = pList.begin(); it != pList.end(); it++){
 			while(it->termID == currID){
-				if(v_docID.size() < MEMORY_LIMIT){
-					v_docID.push_back(it->docID);
-					v_fragID.push_back(it->fragID);
-					v_pos.push_back(it->pos);
-					it ++;
-					num_of_p ++;
-				}
-				else{
-					finished = false;
-					break;
-				}
+				v_docID.push_back(it->docID);
+				v_fragID.push_back(it->fragID);
+				v_pos.push_back(it->pos);
+				it ++;
+				num_of_p ++;
 			}
+			termIDs.push_back(currID);
 			currID = it->termID;
-			mmData = compress_p(v_docID, v_fragID, v_pos);
-			if (finished){
-				mmData.num_posting = num_of_p;
-				num_of_p = 0;
-			}
-			finished = true;
+			mmData = compress_p(ofile, v_docID, v_fragID, v_pos);
+			mmData.num_posting = num_of_p;
+			
+			mmData.file_info.filename = filename;
 			//To-Do: add mmdata to the dictionary of corresponding term
+
+			num_of_p = 0;
 			v_docID.clear();
 			v_fragID.clear();
 			v_pos.clear();
-			it --;
+			it --;//before exit while loop, iterator is added but the corresponding value is not pushed to vector
 		}
+
+		filemeta[filename] = termIDs;
+		ofile.close();
+		merge_test();//see if need to merge
 	}
 
-
-	std::vector<Posting> read_forward_index(){
+	void start_compress(map<string, vector<int>>& filemeta){
 		vector<Posting> invert_index;
 		ifstream index;
 		ifstream info;
@@ -341,8 +369,8 @@ public:
 				//for every document, do
 				index.get(c);
 				bitset<8> byte(c);
-				num = 0;
-				p = 0;
+				num = 0; // store decoding termID
+				p = 0;//power
 				while(byte[7] == 1){
 					byte.flip(7);
 					num += byte.to_ulong()*pow(128, p);
@@ -355,22 +383,17 @@ public:
 
 				Posting p(num, stoul(vec[1]), 0, pos);
 				invert_index.push_back(p);
+				if (invert_index.size() > POSTING_LIMIT){ // make sure doesn't exceed memory
+					std::sort(invert_index.begin(), invert_index.end(), less_than_key());
+					compress_p(invert_index, filemeta);
+					invert_index.clear()
+				}
 			}
 
 		}
 		index.close();
 		info.close();
-
-		std::sort(invert_index.begin(), invert_index.end(), less_than_key());
-		/*
-		for(vector<Posting>::iterator it = invert_index.begin(); it != invert_index.end(); it ++){
-			cout << it->termID << ' ' << it->docID << ' '<< it->pos << endl;
-		}
-		*/
-
-		return invert_index;
 	}
-	
 };
 
 class Reader{
@@ -414,6 +437,10 @@ public:
 		return result;
 	}
 
+	std::vector<Posting> read(&ifstream file){
+		
+	}
+
 	Posting NextGQ(){
 
 	}
@@ -421,8 +448,9 @@ public:
 
 int main(){
 	Compressor comp;
-	vector<Posting> inverted_ind = comp.read_forward_index();
-	comp.compress_p(inverted_ind);
+	map<string, vector<int>> filemeta;
+	comp.start_compress(filemeta;);
+	
 
 	return 0;
 }
