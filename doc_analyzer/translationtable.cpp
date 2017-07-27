@@ -31,7 +31,7 @@ void TranslationTable::insert(vector<Translation> trans, int docID) {
     auto existingtrans = transtable.find(docID);
     
     if(existingtrans != transtable.end()) {
-        existingtrans->second.insert(existingtrans.end(), trans.begin(), trans.end());
+        existingtrans->second.insert(existingtrans->second.end(), trans.begin(), trans.end());
     }
     else {
         transtable[docID] = trans;

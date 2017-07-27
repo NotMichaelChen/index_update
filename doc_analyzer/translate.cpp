@@ -53,10 +53,10 @@ vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<Block
 }
 
 int applyTranslation(int oldindex, Translation t) {
-    if(index < t.loc)
-        return index;
-    else if(index > t.loc + t.oldlen)
-        return index + (t.newlen - t.oldlen);
+    if(oldindex < t.loc)
+        return oldindex;
+    else if(oldindex > t.loc + t.oldlen)
+        return oldindex + (t.newlen - t.oldlen);
     else
         return -1;
 }
