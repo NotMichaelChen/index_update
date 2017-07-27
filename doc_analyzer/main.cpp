@@ -106,15 +106,10 @@ int main(int argc, char **argv) {
     
     vector<Block*> finalpath = disttable.tracePath(bestlist.back().second, bestlist.size());
     
-    //Get file lengths
-    oldfile.seekg(0, ios::end);
-    int oldlength = oldfile.tellg();
-    newfile.seekg(0, ios::end);
-    int newlength = newfile.tellg();
-    vector<Translation> translist = getTranslations(oldlength, newlength, finalpath);
+    vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);
     
     for(Translation t : translist) {
-        cout << t.loc << endl;
+        cout << t.loc << " " << t.oldlen << " " << t.newlen << endl;
     }
     
     return 0;

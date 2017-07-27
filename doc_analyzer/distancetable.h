@@ -13,7 +13,18 @@ public:
     DistanceTable(int blocklimit, BlockGraph& graph, std::vector<Block*>& toporder);
     
     //Gets a list of every best path in the graph
+    //index of vector refers to number of steps through graph (see assumption below)
+    //Each entry is a pair of totalweight, endingblock.
+    //TODO: Consider making private?
     std::vector<std::pair<int, Block*>> findAllBestPaths();
+    
+    //Finds an optimal path through the graph that balances block count vs common text
+    //The parameter is the constant of the cost function, which takes the form ax+y
+    //Where x is the amount of blocks taken, and y is the marginal amount of common text
+    //Thus a represents the cost of taking one block of text
+    //NOTE: this pair represents <steps, block> instead of <weight, block>
+    //weight can be obtained elsewhere
+    std::pair<int, Block*> findOptimalPath(int a);
     
     //Fills a vector with a path that ends at ending
     //path is in order of graph traversal

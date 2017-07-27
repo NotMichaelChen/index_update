@@ -51,7 +51,31 @@ vector<pair<int, Block*>> DistanceTable::findAllBestPaths() {
         }
     }
     
+    //Trim any null pairs remaining
+    while(bestlist.back().second == nullptr)
+        bestlist.pop_back();
+    
     return bestlist;
+}
+
+pair<int, Block*> DistanceTable::findOptimalPath(int a) {
+    auto bestlist = findAllBestPaths();
+    
+    int prevtotalweight = 0;
+    for(size_t i = 0; i < bestlist.size(); ++i) {
+        int curtotalweight = bestlist[i].first;
+        if(curtotalweight == 0) break;
+        
+        int margin = curtotalweight - prevtotalweight;
+        //ax - y > 0?
+        //If there isn't enough saved common text to take the current pair, then return the previous one
+        if(margin < a*(i+1))
+            return bestlist[i-1];
+        
+        prevtotalweight = curtotalweight;
+    }
+    
+    return bestlist.back();
 }
 
 vector<Block*> DistanceTable::tracePath(Block* ending, int steps) {

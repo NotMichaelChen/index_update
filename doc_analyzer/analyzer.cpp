@@ -13,6 +13,7 @@
 #include "translate.h"
 
 #define MIN_BLOCK_SIZE 10
+#define MAX_BLOCK_COUNT 20
 
 using namespace std;
 
@@ -23,8 +24,6 @@ using namespace std;
  * find out where posting structs should be defined
  * implement document store
  * implement block selection count calculation
- * does the matching algorithm work with edge cases? (eg completely replaced, completely deleted, not changed)
- * does indexUpdate assume the page given is actually "new"?
  * time to start merging code with Fengyuan?
  * refactor everything
  */
@@ -65,15 +64,14 @@ void makePosts(string& url, int doc_id, ifstream& oldpage, ifstream& newpage) {
     vector<Block*> topsort = topologicalSort(G);
     
     //Get the optimal set of blocks to select
-    //TODO: make function to find number of blocks to select
-    DistanceTable disttable(7, G, topsort);
+    DistanceTable disttable(MAX_BLOCK_COUNT, G, topsort);
     vector<pair<int, Block*>> bestlist = disttable.findAllBestPaths();
     vector<Block*> finalpath = disttable.tracePath(bestlist.back().second, bestlist.size());
     
     //Get the translation and posting list
     vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);
     //TODO: get the maximum fragid and pass it in
-    auto postingslist = getPostings(commonblocks, doc_id, fragID, oldstream, newstream, se);
+    auto postingslist = getPostings(commonblocks, doc_id, 0, oldstream, newstream, se);
 
     //-generate postings and translation statements, and return them. (Question: how do we know the previous largest fragid for this document, so we know what to use as the next fragid? Maybe store with did in the tuple store?)
 }
@@ -133,9 +131,8 @@ getPostings(vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& o
                 nppostingsmap.insert(make_pair(decodedword, newposting));
             }
             //Always insert positional posting for a word
-            PositionalPosting newposting(decodedword, doc_id, fragID, index);
+            PositionalPosting newposting(decodedword, doc_id, 0, index);
             ppostingsmap.insert(make_pair(decodedword, newposting));
-            ++fragID;
             ++index;
         }
     }
