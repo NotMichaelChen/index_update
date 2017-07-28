@@ -51,6 +51,12 @@ struct fileinfo{//a file that contains a part (or whole) postinglist
 	long end_pos;
 };
 
+struct f_meta{
+	unsigned int termID;
+	long start_pos;
+	long end_pos;
+};
+
 struct mData{
 	//need number of blocks?
 	int index_num;//in which static index is the postinglist stored
@@ -246,7 +252,7 @@ public:
 		}
 	}
 	
-	mData compress_p(ofstream& ofile, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
+	mData compress_p(ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
 		
 		std::vector<unsigned int> v_last_id;
 		std::vector<uint8_t> docID_biv;
@@ -267,6 +273,7 @@ public:
 		mData meta;
 		fileinfo fi;
 		fi.start_pos = ofile.tellp();
+		fm.start_pos = ofile.tellp();
 		meta.start_pos = ofile.tellp();
 		write(last_id_biv, ofile);
 
@@ -290,9 +297,10 @@ public:
 
 		fi.end_pos = ofile.tellp();
 		meta.file_info.push_back(fi);//store the start and end position of postinglist in this file
+		fm.end_pos = ofile.tellp();
 	}
 
-	void compress_p(std::vector<Posting>& pList, std::map<string, vector<int>>& filemeta){
+	void compress_p(std::vector<Posting>& pList, std::map<string, vector<f_meta>>& filemeta){
 		//pass in forward index of same termID
 		//compress positional index
 		ofstream ofile;//positional inverted index
@@ -303,12 +311,12 @@ public:
 			fielname = PDIR + "I0";
 		}
 		ofile.open(filename, ios::ate | ios::binary);
-		vector<int> termIDs;
 
 		std::vector<unsigned int> v_docID;
 		std::vector<unsigned int> v_fragID;
 		std::vector<unsigned int> v_pos;
 		mData mmData;
+		f_meta fm;
 		unsigned int num_of_p = 0;//number of posting of a certain term
 
 		unsigned int currID = pList[0].termID;//the ID of the term that is currently processing
@@ -320,10 +328,11 @@ public:
 				it ++;
 				num_of_p ++;
 			}
-			termIDs.push_back(currID);
+			fm.termID = currID;
 			currID = it->termID;
-			mmData = compress_p(ofile, v_docID, v_fragID, v_pos);
+			mmData = compress_p(ofile, fm, v_docID, v_fragID, v_pos);
 			mmData.num_posting = num_of_p;
+			filemeta[filename].push_back(fm);
 			
 			mmData.file_info.filename = filename;
 			//To-Do: add mmdata to the dictionary of corresponding term
@@ -335,12 +344,11 @@ public:
 			it --;//before exit while loop, iterator is added but the corresponding value is not pushed to vector
 		}
 
-		filemeta[filename] = termIDs;
 		ofile.close();
 		merge_test();//see if need to merge
 	}
 
-	void start_compress(map<string, vector<int>>& filemeta){
+	void start_compress(map<string, vector<f_meta>>& filemeta){
 		vector<Posting> invert_index;
 		ifstream index;
 		ifstream info;
@@ -437,8 +445,23 @@ public:
 		return result;
 	}
 
-	std::vector<Posting> read(&ifstream file){
-		
+	std::vector<Posting> read(string filename, map<string, vector<f_meta>> fm){
+		ifstream ifile;
+		ifile.open(filename, ios::binary);
+		vector<f_meta> fmeta = fm[filename];
+		vector<Posting> result;
+		Posting p;
+		vector<char> readin;
+		unsigned int currID;
+
+		for (vector<f_meta>::iterator it = fmeta.begin(); it = fmeta.end(); it ++){
+			currID = it->termID;
+			ifile.seekg(it->start_pos);
+			while(tellg != end_pos){
+				readin.push_back(get(c));
+				
+			}
+		}
 	}
 
 	Posting NextGQ(){
@@ -448,8 +471,8 @@ public:
 
 int main(){
 	Compressor comp;
-	map<string, vector<int>> filemeta;
-	comp.start_compress(filemeta;);
+	map<string, vector<f_meta>> filemeta;
+	comp.start_compress(filemeta);
 	
 
 	return 0;
