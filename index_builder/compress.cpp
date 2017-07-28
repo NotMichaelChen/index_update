@@ -29,21 +29,6 @@ public:
 	unsigned int fragID;
 	unsigned int pos;
 };
-/*
-class PostingList{
-public:
-	PostingList(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0){
-		Posting p(id, d, f, p);
-		pl.push_back(p);
-	}
-
-	void add(Posting p){
-		pl.push_back(p);
-	}
-
-	vector<Posting> pl;
-};
-*/
 
 struct fileinfo{//a file that contains a part (or whole) postinglist
 	string filename;
@@ -59,11 +44,11 @@ struct f_meta{
 
 struct mData{
 	//need number of blocks?
+	string term;
 	int index_num;//in which static index is the postinglist stored
 	int num_posting;//number of postings
 
 	std::vector<fileinfo> file_info;//how a postinglist is stored in multiple files
-	long start_pos;
 	long meta_doc_start;
 	long meta_frag_start;
 	long meta_pos_start;
@@ -117,6 +102,11 @@ public:
 
   	}
 
+  	vector<Posting> sort_2_vec(vector<Posting>& veca, vector<Posting>& vecb){
+  		vector<Posting>::iterator ita = veca.begin();
+  		vector<
+  	}
+
 	void merge(indexnum){
 		ifstream filez;
 		ifstream fileI;
@@ -132,10 +122,16 @@ public:
 
 		update_meta(PDIR + "Z" + to_string(indexnum), PDIR + "I" + to_string(indexnum));
 
-		vector<Posting> indexz = Reader::read(filez);
-		vector<Posting> indexi = Reader::read(filei);
-		//assume postinglist can be loaded into memory entirely
+		//implement external merge here
+		//Go through the meta data of each file, do
+		//if there is a termID appearing in both, decode the part and merge
+		//else copy and paste the corresponding part of postinglist
+		//update the corresponding fileinfo of that termID
+		//
+		vector<Posting> indexz = Reader::decompress(filez);
+		vector<Posting> indexi = Reader::decompress(filei);
 
+		sort_2_vec(indexz, indexi);
 		
 	}
 
@@ -274,7 +270,6 @@ public:
 		fileinfo fi;
 		fi.start_pos = ofile.tellp();
 		fm.start_pos = ofile.tellp();
-		meta.start_pos = ofile.tellp();
 		write(last_id_biv, ofile);
 
 		meta.meta_doc_start = ofile.tellp();
@@ -298,9 +293,11 @@ public:
 		fi.end_pos = ofile.tellp();
 		meta.file_info.push_back(fi);//store the start and end position of postinglist in this file
 		fm.end_pos = ofile.tellp();
+
+		return meta;
 	}
 
-	void compress_p(std::vector<Posting>& pList, std::map<string, vector<f_meta>>& filemeta){
+	void compress_p(std::vector<Posting>& pList, std::map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict){
 		//pass in forward index of same termID
 		//compress positional index
 		ofstream ofile;//positional inverted index
@@ -335,7 +332,8 @@ public:
 			filemeta[filename].push_back(fm);
 			
 			mmData.file_info.filename = filename;
-			//To-Do: add mmdata to the dictionary of corresponding term
+			//add mmdata to the dictionary of corresponding term
+			mmData[currID] = mmData;
 
 			num_of_p = 0;
 			v_docID.clear();
@@ -348,7 +346,7 @@ public:
 		merge_test();//see if need to merge
 	}
 
-	void start_compress(map<string, vector<f_meta>>& filemeta){
+	void start_compress(map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict){
 		vector<Posting> invert_index;
 		ifstream index;
 		ifstream info;
@@ -393,7 +391,7 @@ public:
 				invert_index.push_back(p);
 				if (invert_index.size() > POSTING_LIMIT){ // make sure doesn't exceed memory
 					std::sort(invert_index.begin(), invert_index.end(), less_than_key());
-					compress_p(invert_index, filemeta);
+					compress_p(invert_index, filemeta, dict);
 					invert_index.clear()
 				}
 			}
@@ -407,7 +405,7 @@ public:
 class Reader{
 public:
 
-	std::vector<char> read_com(ifstream& infile){
+	std::vector<char> read_com(ifstream& infile){//read compressed forward index
 		char c;
 		vector<char> result;
 		while(infile.get(c)){
@@ -416,9 +414,8 @@ public:
 		return result;
 	}
 
-	std::vector<int> VBDecode(string filename){
-		ifstream ifile;
-		ifile.open(filename, ios::binary);
+	std::vector<unsigned int> VBDecode(ifstream& ifile, long start_pos = 0, long end_pos = ifile.tellg()){//ios::ate
+		ifile.seekg(start_pos);
 		char c;
 		int num;
 		int p;
@@ -445,23 +442,76 @@ public:
 		return result;
 	}
 
-	std::vector<Posting> read(string filename, map<string, vector<f_meta>> fm){
+	std::vector<unsigned int> VBDecode(vector<char>& vec){
+		unsigned int num;
+		vector<unsigned int> result;
+		for(vector<char>::iterator it = vec.begin(); it != vec.end(); it++){
+			c = *it;
+			bitset<8> byte(c);
+			num = 0;
+			p = 0;
+			while(byte[7] == 1){
+				byte.flip(7);
+				num += byte.to_ulong()*pow(128, p);
+				p++;
+				it ++;
+				c = *it;
+				byte = bitset<8>(c);
+			}
+			num += (byte.to_ulong())*pow(128, p);
+
+			result.push_back(num);
+		}
+		return result;
+	}
+
+	std::vector<Posting> decompress(string filename, map<string, vector<f_meta>> fm, map<unsigned int, mData>& dict){
 		ifstream ifile;
 		ifile.open(filename, ios::binary);
 		vector<f_meta> fmeta = fm[filename];
 		vector<Posting> result;
-		Posting p;
 		vector<char> readin;
+
+		vector<uint8_t> docID;
+		vector<uint8_t> fragID;
+		vector<uint8_t> pos;
+
 		unsigned int currID;
 
 		for (vector<f_meta>::iterator it = fmeta.begin(); it = fmeta.end(); it ++){
 			currID = it->termID;
-			ifile.seekg(it->start_pos);
-			while(tellg != end_pos){
+
+			ifile.seekg(dict[termID].posting_start);
+			while(ifile.tellg != dict[termID].frag_start){
 				readin.push_back(get(c));
-				
+				docID = VBDecode(readin);
+				readin.clear();
+			}
+
+			ifile.seekg(dict[termID].frag_start);
+			while(ifile.tellg != dict[termID].pos_start){
+				readin.push_back(get(c));
+				fragID = VBDecode(readin);
+				readin.clear();
+			}
+
+			ifile.seekg(dict[termID].pos_start);
+			while(tellg != dict[termID].file_info.end_pos){
+				readin.push_back(get(c));
+				pos = VBDecode(readin);
+				readin.clear();
 			}
 		}
+
+		vector<unsigned int>::iterator itdoc = docID.begin();
+		vector<unsigned int>::iterator itfrag = fragID.begin();
+		vector<unsigned int>::iterator itpos = pos.begin();
+
+		while(docID != docID.end()){
+			result.push_back(p(*itdoc, *itfrag, *itpos));
+		}
+
+		return result;
 	}
 
 	Posting NextGQ(){
@@ -471,9 +521,9 @@ public:
 
 int main(){
 	Compressor comp;
+	map<unsigned int, mData> dict;
 	map<string, vector<f_meta>> filemeta;
-	comp.start_compress(filemeta);
-	
+	comp.start_compress(filemeta, dict);
 
 	return 0;
 }
