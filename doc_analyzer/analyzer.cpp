@@ -40,7 +40,7 @@ void indexUpdate(string& url, ifstream& newpage) {
     //-and store the currentpage instead of the previouspage in the tuple store.
 }
 
-void makePosts(string& url, int doc_id, ifstream& oldpage, ifstream& newpage) {
+void makePosts(string& url, unsigned int doc_id, ifstream& oldpage, ifstream& newpage) {
     //-check if there was a previous version, if not create postings with fragid = 0
     int fragID;
     
@@ -72,19 +72,21 @@ void makePosts(string& url, int doc_id, ifstream& oldpage, ifstream& newpage) {
     vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);
     //TODO: get the maximum fragid and pass it in
     auto postingslist = getPostings(commonblocks, doc_id, 0, oldstream, newstream, se);
+    //Number of fragIDs used is exactly proportional to the number of positional postings inserted
+    fragID += postingslist.second.size();
 
     //-generate postings and translation statements, and return them. (Question: how do we know the previous largest fragid for this document, so we know what to use as the next fragid? Maybe store with did in the tuple store?)
 }
 
 //TODO: refactor and decide if this should be one or two functions
 pair<vector<NonPositionalPosting>, vector<PositionalPosting>>
-getPostings(vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& oldstream, vector<int>& newstream, StringEncoder& se) {
+getPostings(vector<Block*>& commonblocks, unsigned int doc_id, unsigned int fragID, vector<int>& oldstream, vector<int>& newstream, StringEncoder& se) {
     //Which block to skip next
     int blockindex = 0;
     unordered_map<string, NonPositionalPosting> nppostingsmap;
     unordered_map<string, PositionalPosting> ppostingsmap;
     
-    size_t index = 0;
+    unsigned int index = 0;
     
     //Sort blocks based on oldindex first
     sort(commonblocks.begin(), commonblocks.end(), compareOld);
@@ -131,9 +133,10 @@ getPostings(vector<Block*>& commonblocks, int doc_id, int fragID, vector<int>& o
                 nppostingsmap.insert(make_pair(decodedword, newposting));
             }
             //Always insert positional posting for a word
-            PositionalPosting newposting(decodedword, doc_id, 0, index);
+            PositionalPosting newposting(decodedword, doc_id, fragID, index);
             ppostingsmap.insert(make_pair(decodedword, newposting));
             ++index;
+            ++fragID;
         }
     }
     
