@@ -3,11 +3,11 @@
 #include <getopt.h>
 #include <vector>
 
-#include "stringencoder.h"
-#include "block.h"
-#include "graph.h"
-#include "distancetable.h"
-#include "translate.h"
+#include "Matcher/stringencoder.h"
+#include "Matcher/block.h"
+#include "Matcher/graph.h"
+#include "Matcher/distancetable.h"
+#include "Matcher/translate.h"
 
 using namespace std;
 

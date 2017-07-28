@@ -1,8 +1,11 @@
+#http://blog.jgc.org/2011/07/gnu-make-recursive-wildcard-function.html
+rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+
 CC=g++
 CFLAGS+=-I. -Wall -std=c++14
-VPATH = /Matcher
-DEPS = $(wildcard *.h)
-SRC = $(wildcard *.cpp)
+VPATH = %.cpp %.o Matcher
+DEPS = $(call rwildcard,, *.h)
+SRC = $(call rwildcard,, *.cpp)
 OBJ = $(SRC:.cpp=.o)
 DEBUG = -g -O0
 
@@ -14,7 +17,7 @@ LBS: $(OBJ)
 
 .PHONY: clean
 clean:
-	rm -f *.o
+	find . -type f -name '*.o' -delete
 
 .PHONY: debug
 debug: CFLAGS+=$(DEBUG)

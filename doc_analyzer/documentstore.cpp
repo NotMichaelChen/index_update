@@ -1,5 +1,7 @@
 #include "documentstore.h"
 
+#include <unordered_map>
+
 using namespace std;
 
 DocumentStore::DocumentStore() : nextid(0) {}

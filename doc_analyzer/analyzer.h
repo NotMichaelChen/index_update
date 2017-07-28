@@ -5,8 +5,8 @@
 #include <vector>
 #include <utility>
 
-#include "block.h"
-#include "stringencoder.h"
+#include "Matcher/stringencoder.h"
+#include "Matcher/block.h"
 
 //General posting type used by the analyzer, to be further parsed by the index 
 //Contains both position and nonpositional data and uses the actual word instead of a termid
