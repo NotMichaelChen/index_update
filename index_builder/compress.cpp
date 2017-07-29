@@ -98,16 +98,12 @@ public:
   		return result;
   	}
 
-  	void update_meta(string s1, string s2){
-
+  	void update_meta(map<string, vector<f_meta>>& filemeta, string s1, string s2){
+  		filemeta.erase(s1);
+  		filemeta.erase(s2);
   	}
 
-  	vector<Posting> sort_2_vec(vector<Posting>& veca, vector<Posting>& vecb){
-  		vector<Posting>::iterator ita = veca.begin();
-  		vector<
-  	}
-
-	void merge(indexnum){
+	void merge(map<string, vector<f_meta>>& filemeta, indexnum){
 		ifstream filez;
 		ifstream fileI;
 		ofstream ofile;
@@ -120,7 +116,37 @@ public:
 			ofile.open(PDIR + "I0", ios::ate | ios::binary);
 		}
 
-		update_meta(PDIR + "Z" + to_string(indexnum), PDIR + "I" + to_string(indexnum));
+		string file1 = "Z" + to_string(indexnum);
+		string file2 = "I" + to_string(indexnum);
+		vector<f_meta> v1 = filemeta[file1];
+		vector<f_meta> v2 = filemeta[file2];
+		vector<f_meta>::iterator it1 = v1.begin();
+		vector<f_meta>::iterator it2 = v2.begin();
+
+		while( it1 != v1.end() && it2 != v2.end() ){
+			if( it1->termID == it2->termID ){
+
+				//decode and merge
+				//to-do: update meta data corresponding to the term
+				it1 ++;
+				it2 ++;
+			}
+			else if( it1->termID < it2->termID ){
+
+			}
+			else if( it1->termID > it2->termID )
+		}
+		
+		if (it1 != v1.end() ){
+			for(vector<f_meta>::iterator it = it1; it != v1.end(); it++){
+				//copy and paste
+			}
+		}
+		if (it2 != v2.end() ){
+			for(vector<f_meta>::iterator it = it2; it != v2.end(); it++){
+				//copy and paste
+			}
+		}
 
 		//implement external merge here
 		//Go through the meta data of each file, do
@@ -128,21 +154,17 @@ public:
 		//else copy and paste the corresponding part of postinglist
 		//update the corresponding fileinfo of that termID
 		//
-		vector<Posting> indexz = Reader::decompress(filez);
-		vector<Posting> indexi = Reader::decompress(filei);
-
-		sort_2_vec(indexz, indexi);
+		update_meta(PDIR + "Z" + to_string(indexnum), PDIR + "I" + to_string(indexnum));
 		
 	}
 
-	void merge_test(PDIR){
+	void merge_test(map<string, vector<f_meta>>& filemeta){
 		int indexnum = 0;
 		vector<string> files = read_directory(PDIR);
 
 		while(!none_of(begin(files), std::end(files), "I" + to_string(indexnum))){
 			//if In exists already, merge In with Zn
-			merge(indexnum);
-
+			merge(filemeta, indexnum);
 			indexnum ++;
 		}
 	}
@@ -343,7 +365,7 @@ public:
 		}
 
 		ofile.close();
-		merge_test();//see if need to merge
+		merge_test(filemeta);//see if need to merge
 	}
 
 	void start_compress(map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict){
