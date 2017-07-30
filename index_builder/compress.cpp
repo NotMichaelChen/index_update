@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <dirent.h>
+#include <reader.hpp>
 
 #define NO_DOC 10 //temporary use
 #define POSTING_LIMIT 1000 //make sure doesn't exceed memory limit
@@ -19,6 +20,9 @@ using namespace std;
 
 class Posting{
 public:
+	Posting (){
+	};
+
 	Posting(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0){
 		termID = id;
 		docID = d;
@@ -47,7 +51,7 @@ public:
 	}
 
 	friend bool operator== (Posting p1, Posting p2){
-		if(p1.termID == p2.termID && p1.docID == p2.docID && p1.fragID == p2.fragID && p1.pos = p2.pos) return true;
+		if(p1.termID == p2.termID && p1.docID == p2.docID && p1.fragID == p2.fragID && p1.pos == p2.pos) return true;
 		else return false;
 	}
 
@@ -226,7 +230,7 @@ public:
 				copy_and_paste(filei, ofile, it2->start_pos, it2->end_pos);
 			}
 		}
-		update_f_meta(string(PDIR) + "Z" + to_string(indexnum), string(PDIR) + "I" + to_string(indexnum));
+		update_f_meta(filemeta, string(PDIR) + "Z" + to_string(indexnum), string(PDIR) + "I" + to_string(indexnum));
 		filez.close();
 		filei.close();
 		ofile.close();
@@ -235,7 +239,7 @@ public:
 
 	void merge_test(map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict){
 		int indexnum = 0;
-		vector<string> files = read_directory(PDIR);
+		vector<string> files = read_directory(string(PDIR));
 
 		while(!none_of(begin(files), std::end(files), "I" + to_string(indexnum))){
 			//if In exists already, merge In with Zn
@@ -345,7 +349,7 @@ public:
 		}
 	}
 
-	mData compress_p(ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
+	mData compress_p(string filename, ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
 
 		std::vector<unsigned int> v_last_id;
 		std::vector<uint8_t> docID_biv;
@@ -365,6 +369,7 @@ public:
 
 		mData meta;
 		fileinfo fi;
+		fi.filename = filename;
 		fi.start_pos = ofile.tellp();
 		fm.start_pos = ofile.tellp();
 		write(last_id_biv, ofile);
@@ -424,11 +429,10 @@ public:
 			}
 			fm.termID = currID;
 			currID = it->termID;
-			mmData = compress_p(ofile, fm, v_docID, v_fragID, v_pos);
+			mmData = compress_p(filename, ofile, fm, v_docID, v_fragID, v_pos);
 			mmData.num_posting = num_of_p;
 			filemeta[filename].push_back(fm);
 
-			mmData.file_info.filename = filename;
 			//add mmdata to the dictionary of corresponding term
 			dict[currID] = mmData;
 
@@ -499,119 +503,117 @@ public:
 	}
 };
 
-class Reader{
-public:
-
-	std::vector<char> read_com(ifstream& infile){//read compressed forward index
-		char c;
-		vector<char> result;
-		while(infile.get(c)){
-			result.push_back(c);
-		}
-		return result;
+std::vector<char> Reader::read_com(ifstream& infile){//read compressed forward index
+	char c;
+	vector<char> result;
+	while(infile.get(c)){
+		result.push_back(c);
 	}
+	return result;
+}
 
-	std::vector<unsigned int> VBDecode(ifstream& ifile, long start_pos = 0, long end_pos = ifile.tellg()){//ios::ate
-		ifile.seekg(start_pos);
-		char c;
-		int num;
-		int p;
-		vector<int> result;
-		vector<char> vec = read_com(ifile);
+std::vector<unsigned int> Reader::VBDecode(ifstream& ifile, long start_pos = 0, long end_pos = ifile.tellg()){//ios::ate
+	ifile.seekg(start_pos);
+	char c;
+	unsigned int num;
+	int p;
+	vector<unsigned int> result;
+	vector<char> vec = read_com(ifile);
 
-		for(vector<char>::iterator it = vec.begin(); it != vec.end(); it++){
+	for(vector<char>::iterator it = vec.begin(); it != vec.end(); it++){
+		c = *it;
+		bitset<8> byte(c);
+		num = 0;
+		p = 0;
+		while(byte[7] == 1){
+			byte.flip(7);
+			num += byte.to_ulong()*pow(128, p);
+			p++;
+			it ++;
 			c = *it;
-			bitset<8> byte(c);
-			num = 0;
-			p = 0;
-			while(byte[7] == 1){
-				byte.flip(7);
-				num += byte.to_ulong()*pow(128, p);
-				p++;
-				it ++;
-				c = *it;
-				byte = bitset<8>(c);
-			}
-			num += (byte.to_ulong())*pow(128, p);
-
-			result.push_back(num);
+			byte = bitset<8>(c);
 		}
-		return result;
-	}
+		num += (byte.to_ulong())*pow(128, p);
 
-	std::vector<unsigned int> VBDecode(vector<char>& vec){
-		unsigned int num;
-		vector<unsigned int> result;
-		for(vector<char>::iterator it = vec.begin(); it != vec.end(); it++){
+		result.push_back(num);
+	}
+	return result;
+}
+
+std::vector<unsigned int> Reader::VBDecode(vector<char>& vec){
+	unsigned int num;
+	vector<unsigned int> result;
+	char c;
+	int p;
+	for(vector<char>::iterator it = vec.begin(); it != vec.end(); it++){
+		c = *it;
+		bitset<8> byte(c);
+		num = 0;
+		p = 0;
+		while(byte[7] == 1){
+			byte.flip(7);
+			num += byte.to_ulong()*pow(128, p);
+			p++;
+			it ++;
 			c = *it;
-			bitset<8> byte(c);
-			num = 0;
-			p = 0;
-			while(byte[7] == 1){
-				byte.flip(7);
-				num += byte.to_ulong()*pow(128, p);
-				p++;
-				it ++;
-				c = *it;
-				byte = bitset<8>(c);
-			}
-			num += (byte.to_ulong())*pow(128, p);
-
-			result.push_back(num);
+			byte = bitset<8>(c);
 		}
-		return result;
+		num += (byte.to_ulong())*pow(128, p);
+
+		result.push_back(num);
+	}
+	return result;
+}
+
+std::vector<Posting> Reader::decompress(string filename, unsigned int termID, map<unsigned int, mData>& dict){
+	ifstream ifile;
+	ifile.open(filename, ios::binary);
+	vector<Posting> result;
+	Posting p;
+	char c;
+	vector<char> readin;
+
+	vector<unsigned int> docID;
+	vector<unsigned int> fragID;
+	vector<unsigned int> pos;
+
+	ifile.seekg(dict[termID].posting_start);
+	while(ifile.tellg != dict[termID].frag_start){
+		ifile.get(c);
+		readin.push_back(c);
+		docID = VBDecode(readin);
+		readin.clear();
 	}
 
-	std::vector<Posting> decompress(string filename, unsigned int termID, map<unsigned int, mData>& dict){
-		ifstream ifile;
-		ifile.open(filename, ios::binary);
-		vector<Posting> result;
-		Posting p;
-		char c;
-		vector<char> readin;
-
-		vector<uint8_t> docID;
-		vector<uint8_t> fragID;
-		vector<uint8_t> pos;
-
-		ifile.seekg(dict[termID].posting_start);
-		while(ifile.tellg != dict[termID].frag_start){
-			ifile.get(c);
-			readin.push_back(c);
-			docID = VBDecode(readin);
-			readin.clear();
-		}
-
-		ifile.seekg(dict[termID].frag_start);
-		while(ifile.tellg != dict[termID].pos_start){
-			ifile.get(c);
-			readin.push_back(c);
-			fragID = VBDecode(readin);
-			readin.clear();
-		}
-
-		ifile.seekg(dict[termID].pos_start);
-		while(ifile.tellg != dict[termID].file_info.end_pos){
-			ifile.get(c);
-			readin.push_back(c);
-			pos = VBDecode(readin);
-			readin.clear();
-		}
-
-		vector<unsigned int>::iterator itdoc = docID.begin();
-		vector<unsigned int>::iterator itfrag = fragID.begin();
-		vector<unsigned int>::iterator itpos = pos.begin();
-
-		while(itdoc != docID.end()){
-			result.push_back(p(termID, *itdoc, *itfrag, *itpos));
-			itdoc ++;
-			itfrag ++;
-			itpos ++;
-		}
-
-		return result;
+	ifile.seekg(dict[termID].frag_start);
+	while(ifile.tellg != dict[termID].pos_start){
+		ifile.get(c);
+		readin.push_back(c);
+		fragID = VBDecode(readin);
+		readin.clear();
 	}
-};
+
+	ifile.seekg(dict[termID].pos_start);
+	while(ifile.tellg != dict[termID].file_info.end_pos){
+		ifile.get(c);
+		readin.push_back(c);
+		pos = VBDecode(readin);
+		readin.clear();
+	}
+
+	vector<unsigned int>::iterator itdoc = docID.begin();
+	vector<unsigned int>::iterator itfrag = fragID.begin();
+	vector<unsigned int>::iterator itpos = pos.begin();
+
+	while(itdoc != docID.end()){
+		result.push_back(p(termID, *itdoc, *itfrag, *itpos));
+		itdoc ++;
+		itfrag ++;
+		itpos ++;
+	}
+
+	return result;
+}
 
 int main(){
 	Compressor comp;
