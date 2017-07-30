@@ -7,6 +7,7 @@
 #include <sstream>
 #include <map>
 #include <string>
+#include <dirent.h>
 
 #define NO_DOC 10 //temporary use
 #define POSTING_LIMIT 1000 //make sure doesn't exceed memory limit
@@ -45,7 +46,7 @@ public:
 		return !(p1 < p2);
 	}
 
-	friend bool operator= (Posting p1, Posting p2){
+	friend bool operator== (Posting p1, Posting p2){
 		if(p1.termID == p2.termID && p1.docID == p2.docID && p1.fragID == p2.fragID && p1.pos = p2.pos) return true;
 		else return false;
 	}
@@ -142,7 +143,7 @@ public:
 		ifile.seekg(start);
 		char c;
 		while(ifile.tellg() != end){
-			c << ifile;
+			ifile.get(c);
 			ofile << c;
 		}
 	}
@@ -151,13 +152,13 @@ public:
 		ifstream filez;
 		ifstream filei;
 		ofstream ofile;
-		filez.open(PDIR + "Z" + to_string(indexnum));
-		filei.open(PDIR + "I" + to_string(indexnum));
+		filez.open(string(PDIR) + "Z" + to_string(indexnum));
+		filei.open(string(PDIR) + "I" + to_string(indexnum));
 
-		ofile.open(PDIR + "Z" + to_string(indexnum + 1), ios::ate | ios::binary);
+		ofile.open(string(PDIR) + "Z" + to_string(indexnum + 1), ios::ate | ios::binary);
 		if(ofile.tellp() != 0){
 			ofile.close();
-			ofile.open(PDIR + "I0", ios::ate | ios::binary);
+			ofile.open(string(PDIR) + "I0", ios::ate | ios::binary);
 		}
 
 		long ostart;
@@ -225,7 +226,7 @@ public:
 				copy_and_paste(filei, ofile, it2->start_pos, it2->end_pos);
 			}
 		}
-		update_f_meta(PDIR + "Z" + to_string(indexnum), PDIR + "I" + to_string(indexnum));
+		update_f_meta(string(PDIR) + "Z" + to_string(indexnum), string(PDIR) + "I" + to_string(indexnum));
 		filez.close();
 		filei.close();
 		ofile.close();
@@ -397,11 +398,11 @@ public:
 		//pass in forward index of same termID
 		//compress positional index
 		ofstream ofile;//positional inverted index
-		string filename = PDIR + "Z" + to_string(indexnum);
+		string filename = string(PDIR) + "Z" + to_string(indexnum);
 		ofile.open(filename, ios::ate | ios::binary);
-		if(ofile.tellg() != 0){
+		if(ofile.tellp() != 0){
 			ofile.close();
-			fielname = PDIR + "I" + to_string(indexnum);
+			filename = string(PDIR) + "I" + to_string(indexnum);
 		}
 		ofile.open(filename, ios::ate | ios::binary);
 
@@ -429,7 +430,7 @@ public:
 
 			mmData.file_info.filename = filename;
 			//add mmdata to the dictionary of corresponding term
-			mmData[currID] = mmData;
+			dict[currID] = mmData;
 
 			num_of_p = 0;
 			v_docID.clear();
@@ -488,7 +489,7 @@ public:
 				if (invert_index.size() > POSTING_LIMIT){ // make sure doesn't exceed memory
 					std::sort(invert_index.begin(), invert_index.end(), less_than_key());
 					compress_p(invert_index, filemeta, dict);
-					invert_index.clear()
+					invert_index.clear();
 				}
 			}
 
@@ -566,6 +567,7 @@ public:
 		ifile.open(filename, ios::binary);
 		vector<Posting> result;
 		Posting p;
+		char c;
 		vector<char> readin;
 
 		vector<uint8_t> docID;
@@ -574,21 +576,24 @@ public:
 
 		ifile.seekg(dict[termID].posting_start);
 		while(ifile.tellg != dict[termID].frag_start){
-			readin.push_back(get(c));
+			ifile.get(c);
+			readin.push_back(c);
 			docID = VBDecode(readin);
 			readin.clear();
 		}
 
 		ifile.seekg(dict[termID].frag_start);
 		while(ifile.tellg != dict[termID].pos_start){
-			readin.push_back(get(c));
+			ifile.get(c);
+			readin.push_back(c);
 			fragID = VBDecode(readin);
 			readin.clear();
 		}
 
 		ifile.seekg(dict[termID].pos_start);
-		while(tellg != dict[termID].file_info.end_pos){
-			readin.push_back(get(c));
+		while(ifile.tellg != dict[termID].file_info.end_pos){
+			ifile.get(c);
+			readin.push_back(c);
 			pos = VBDecode(readin);
 			readin.clear();
 		}
@@ -597,15 +602,14 @@ public:
 		vector<unsigned int>::iterator itfrag = fragID.begin();
 		vector<unsigned int>::iterator itpos = pos.begin();
 
-		while(docID != docID.end()){
+		while(itdoc != docID.end()){
 			result.push_back(p(termID, *itdoc, *itfrag, *itpos));
+			itdoc ++;
+			itfrag ++;
+			itpos ++;
 		}
 
 		return result;
-	}
-
-	Posting NextGQ(){
-
 	}
 };
 
