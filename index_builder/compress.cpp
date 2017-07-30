@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <sstream>
 #include <map>
+#include <string>
 
 #define NO_DOC 10 //temporary use
 #define POSTING_LIMIT 1000 //make sure doesn't exceed memory limit
