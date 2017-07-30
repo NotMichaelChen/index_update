@@ -8,7 +8,9 @@
 #include <map>
 #include <string>
 #include <dirent.h>
+
 #include "reader.hpp"
+#include "posting.hpp"
 
 #define NO_DOC 10 //temporary use
 #define POSTING_LIMIT 1000 //make sure doesn't exceed memory limit
@@ -18,48 +20,6 @@
 
 using namespace std;
 
-class Posting{
-public:
-	Posting (){
-	};
-
-	Posting(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0){
-		termID = id;
-		docID = d;
-		fragID = f;
-		pos = p;
-	}
-
-	friend bool operator< (Posting p1, Posting p2){
-		if(p1.termID == p2.termID){
-        	if(p1.docID == p2.docID){
-        		if(p1.fragID == p2.fragID){
-        			return (p1.pos < p2.pos);
-        		}else{
-        			return (p1.fragID < p2.fragID);
-        		}
-        	}else{
-        		return (p1.docID < p2.docID);
-        	}
-        }else{
-        	return (p1.termID < p2.termID);
-        }
-	}
-
-	friend bool operator> (Posting p1, Posting p2){
-		return !(p1 < p2);
-	}
-
-	friend bool operator== (Posting p1, Posting p2){
-		if(p1.termID == p2.termID && p1.docID == p2.docID && p1.fragID == p2.fragID && p1.pos == p2.pos) return true;
-		else return false;
-	}
-
-	unsigned int termID;
-	unsigned int docID;
-	unsigned int fragID;
-	unsigned int pos;
-};
 
 struct fileinfo{//a file that contains a part (or whole) postinglist
 	string filename;
@@ -502,6 +462,41 @@ public:
 		info.close();
 	}
 };
+
+Posting::Posting (){
+};
+
+Posting::Posting(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0){
+	termID = id;
+	docID = d;
+	fragID = f;
+	pos = p;
+}
+
+friend bool operator< (Posting p1, Posting p2){
+	if(p1.termID == p2.termID){
+		if(p1.docID == p2.docID){
+			if(p1.fragID == p2.fragID){
+				return (p1.pos < p2.pos);
+			}else{
+				return (p1.fragID < p2.fragID);
+			}
+		}else{
+			return (p1.docID < p2.docID);
+		}
+	}else{
+		return (p1.termID < p2.termID);
+	}
+}
+
+friend bool operator> (Posting p1, Posting p2){
+	return !(p1 < p2);
+}
+
+friend bool operator== (Posting p1, Posting p2){
+	if(p1.termID == p2.termID && p1.docID == p2.docID && p1.fragID == p2.fragID && p1.pos == p2.pos) return true;
+	else return false;
+}
 
 std::vector<char> Reader::read_com(ifstream& infile){//read compressed forward index
 	char c;
