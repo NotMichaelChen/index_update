@@ -473,7 +473,7 @@ Posting::Posting(unsigned int id, unsigned int d, unsigned int f = 0, unsigned i
 	pos = p;
 }
 
-friend bool operator< (Posting p1, Posting p2){
+bool operator< (Posting p1, Posting p2){
 	if(p1.termID == p2.termID){
 		if(p1.docID == p2.docID){
 			if(p1.fragID == p2.fragID){
@@ -489,11 +489,11 @@ friend bool operator< (Posting p1, Posting p2){
 	}
 }
 
-friend bool operator> (Posting p1, Posting p2){
+bool operator> (Posting p1, Posting p2){
 	return !(p1 < p2);
 }
 
-friend bool operator== (Posting p1, Posting p2){
+bool operator== (Posting p1, Posting p2){
 	if(p1.termID == p2.termID && p1.docID == p2.docID && p1.fragID == p2.fragID && p1.pos == p2.pos) return true;
 	else return false;
 }
