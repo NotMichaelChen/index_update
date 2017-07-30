@@ -24,6 +24,31 @@ public:
 		pos = p;
 	}
 
+	friend bool operator< (Posting p1, Posting p2){
+		if(p1.termID == p2.termID){
+        	if(p1.docID == p2.docID){
+        		if(p1.fragID == p2.fragID){
+        			return (p1.pos < p2.pos);
+        		}else{
+        			return (p1.fragID < p2.fragID);
+        		}
+        	}else{
+        		return (p1.docID < p2.docID);
+        	}
+        }else{
+        	return (p1.termID < p2.termID);
+        }
+	}
+
+	friend bool operator> (Posting p1, Posting p2){
+		return !(p1 < p2);
+	}
+
+	friend bool operator= (Posting p1, Posting p2){
+		if(p1.termID == p2.termID && p1.docID == p2.docID && p1.fragID == p2.fragID && p1.pos = p2.pos) return true;
+		else return false;
+	}
+
 	unsigned int termID;
 	unsigned int docID;
 	unsigned int fragID;
@@ -103,29 +128,33 @@ public:
   		filemeta.erase(s2);
   	}
 
-	void update_t_meta(unsigned int termID, string file1, string file2, string newfile, long start, long end, map<unsigned int, mData>& dict){
+	void update_t_meta(unsigned int termID, string file1, string file2, map<unsigned int, mData>& dict){
+		//delete old metadata, compress_p will take care of adding new
 		vector<fileinfo>& infovec= dict[termID].file_info;
 		for( vector<fileinfo>::iterator it = infovec.begin(); it != infovec.end(); it++){
 			if( it->filename == file1 ) infovec.erase(it);
 			else if( it->filename == file2 ) infovec.erase(it);
 		}
-		fileinfo finfo;
-		finfo.filename = newfile;
-		finfo.start_pos = start;
-		finfo.start_pos = end;
-		infovec.push_back(finfo);
+	}
 
+	void copy_and_paste(ifstream& ifile, ofstream& ofile, long start, long end){
+		ifile.seekg(start);
+		char c;
+		while(ifile.tellg() != end){
+			c << ifile;
+			ofile << c;
+		}
 	}
 
 	void merge(map<string, vector<f_meta>>& filemeta, int indexnum, map<unsigned int, mData>& dict){
 		ifstream filez;
-		ifstream fileI;
+		ifstream filei;
 		ofstream ofile;
 		filez.open(PDIR + "Z" + to_string(indexnum));
 		filei.open(PDIR + "I" + to_string(indexnum));
 
 		ofile.open(PDIR + "Z" + to_string(indexnum + 1), ios::ate | ios::binary);
-		if(ofile.tellg() != 0){
+		if(ofile.tellp() != 0){
 			ofile.close();
 			ofile.open(PDIR + "I0", ios::ate | ios::binary);
 		}
@@ -139,46 +168,67 @@ public:
 		vector<f_meta>::iterator it1 = v1.begin();
 		vector<f_meta>::iterator it2 = v2.begin();
 
+		//Go through the meta data of each file, do
+		//if there is a termID appearing in both, decode the part and merge
+		//else copy and paste the corresponding part of postinglist
+		//update the corresponding fileinfo of that termID
+		//assume that the posting of one term can be stored in memory
 		while( it1 != v1.end() && it2 != v2.end() ){
 			if( it1->termID == it2->termID ){
 				//decode and merge
 				//update meta data corresponding to the term
 				vector<Posting> vp1 = Reader::decompress(file1, it1->termID, dict);
 				vector<Posting> vp2 = Reader::decompress(file2, it2->termID, dict);
+				vector<Posting> vpout; //store the sorted result
 				//use NextGQ to write the sorted vector of Posting to disk
 				vector<Posting>::iterator vpit1 = vp1.begin();
 				vector<Posting>::iterator vpit2 = vp2.begin();
 				while( vpit1 != vp1.end() && vpit2 != vp2.end() ){
-					//TODO: NextGQ
+					//NextGQ
+					if( *vpit1 < *vpit2 ){
+						vpout.push_back(*vpit1);
+						vpit1 ++;
+					}
+					else if( *vpit1 > *vpit2 ){
+						vpout.push_back(*vpit2);
+						vpit2 ++;
+					}
+					else if ( *vpit1 == *vpit2 ){
+						cout << "Error: same posting appearing in different indexes." << endl;
+						break;
+					}
 				}
-				update_t_meta(it1->termID, file1, file2, ofile, ostart, oend, dict);
 
+				update_t_meta(it1->termID, file1, file2, dict);
+				compress_p(vpout, filemeta, dict, indexnum + 1);
 				it1 ++;
 				it2 ++;
 			}
-			else if( it1->termID < it2->termID ) it1 ++;
-			else if( it1->termID > it2->termID ) it2 ++;
+			else if( it1->termID < it2->termID ){
+				copy_and_paste(filez, ofile, it1->start_pos, it1->end_pos);
+				it1 ++;
+			}
+			else if( it1->termID > it2->termID ){
+				copy_and_paste(filei, ofile, it2->start_pos, it2->end_pos);
+				it2 ++;
+			}
 		}
-
+		//following can be streamlined so that it is copied till end of file
 		if (it1 != v1.end() ){
 			for(vector<f_meta>::iterator it = it1; it != v1.end(); it++){
-				//copy and paste
+				copy_and_paste(filez, ofile, it->start_pos, it->end_pos);
 			}
 		}
 		if (it2 != v2.end() ){
 			for(vector<f_meta>::iterator it = it2; it != v2.end(); it++){
-				//copy and paste
+				copy_and_paste(filei, ofile, it2->start_pos, it2->end_pos);
 			}
 		}
-
-		//implement external merge here
-		//Go through the meta data of each file, do
-		//if there is a termID appearing in both, decode the part and merge
-		//else copy and paste the corresponding part of postinglist
-		//update the corresponding fileinfo of that termID
-		//
 		update_f_meta(PDIR + "Z" + to_string(indexnum), PDIR + "I" + to_string(indexnum));
-
+		filez.close();
+		filei.close();
+		ofile.close();
+		//delete two old files
 	}
 
 	void merge_test(map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict){
@@ -342,15 +392,15 @@ public:
 		return meta;
 	}
 
-	void compress_p(std::vector<Posting>& pList, std::map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict){
+	void compress_p(std::vector<Posting>& pList, std::map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict, int indexnum = 0){
 		//pass in forward index of same termID
 		//compress positional index
 		ofstream ofile;//positional inverted index
-		string filename = PDIR + "Z0";
+		string filename = PDIR + "Z" + to_string(indexnum);
 		ofile.open(filename, ios::ate | ios::binary);
 		if(ofile.tellg() != 0){
 			ofile.close();
-			fielname = PDIR + "I0";
+			fielname = PDIR + "I" + to_string(indexnum);
 		}
 		ofile.open(filename, ios::ate | ios::binary);
 
