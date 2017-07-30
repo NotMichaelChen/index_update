@@ -8,7 +8,7 @@
 #include <map>
 #include <string>
 #include <dirent.h>
-#include <reader.hpp>
+#include "reader.hpp"
 
 #define NO_DOC 10 //temporary use
 #define POSTING_LIMIT 1000 //make sure doesn't exceed memory limit
