@@ -98,12 +98,26 @@ public:
   		return result;
   	}
 
-  	void update_meta(map<string, vector<f_meta>>& filemeta, string s1, string s2){
+  	void update_f_meta(map<string, vector<f_meta>>& filemeta, string s1, string s2){
   		filemeta.erase(s1);
   		filemeta.erase(s2);
   	}
 
-	void merge(map<string, vector<f_meta>>& filemeta, indexnum){
+	void update_t_meta(unsigned int termID, string file1, string file2, string newfile, long start, long end, map<unsigned int, mData>& dict){
+		vector<fileinfo>& infovec= dict[termID].file_info;
+		for( vector<fileinfo>::iterator it = infovec.begin(); it != infovec.end(); it++){
+			if( it->filename == file1 ) infovec.erase(it);
+			else if( it->filename == file2 ) infovec.erase(it);
+		}
+		fileinfo finfo;
+		finfo.filename = newfile;
+		finfo.start_pos = start;
+		finfo.start_pos = end;
+		infovec.push_back(finfo);
+
+	}
+
+	void merge(map<string, vector<f_meta>>& filemeta, int indexnum, map<unsigned int, mData>& dict){
 		ifstream filez;
 		ifstream fileI;
 		ofstream ofile;
@@ -116,27 +130,36 @@ public:
 			ofile.open(PDIR + "I0", ios::ate | ios::binary);
 		}
 
+		long ostart;
+		long oend;
 		string file1 = "Z" + to_string(indexnum);
 		string file2 = "I" + to_string(indexnum);
-		vector<f_meta> v1 = filemeta[file1];
-		vector<f_meta> v2 = filemeta[file2];
+		vector<f_meta>& v1 = filemeta[file1];
+		vector<f_meta>& v2 = filemeta[file2];
 		vector<f_meta>::iterator it1 = v1.begin();
 		vector<f_meta>::iterator it2 = v2.begin();
 
 		while( it1 != v1.end() && it2 != v2.end() ){
 			if( it1->termID == it2->termID ){
-
 				//decode and merge
-				//to-do: update meta data corresponding to the term
+				//update meta data corresponding to the term
+				vector<Posting> vp1 = Reader::decompress(file1, it1->termID, dict);
+				vector<Posting> vp2 = Reader::decompress(file2, it2->termID, dict);
+				//use NextGQ to write the sorted vector of Posting to disk
+				vector<Posting>::iterator vpit1 = vp1.begin();
+				vector<Posting>::iterator vpit2 = vp2.begin();
+				while( vpit1 != vp1.end() && vpit2 != vp2.end() ){
+					//TODO: NextGQ
+				}
+				update_t_meta(it1->termID, file1, file2, ofile, ostart, oend, dict);
+
 				it1 ++;
 				it2 ++;
 			}
-			else if( it1->termID < it2->termID ){
-
-			}
-			else if( it1->termID > it2->termID )
+			else if( it1->termID < it2->termID ) it1 ++;
+			else if( it1->termID > it2->termID ) it2 ++;
 		}
-		
+
 		if (it1 != v1.end() ){
 			for(vector<f_meta>::iterator it = it1; it != v1.end(); it++){
 				//copy and paste
@@ -154,17 +177,17 @@ public:
 		//else copy and paste the corresponding part of postinglist
 		//update the corresponding fileinfo of that termID
 		//
-		update_meta(PDIR + "Z" + to_string(indexnum), PDIR + "I" + to_string(indexnum));
-		
+		update_f_meta(PDIR + "Z" + to_string(indexnum), PDIR + "I" + to_string(indexnum));
+
 	}
 
-	void merge_test(map<string, vector<f_meta>>& filemeta){
+	void merge_test(map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict){
 		int indexnum = 0;
 		vector<string> files = read_directory(PDIR);
 
 		while(!none_of(begin(files), std::end(files), "I" + to_string(indexnum))){
 			//if In exists already, merge In with Zn
-			merge(filemeta, indexnum);
+			merge(filemeta, indexnum, dict);
 			indexnum ++;
 		}
 	}
@@ -247,7 +270,7 @@ public:
 			std::vector<uint8_t> field_biv;
 			std::vector<uint8_t> biv;
 
-			
+
 			int prev;
 			int size_block;
 			while(it != field.end()){
@@ -269,9 +292,9 @@ public:
 			return field_biv;
 		}
 	}
-	
+
 	mData compress_p(ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
-		
+
 		std::vector<unsigned int> v_last_id;
 		std::vector<uint8_t> docID_biv;
 		std::vector<uint8_t> fragID_biv;
@@ -287,7 +310,7 @@ public:
 
 		fragID_biv = compress(v_fragID, 1, 0, size_frag_biv);
 		pos_biv = compress(v_pos, 1, 0, size_pos_biv);
-		
+
 		mData meta;
 		fileinfo fi;
 		fi.start_pos = ofile.tellp();
@@ -352,7 +375,7 @@ public:
 			mmData = compress_p(ofile, fm, v_docID, v_fragID, v_pos);
 			mmData.num_posting = num_of_p;
 			filemeta[filename].push_back(fm);
-			
+
 			mmData.file_info.filename = filename;
 			//add mmdata to the dictionary of corresponding term
 			mmData[currID] = mmData;
@@ -365,7 +388,7 @@ public:
 		}
 
 		ofile.close();
-		merge_test(filemeta);//see if need to merge
+		merge_test(filemeta, dict);//see if need to merge
 	}
 
 	void start_compress(map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict){
@@ -382,7 +405,7 @@ public:
 		int p;
 		int num;
 
-		for(int i = 0; i < NO_DOC; i ++){	
+		for(int i = 0; i < NO_DOC; i ++){
 			vec.clear();
 			getline(info, line);//read docInfo
 			stringstream lineStream(line);
@@ -487,42 +510,36 @@ public:
 		return result;
 	}
 
-	std::vector<Posting> decompress(string filename, map<string, vector<f_meta>> fm, map<unsigned int, mData>& dict){
+	std::vector<Posting> decompress(string filename, unsigned int termID, map<unsigned int, mData>& dict){
 		ifstream ifile;
 		ifile.open(filename, ios::binary);
-		vector<f_meta> fmeta = fm[filename];
 		vector<Posting> result;
+		Posting p;
 		vector<char> readin;
 
 		vector<uint8_t> docID;
 		vector<uint8_t> fragID;
 		vector<uint8_t> pos;
 
-		unsigned int currID;
+		ifile.seekg(dict[termID].posting_start);
+		while(ifile.tellg != dict[termID].frag_start){
+			readin.push_back(get(c));
+			docID = VBDecode(readin);
+			readin.clear();
+		}
 
-		for (vector<f_meta>::iterator it = fmeta.begin(); it = fmeta.end(); it ++){
-			currID = it->termID;
+		ifile.seekg(dict[termID].frag_start);
+		while(ifile.tellg != dict[termID].pos_start){
+			readin.push_back(get(c));
+			fragID = VBDecode(readin);
+			readin.clear();
+		}
 
-			ifile.seekg(dict[termID].posting_start);
-			while(ifile.tellg != dict[termID].frag_start){
-				readin.push_back(get(c));
-				docID = VBDecode(readin);
-				readin.clear();
-			}
-
-			ifile.seekg(dict[termID].frag_start);
-			while(ifile.tellg != dict[termID].pos_start){
-				readin.push_back(get(c));
-				fragID = VBDecode(readin);
-				readin.clear();
-			}
-
-			ifile.seekg(dict[termID].pos_start);
-			while(tellg != dict[termID].file_info.end_pos){
-				readin.push_back(get(c));
-				pos = VBDecode(readin);
-				readin.clear();
-			}
+		ifile.seekg(dict[termID].pos_start);
+		while(tellg != dict[termID].file_info.end_pos){
+			readin.push_back(get(c));
+			pos = VBDecode(readin);
+			readin.clear();
 		}
 
 		vector<unsigned int>::iterator itdoc = docID.begin();
@@ -530,7 +547,7 @@ public:
 		vector<unsigned int>::iterator itpos = pos.begin();
 
 		while(docID != docID.end()){
-			result.push_back(p(*itdoc, *itfrag, *itpos));
+			result.push_back(p(termID, *itdoc, *itfrag, *itpos));
 		}
 
 		return result;
