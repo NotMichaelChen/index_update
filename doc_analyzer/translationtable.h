@@ -3,11 +3,18 @@
 
 #include <vector>
 #include <unordered_map>
+#include <cpp_redis/cpp_redis>
+
+#ifdef _WIN32
+#include <Winsock2.h>
+#endif /* _WIN32 */
 
 #include "Matcher/translate.h"
 
+
 class TranslationTable {
 public:
+    TranslationTable();
     int apply(int docID, int fragID, int position);
     void insert(std::vector<Translation> trans, int docID);
     //If a document gets reindexed, throw away its translation list
@@ -19,6 +26,9 @@ private:
     //<docid, translations>
     //transtable index indicates where fragID should begin applying
     std::unordered_map<int, std::vector<Translation>> transtable;
+    //key: docID
+    //val: translations
+    cpp_redis::redis_client client;
 };
 
 #endif

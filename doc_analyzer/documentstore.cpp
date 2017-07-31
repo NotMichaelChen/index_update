@@ -1,7 +1,6 @@
 #include "documentstore.h"
 
 #include <cpp_redis/cpp_redis>
-#include <sstream>
 #include <time.h>
 
 #ifdef _WIN32
@@ -12,14 +11,14 @@ using namespace std;
 
 DocumentStore::DocumentStore() : nextid(0) {
     #ifdef _WIN32
-      //! Windows netword DLL init
-      WORD version = MAKEWORD(2, 2);
-      WSADATA data;
-    
-      if (WSAStartup(version, &data) != 0) {
-        std::cerr << "WSAStartup() failure" << std::endl;
-        return -1;
-      }
+        //! Windows netword DLL init
+        WORD version = MAKEWORD(2, 2);
+        WSADATA data;
+        
+        if (WSAStartup(version, &data) != 0) {
+            std::cerr << "WSAStartup() failure" << std::endl;
+            return -1;
+        }
     #endif /* _WIN32 */
     
     //cpp_redis::active_logger = std::unique_ptr<cpp_redis::logger>(new cpp_redis::logger);

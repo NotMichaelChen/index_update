@@ -14,14 +14,14 @@ struct DocumentTuple {
     unsigned int docID;
     std::string doc;
     unsigned int maxfragID;
-    std::string timestamp
+    std::string timestamp;
 };
 
 class DocumentStore {
 public:
     DocumentStore();
     DocumentTuple getDocument(std::string url);
-    void insertDocument(std::string url, std::string doc, unsigned int maxfragID);
+    void insertDocument(std::string url, std::string doc, unsigned int maxfragID, std::string timestamp);
     int getNextDocID();
 private:
     //key: url

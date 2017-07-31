@@ -25,11 +25,11 @@ vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<Block
         int newlength = b->newloc - (currentloc+shift);
         
         if(oldlength != 0 || newlength != 0) {
-            Translation trans = {
+            Translation trans(
                 currentloc + shift,
                 oldlength,
                 newlength
-            };
+            );
             
             translist.push_back(trans);
             
@@ -42,11 +42,11 @@ vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<Block
     
     //Add the last edit region if a common block does not extend to the end
     if(currentloc != oldfilelen || currentloc + shift != newfilelen) {
-        Translation trans = {
+        Translation trans(
             currentloc + shift,
             oldfilelen - currentloc,
             newfilelen - (currentloc+shift)
-        };
+        );
         
         translist.push_back(trans);
     }
