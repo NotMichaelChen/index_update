@@ -4,6 +4,7 @@
 class Posting{
 public:
 	Posting ();
+	~Posting ();
 
 	Posting(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0);
 

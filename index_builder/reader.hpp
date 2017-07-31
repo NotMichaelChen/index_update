@@ -10,13 +10,13 @@
 class Reader{
 public:
 
-	static std::vector<char> read_com(std::ifstream& infile);
+	static std::vector<char> read_com(std::ifstream& infile, long end_pos);
 
-	static std::vector<unsigned int> VBDecode(std::ifstream& ifile, long start_pos = 0, long end_pos = ifile.tellg());
+	static std::vector<unsigned int> VBDecode(std::ifstream& ifile, long start_pos = 0, long end_pos = 0);
 
 	static std::vector<unsigned int> VBDecode(std::vector<char>& vec);
 
-	static std::vector<Posting> decompress(std::string filename, unsigned int termID, std::map<unsigned int, mData>& dict);
+	static std::vector<Posting> decompress(std::string filename, unsigned int termID, std::map<unsigned int, std::vector<mData>>& dict);
 };
 
 #endif
