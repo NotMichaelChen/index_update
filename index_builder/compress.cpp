@@ -175,7 +175,7 @@ public:
 	void merge_test(map<string, vector<f_meta>>& filemeta, map<unsigned int, mData>& dict){
 		int indexnum = 0;
 		string dir = string(PDIR);
-		vector<string> files = read_directory(string(PDIR));
+		vector<string> files = read_directory(dir);
 
 		while(!none_of(begin(files), std::end(files), "I" + to_string(indexnum))){
 			//if In exists already, merge In with Zn
