@@ -480,7 +480,7 @@ std::vector<char> Reader::read_com(ifstream& infile){//read compressed forward i
 	return result;
 }
 
-std::vector<unsigned int> Reader::VBDecode(ifstream& ifile, long start_pos = 0, long end_pos){//ios::ate
+std::vector<unsigned int> Reader::VBDecode(ifstream& ifile, long start_pos, long end_pos){//ios::ate
 	ifile.seekg(start_pos);
 	char c;
 	unsigned int num;
