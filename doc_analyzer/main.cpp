@@ -8,10 +8,31 @@
 #include "Matcher/graph.h"
 #include "Matcher/distancetable.h"
 #include "Matcher/translate.h"
+#include "documentstore.h"
 
 using namespace std;
 
+int matchertest(int argc, char **argv);
+int doctest();
+
 int main(int argc, char **argv) {
+    return 0;
+}
+
+int doctest() {
+    DocumentStore store;
+    
+    store.insertDocument("www.abc.com", "This is a document", 123, "23-01-3203");
+    store.insertDocument("www.def.com", "Different document", 2, "12-03-2323");
+    DocumentTuple doc = store.getDocument("www.abc.com");
+    cout << doc.docID << " " << doc.doc << " " << doc.maxfragID << " " << doc.timestamp << endl;
+    doc = store.getDocument("www.def.com");
+    cout << doc.docID << " " << doc.doc << " " << doc.maxfragID << " " << doc.timestamp << endl;
+    
+    return 0;
+}
+
+int matchertest(int argc, char **argv) {
     string k, oldfilename, newfilename;
     bool isold = false, isnew = false;
     

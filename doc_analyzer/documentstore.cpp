@@ -1,7 +1,6 @@
 #include "documentstore.h"
 
 #include <cpp_redis/cpp_redis>
-#include <time.h>
 
 #ifdef _WIN32
 #include <Winsock2.h>
@@ -25,6 +24,9 @@ DocumentStore::DocumentStore() : nextid(0) {
     
     client.connect("127.0.0.1", 6379);
     client.select(0);
+    
+    client.setnx("nextid", "0");
+    client.commit();
 }
 
 DocumentTuple DocumentStore::getDocument(string url) {
@@ -49,9 +51,15 @@ DocumentTuple DocumentStore::getDocument(string url) {
     return obtaineddoc;
 }
 
-void DocumentStore::insertDocument(std::string url, std::string doc, unsigned int maxfragID, string timestamp) { 
-    vector<string> keys = {url};
-    client.exists(keys, [&](cpp_redis::reply& reply) {
+void DocumentStore::insertDocument(std::string url, std::string doc, unsigned int maxfragID, string timestamp) {
+    string nextid;
+    client.get("nextid", [&nextid](cpp_redis::reply& reply) {
+        nextid = reply.as_string();
+    });
+    
+    client.sync_commit();
+    
+    client.exists({url}, [&](cpp_redis::reply& reply) {
         if(reply.ok()) {
             //If the key already exists
             if(reply.as_integer()) {
@@ -61,9 +69,9 @@ void DocumentStore::insertDocument(std::string url, std::string doc, unsigned in
                 client.rpush(url, newdocinfo);
             }
             else {
-                vector<string> doctuple = {to_string(nextid), doc, to_string(maxfragID), timestamp};
+                vector<string> doctuple = {nextid, doc, to_string(maxfragID), timestamp};
                 client.rpush(url, doctuple);
-                ++nextid;
+                client.incr("nextid");
             }
             
             client.commit();
