@@ -21,9 +21,6 @@
 
 using namespace std;
 
-
-
-
 struct less_than_key
 {
     inline bool operator() (const Posting& p1, const Posting& p2)
@@ -442,7 +439,7 @@ public:
 Posting::Posting (){
 };
 
-Posting::Posting(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0){
+Posting::Posting(unsigned int id, unsigned int d, unsigned int f, unsigned int p){
 	termID = id;
 	docID = d;
 	fragID = f;
@@ -483,7 +480,7 @@ std::vector<char> Reader::read_com(ifstream& infile){//read compressed forward i
 	return result;
 }
 
-std::vector<unsigned int> Reader::VBDecode(ifstream& ifile, long start_pos = 0, long end_pos = ifile.tellg()){//ios::ate
+std::vector<unsigned int> Reader::VBDecode(ifstream& ifile, long start_pos = 0, long end_pos){//ios::ate
 	ifile.seekg(start_pos);
 	char c;
 	unsigned int num;
@@ -549,7 +546,7 @@ std::vector<Posting> Reader::decompress(string filename, unsigned int termID, ma
 	vector<unsigned int> pos;
 
 	ifile.seekg(dict[termID].posting_start);
-	while(ifile.tellg != dict[termID].frag_start){
+	while(ifile.tellg() != dict[termID].frag_start){
 		ifile.get(c);
 		readin.push_back(c);
 		docID = VBDecode(readin);
@@ -557,7 +554,7 @@ std::vector<Posting> Reader::decompress(string filename, unsigned int termID, ma
 	}
 
 	ifile.seekg(dict[termID].frag_start);
-	while(ifile.tellg != dict[termID].pos_start){
+	while(ifile.tellg() != dict[termID].pos_start){
 		ifile.get(c);
 		readin.push_back(c);
 		fragID = VBDecode(readin);
@@ -565,7 +562,7 @@ std::vector<Posting> Reader::decompress(string filename, unsigned int termID, ma
 	}
 
 	ifile.seekg(dict[termID].pos_start);
-	while(ifile.tellg != dict[termID].file_info.end_pos){
+	while(ifile.tellg() != dict[termID].file_info.end_pos){
 		ifile.get(c);
 		readin.push_back(c);
 		pos = VBDecode(readin);
