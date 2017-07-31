@@ -11,7 +11,7 @@
 
 class Compressor{
 public:
-	std::vector<std::string> read_directory( std::string& path );
+	std::vector<std::string> read_directory( std::string path );
 
   	void update_f_meta(std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::string s1, std::string s2);
 
@@ -24,6 +24,8 @@ public:
 	void merge_test(std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::vector<mData>>& dict);
 
 	void write(std::vector<uint8_t> num, std::ofstream& ofile);
+
+    bool check_contain(std::vector<std::string> v, std::string f);
 
 	std::vector<char> read_com(std::ifstream& infile);
 

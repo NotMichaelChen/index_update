@@ -27,6 +27,54 @@ bool strless::operator() (const string & first, const string & second ) const  {
     return first < second;
 }
 
+Posting::Posting (){}
+
+Posting::~Posting (){}
+
+Posting::Posting(unsigned int id, unsigned int d, unsigned int f, unsigned int p){
+	termID = id;
+	docID = d;
+	fragID = f;
+	pos = p;
+}
+
+bool operator< (const Posting& p1, const Posting& p2) {
+	if(p1.termID == p2.termID){
+		if(p1.docID == p2.docID){
+			if(p1.fragID == p2.fragID){
+				return (p1.pos < p2.pos);
+			}else{
+				return (p1.fragID < p2.fragID);
+			}
+		}else{
+			return (p1.docID < p2.docID);
+		}
+	}else{
+		return (p1.termID < p2.termID);
+	}
+}
+
+bool operator> (const Posting& p1, const Posting& p2) {
+    if(p1.termID == p2.termID){
+		if(p1.docID == p2.docID){
+			if(p1.fragID == p2.fragID){
+				return (p1.pos > p2.pos);
+			}else{
+				return (p1.fragID > p2.fragID);
+			}
+		}else{
+			return (p1.docID > p2.docID);
+		}
+	}else{
+		return (p1.termID > p2.termID);
+	}
+}
+
+bool operator== (const Posting& p1, const Posting& p2){
+	if(p1.termID == p2.termID && p1.docID == p2.docID && p1.fragID == p2.fragID && p1.pos == p2.pos) return true;
+	else return false;
+}
+
 struct less_than_key
 {
     inline bool operator() (const Posting& p1, const Posting& p2)
@@ -47,7 +95,7 @@ struct less_than_key
     }
 };
 
-std::vector<std::string> Compressor::read_directory( std::string& path ){
+std::vector<std::string> Compressor::read_directory( std::string path ){
 	std::vector <std::string> result;
 	dirent* de;
 	DIR* dp;
@@ -175,12 +223,23 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 	//delete two old files
 }
 
+//TODO
+//!none_of(begin(files), std::end(files), string("I") + to_string(indexnum))
+
+bool Compressor::check_contain(vector<string> v, string f){
+    for( vector<string>::iterator it = v.begin(); it != v.end(); it ++){
+        if( *it == f) return true;
+    }
+    return false;
+}
+
 void Compressor::merge_test(map<string, vector<f_meta>, strless>& filemeta, map<unsigned int, vector<mData>>& dict){
 	int indexnum = 0;
 	string dir = string(PDIR);
 	vector<string> files = read_directory(dir);
+    string f = string("I") + to_string(indexnum);
 
-	while(!none_of(begin(files), std::end(files), "I" + to_string(indexnum))){
+	while(check_contain(files, f)){
 		//if In exists already, merge In with Zn
 		merge(filemeta, indexnum, dict);
 		indexnum ++;
@@ -440,58 +499,6 @@ void Compressor::start_compress(map<string, vector<f_meta>, strless>& filemeta, 
 	info.close();
 }
 
-
-Posting::Posting (){
-}
-
-Posting::~Posting (){
-
-}
-
-Posting::Posting(unsigned int id, unsigned int d, unsigned int f, unsigned int p){
-	termID = id;
-	docID = d;
-	fragID = f;
-	pos = p;
-}
-
-bool operator< (Posting& p1, Posting& p2){
-	if(p1.termID == p2.termID){
-		if(p1.docID == p2.docID){
-			if(p1.fragID == p2.fragID){
-				return (p1.pos < p2.pos);
-			}else{
-				return (p1.fragID < p2.fragID);
-			}
-		}else{
-			return (p1.docID < p2.docID);
-		}
-	}else{
-		return (p1.termID < p2.termID);
-	}
-}
-
-bool operator> (Posting& p1, Posting& p2){
-    if(p1.termID == p2.termID){
-		if(p1.docID == p2.docID){
-			if(p1.fragID == p2.fragID){
-				return (p1.pos > p2.pos);
-			}else{
-				return (p1.fragID > p2.fragID);
-			}
-		}else{
-			return (p1.docID > p2.docID);
-		}
-	}else{
-		return (p1.termID > p2.termID);
-	}
-}
-
-bool operator== (Posting p1, Posting p2){
-	if(p1.termID == p2.termID && p1.docID == p2.docID && p1.fragID == p2.fragID && p1.pos == p2.pos) return true;
-	else return false;
-}
-
 std::vector<char> Reader::read_com(ifstream& infile, long end_pos){//read compressed forward index
 	char c;
 	vector<char> result;
@@ -616,14 +623,7 @@ std::vector<Posting> Reader::decompress(string filename, unsigned int termID, ma
 }
 
 class Querior{
-    std::vector<Posting> query(string term){
-
-    }
-
-    void query( std::string terms,  ){
-        for( vector<string>::iterator it = terms.begin(); it != terms.end(); it ++){
-
-        }
+    void query( std::string terms  ){
     }
 };
 
@@ -634,10 +634,11 @@ int main(){
 	map<string, vector<f_meta>, strless> filemeta;
 	comp.start_compress(filemeta, dict);
 
-    Querior q;
+    /*Querior q;
     string str;
     cin >> str;
     q.query(str, lexical);
+    */
 
 	return 0;
 }
