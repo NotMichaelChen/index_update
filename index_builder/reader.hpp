@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "posting.hpp"
+#include "meta.hpp"
 
 class Reader{
 public:
