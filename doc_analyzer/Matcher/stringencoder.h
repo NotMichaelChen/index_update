@@ -7,6 +7,7 @@
 #include <map>
 
 //Encodes a file of words into a list of integers
+
 class StringEncoder {
 public:
     StringEncoder();
@@ -15,8 +16,9 @@ public:
     std::string decodeNum(int num);
     
 private:
-    //Assigns words to numbers
+    //Maps words to numbers
     std::map<std::string, int> dictionary;
+    //Maps numbers (index) to words
     //Since id's are assigned incrementally, a vector can be used for lookup
     //Should be appended whenever nextcode is incremented
     std::vector<std::string> lookup;

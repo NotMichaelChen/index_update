@@ -65,8 +65,7 @@ void makePosts(string& url, unsigned int doc_id, ifstream& oldpage, ifstream& ne
     
     //Get the optimal set of blocks to select
     DistanceTable disttable(MAX_BLOCK_COUNT, G, topsort);
-    vector<pair<int, Block*>> bestlist = disttable.findAllBestPaths();
-    vector<Block*> finalpath = disttable.tracePath(bestlist.back().second, bestlist.size());
+    vector<Block*> finalpath = disttable.findOptimalPath(5);
     
     //Get the translation and posting list
     vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);

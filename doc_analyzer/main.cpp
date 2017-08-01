@@ -9,6 +9,7 @@
 #include "Matcher/distancetable.h"
 #include "Matcher/translate.h"
 #include "Structures/documentstore.h"
+#include "Structures/translationtable.h"
 
 using namespace std;
 
@@ -17,7 +18,7 @@ int doctest();
 
 int main(int argc, char **argv) {
     //return doctest();
-    //return matchertest(argc, argv);
+    return matchertest(argc, argv);
     return 0;
 }
 
@@ -108,18 +109,19 @@ int matchertest(int argc, char **argv) {
     
     vector<Block*> topsort = topologicalSort(G);
     for(Block* b : topsort) {
-        cout << *b;
+        cout << *b << " ";
     }
     cout << endl;
     
     DistanceTable disttable(blocks, G, topsort);
-    vector<pair<int, Block*>> bestlist = disttable.findAllBestPaths();
+    vector<DistanceTable::TableEntry> bestlist = disttable.findAllBestPaths();
     
     cout << "Steps\tWeight\tPath" << endl;
     for(size_t i = 0; i < bestlist.size(); ++i) {
-        if(bestlist[i].first == 0) break;
-        vector<Block*> path = disttable.tracePath(bestlist[i].second, i+1);
-        cout << i+1 << "\t" << bestlist[i].first << "\t";
+        if(bestlist[i].current == nullptr) break;
+        
+        vector<Block*> path = disttable.tracePath(bestlist[i].current, bestlist[i].steps);
+        cout << bestlist[i].steps << "\t" << bestlist[i].distance << "\t";
         for(Block* j : path) {
             //cout << j;
             cout << *j << " ";
@@ -127,7 +129,7 @@ int matchertest(int argc, char **argv) {
         cout << endl;
     }
     
-    vector<Block*> finalpath = disttable.tracePath(bestlist.back().second, bestlist.size());
+    vector<Block*> finalpath = disttable.findOptimalPath(5);
     
     vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);
     

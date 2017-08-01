@@ -21,7 +21,6 @@ vector<int> StringEncoder::encodeFile(ifstream& file) {
     
     string word;
     while(file >> word) {
-        //Make the word lowercase
         transform(word.begin(), word.end(), word.begin(), ::tolower);
         
         //Add the token/word into the dictionary if it's not in there yet,

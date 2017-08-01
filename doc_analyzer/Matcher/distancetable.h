@@ -8,15 +8,27 @@
 #include "block.h"
 
 //Table that holds distance info when traversing a graph
+//**All references to steps are assuming starting from some source node S that connects to all other nodes
+//Thus a step=0 is impossible
 class DistanceTable {
 public:
+    struct TableEntry {
+        TableEntry(int s, int d, Block* c, Block* p)
+        : steps(s), distance(d), current(c), prev(p) {}
+        
+        int steps;
+        int distance;
+        Block* current;
+        Block* prev;
+    };
+    
     DistanceTable(int blocklimit, BlockGraph& graph, std::vector<Block*>& toporder);
     
     //Gets a list of every best path in the graph
     //index of vector refers to number of steps through graph (see assumption below)
     //Each entry is a pair of totalweight, endingblock.
     //TODO: Consider making private?
-    std::vector<std::pair<int, Block*>> findAllBestPaths();
+    std::vector<TableEntry> findAllBestPaths();
     
     //Finds an optimal path through the graph that balances block count vs common text
     //The parameter is the constant of the cost function, which takes the form ax+y
@@ -24,7 +36,7 @@ public:
     //Thus a represents the cost of taking one block of text
     //NOTE: this pair represents <steps, block> instead of <weight, block>
     //weight can be obtained elsewhere
-    std::pair<int, Block*> findOptimalPath(int a);
+    std::vector<Block*> findOptimalPath(int a);
     
     //Fills a vector with a path that ends at ending
     //path is in order of graph traversal
@@ -43,7 +55,7 @@ private:
     //Each table is a list of distance and previous_block pairs, with the position
     //in the vector denoting the number of hops it takes from S.
     //**We assume that index=0 means 1 hop from S
-    std::map<Block*, std::vector<std::pair<int, Block*>>> table;
+    std::map<Block*, std::vector<TableEntry>> tablelist;
     //The maximum number of steps we're allowed to take through the graph
     int maxsteps;
 };
