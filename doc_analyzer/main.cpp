@@ -120,7 +120,7 @@ int matchertest(int argc, char **argv) {
     for(size_t i = 0; i < bestlist.size(); ++i) {
         if(bestlist[i].current == nullptr) break;
         
-        vector<Block*> path = disttable.tracePath(bestlist[i].current, bestlist[i].steps);
+        vector<Block*> path = disttable.tracePath(bestlist[i]);
         cout << bestlist[i].steps << "\t" << bestlist[i].distance << "\t";
         for(Block* j : path) {
             //cout << j;

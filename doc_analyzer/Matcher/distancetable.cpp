@@ -75,24 +75,20 @@ vector<Block*> DistanceTable::findOptimalPath(int a) {
     if(bestending.current == nullptr)
         bestending = bestlist.back();
     
-    return tracePath(bestending.current, bestending.steps);
+    return tracePath(bestending);
 }
 
-vector<Block*> DistanceTable::tracePath(Block* ending, int steps) {
+vector<Block*> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
     vector<Block*> path;
-    if(ending == nullptr)
+    if(ending.current == nullptr)
         return path;
     
-    path.push_back(ending);
-    steps--;
-    Block* next = ending;
-    //steps must be strictly greater than 0
-    //Since we are pushing the "next" vertex, we would end up pushing nullptr
-    //if we let steps=0
-    while(steps > 0) {
-        next = tablelist[next][steps].prev;
-        path.push_back(next);
-        steps--;
+    path.push_back(ending.current);
+    DistanceTable::TableEntry candidate = ending;
+    
+    while(candidate.prev != nullptr) {
+        path.push_back(candidate.prev);
+        candidate = getPreviousEntry(candidate);
     }
     
     reverse(path.begin(), path.end());
@@ -123,6 +119,11 @@ void DistanceTable::mergeIntoNext(Block* prev, Block* next) {
     //If the table exceeds the number of steps, remove the extra entry
     if(tablelist[next].size() > maxsteps)
         tablelist[next].pop_back();
+}
+
+DistanceTable::TableEntry DistanceTable::getPreviousEntry(DistanceTable::TableEntry te) {
+    //subtract one to offset step/index difference, subtract another one to get previous step
+    return tablelist[te.prev][te.steps-2];
 }
 
 void DistanceTable::initVertex(Block* V) {

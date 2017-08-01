@@ -41,7 +41,7 @@ public:
     //Fills a vector with a path that ends at ending
     //path is in order of graph traversal
     //ending is included in the path as the last entry
-    std::vector<Block*> tracePath(Block* ending, int steps);
+    std::vector<Block*> tracePath(TableEntry ending);
     
 private:
     //Initialize a vertex in the table
@@ -50,6 +50,8 @@ private:
     void initVertex(Block* V);
     //Merge the list from prev into the list of next, where next is a neighbor of prev
     void mergeIntoNext(Block* prev, Block* next);
+    //Gets the previous table entry given a current table entry
+    TableEntry getPreviousEntry(TableEntry te);
     
     //Each block is associated with a table describing its distance from S
     //Each table is a list of distance and previous_block pairs, with the position
