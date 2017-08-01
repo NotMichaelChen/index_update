@@ -75,8 +75,7 @@ bool operator== (const Posting& p1, const Posting& p2){
 	else return false;
 }
 
-struct less_than_key
-{
+struct less_than_key{
     inline bool operator() (const Posting& p1, const Posting& p2)
     {
         if(p1.termID == p2.termID){
@@ -174,11 +173,17 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 			vector<Posting> vp1 = Reader::decompress(file1, it1->termID, dict);
 			vector<Posting> vp2 = Reader::decompress(file2, it2->termID, dict);
 			vector<Posting> vpout; //store the sorted result
+
+            for( vector<Posting>::iterator it = vp1.begin(); it != vp1.end(); it ++){
+                cout << it->termID << ' ';
+            }
+
 			//use NextGQ to write the sorted vector of Posting to disk
 			vector<Posting>::iterator vpit1 = vp1.begin();
 			vector<Posting>::iterator vpit2 = vp2.begin();
 			while( vpit1 != vp1.end() && vpit2 != vp2.end() ){
 				//NextGQ
+                cout << "NEXTGQ" << endl;
 				if( *vpit1 < *vpit2 ){
 					vpout.push_back(*vpit1);
 					vpit1 ++;
@@ -192,6 +197,14 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 					break;
 				}
 			}
+            if( vpit1 != vp1.end()){
+                vpout.push_back(*vpit1);
+                vpit1 ++;
+            }
+            else if( vpit2 != vp2.end()){
+                vpout.push_back(*vpit2);
+                vpit2 ++;
+            }
 
 			update_t_meta(it1->termID, file1, file2, dict);
 			compress_p(vpout, filemeta, dict, indexnum + 1);
@@ -218,7 +231,7 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 			copy_and_paste(filei, ofile, it2->start_pos, it2->end_pos);
 		}
 	}
-	update_f_meta(filemeta, pdir + "Z" + to_string(indexnum), pdir + "I" + to_string(indexnum));
+	//update_f_meta(filemeta, pdir + "Z" + to_string(indexnum), pdir + "I" + to_string(indexnum));
 	filez.close();
 	filei.close();
 	ofile.close();
@@ -354,7 +367,8 @@ vector<uint8_t> Compressor::compress(std::vector<unsigned int>& field, int metho
 	}
 }
 
-mData Compressor::compress_p(string filename, ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
+mData Compressor::compress_p(string namebase, ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
+    string filename = string(PDIR) + namebase;
 
 	std::vector<unsigned int> v_last_id;
 	std::vector<uint8_t> docID_biv;
@@ -373,7 +387,7 @@ mData Compressor::compress_p(string filename, ofstream& ofile, f_meta fm, std::v
 	pos_biv = compress(v_pos, 1, 0, size_pos_biv);
 
 	mData meta;
-    meta.filename = filename;
+    meta.filename = namebase;
 
 	fm.start_pos = ofile.tellp();
     meta.start_pos = ofile.tellp();
@@ -410,15 +424,19 @@ void Compressor::compress_p(std::vector<Posting>& pList, std::map<string, vector
 	ofstream ofile;//positional inverted index
     string pdir(PDIR);
 	string filename = pdir + "Z" + to_string(indexnum);
-    cout << filename << endl;
+    string namebase;
 	ofile.open(filename, ofstream::app | ofstream::binary);
-    cout << ofile.tellp() << endl;
+
 	if(ofile.tellp() != 0){
         cout << filename << " already exists." << endl;
 		ofile.close();
 		filename = pdir + "I" + to_string(indexnum);
         ofile.open(filename, ios::ate | ios::binary);
-	}
+        namebase = string("I") + to_string(indexnum);
+	}else{
+        namebase = string("Z") + to_string(indexnum);
+    }
+
     if (ofile.is_open()){
 
         std::vector<unsigned int> v_docID;
@@ -429,6 +447,7 @@ void Compressor::compress_p(std::vector<Posting>& pList, std::map<string, vector
     	unsigned int num_of_p = 0;//number of posting of a certain term
 
     	unsigned int currID = pList[0].termID;//the ID of the term that is currently processing
+        cout << "ID " << currID << endl;
     	for(std::vector<Posting>::iterator it = pList.begin(); it != pList.end(); it++){
     		while(it->termID == currID){
     			v_docID.push_back(it->docID);
@@ -438,14 +457,14 @@ void Compressor::compress_p(std::vector<Posting>& pList, std::map<string, vector
     			num_of_p ++;
     		}
     		fm.termID = currID;
-    		currID = it->termID;
             //cout << "Current term " << currID << endl;
-    		mmData = compress_p(filename, ofile, fm, v_docID, v_fragID, v_pos);
+    		mmData = compress_p(namebase, ofile, fm, v_docID, v_fragID, v_pos);
     		mmData.num_posting = num_of_p;
-    		filemeta[filename].push_back(fm);
+    		filemeta[namebase].push_back(fm);
 
     		//add mmdata to the dictionary of corresponding term
     		dict[currID].push_back(mmData);
+            currID = it->termID;
 
     		num_of_p = 0;
     		v_docID.clear();
@@ -455,6 +474,23 @@ void Compressor::compress_p(std::vector<Posting>& pList, std::map<string, vector
     	}
 
     	ofile.close();
+        for( map<unsigned int, vector<mData>>::iterator it = dict.begin(); it != dict.end(); it ++){
+            cout << it->first << endl;
+            vector<mData> vec = it->second;
+            for( vector<mData>::iterator ite = vec.begin(); ite != vec.end(); ite ++){
+                cout << ite->filename << ' ' << ite->start_pos << endl;
+            }
+            cout << endl;
+        }
+
+        for( map<string, vector<f_meta>, strless>::iterator it = filemeta.begin(); it != filemeta.end(); it++){
+            cout << it->first << endl;
+            vector<f_meta> vec = it->second;
+            for( vector<f_meta>::iterator ite = vec.begin(); ite != vec.end(); ite++){
+                cout << ite->termID << ' ';
+            }
+            cout << endl;
+        }
         merge_test(filemeta, dict);//see if need to merge
     }else{
         cerr << "File cannot be opened." << endl;
@@ -588,60 +624,69 @@ std::vector<unsigned int> Reader::VBDecode(vector<char>& vec){
 	return result;
 }
 
-std::vector<Posting> Reader::decompress(string filename, unsigned int termID, map<unsigned int, vector<mData>>& dict){
+std::vector<Posting> Reader::decompress(string namebase, unsigned int termID, map<unsigned int, vector<mData>>& dict){
+
 	ifstream ifile;
+    string filename = string(PDIR) + namebase;
 	ifile.open(filename, ios::binary);
-	vector<Posting> result;
-	char c;
-	vector<char> readin;
+    vector<Posting> result;
 
-	vector<unsigned int> docID;
-	vector<unsigned int> fragID;
-	vector<unsigned int> pos;
-    vector<mData>& mvec = dict[termID];
-    vector<mData>::iterator currMVec;
+    if(ifile.is_open()){
+        cout << "Opened" << endl;
+    	char c;
+    	vector<char> readin;
 
-    for( currMVec = mvec.begin(); currMVec != mvec.end(); currMVec ++){
-        if( currMVec->filename == filename ) break;
+    	vector<unsigned int> docID;
+    	vector<unsigned int> fragID;
+    	vector<unsigned int> pos;
+        vector<mData>& mvec = dict[termID];
+        vector<mData>::iterator currMVec;
+
+        for( currMVec = dict[termID].begin(); currMVec != dict[termID].end(); currMVec ++){
+            cout << currMVec->filename << endl;
+            if( currMVec->filename == namebase ) break;
+        }
+
+
+    	ifile.seekg(currMVec->posting_start);
+    	while(ifile.tellg() != currMVec->frag_start){
+    		ifile.get(c);
+    		readin.push_back(c);
+    		docID = VBDecode(readin);
+    		readin.clear();
+    	}
+
+    	ifile.seekg(currMVec->frag_start);
+    	while(ifile.tellg() != currMVec->pos_start){
+    		ifile.get(c);
+    		readin.push_back(c);
+    		fragID = VBDecode(readin);
+    		readin.clear();
+    	}
+
+    	ifile.seekg(currMVec->pos_start);
+    	while(ifile.tellg() != currMVec->end_pos){
+    		ifile.get(c);
+    		readin.push_back(c);
+    		pos = VBDecode(readin);
+    		readin.clear();
+    	}
+
+    	vector<unsigned int>::iterator itdoc = docID.begin();
+    	vector<unsigned int>::iterator itfrag = fragID.begin();
+    	vector<unsigned int>::iterator itpos = pos.begin();
+
+    	while(itdoc != docID.end()){
+            Posting p(termID, *itdoc, *itfrag, *itpos);
+    		result.push_back(p);
+    		itdoc ++;
+    		itfrag ++;
+    		itpos ++;
+    	}
+    }else{
+        cerr << "File cannot be opened." << endl;
     }
-
-	ifile.seekg(currMVec->posting_start);
-	while(ifile.tellg() != currMVec->frag_start){
-		ifile.get(c);
-		readin.push_back(c);
-		docID = VBDecode(readin);
-		readin.clear();
-	}
-
-	ifile.seekg(currMVec->frag_start);
-	while(ifile.tellg() != currMVec->pos_start){
-		ifile.get(c);
-		readin.push_back(c);
-		fragID = VBDecode(readin);
-		readin.clear();
-	}
-
-	ifile.seekg(currMVec->pos_start);
-	while(ifile.tellg() != currMVec->end_pos){
-		ifile.get(c);
-		readin.push_back(c);
-		pos = VBDecode(readin);
-		readin.clear();
-	}
-
-	vector<unsigned int>::iterator itdoc = docID.begin();
-	vector<unsigned int>::iterator itfrag = fragID.begin();
-	vector<unsigned int>::iterator itpos = pos.begin();
-
-	while(itdoc != docID.end()){
-        Posting p(termID, *itdoc, *itfrag, *itpos);
-		result.push_back(p);
-		itdoc ++;
-		itfrag ++;
-		itpos ++;
-	}
-
-	return result;
+    return result;
 }
 
 class Querior{

@@ -37,7 +37,7 @@ public:
 
 	std::vector<uint8_t> compress(std::vector<unsigned int>& field, int method, int sort, std::vector<uint8_t> &meta_data_biv);
 
-	mData compress_p(std::string filename, std::ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos);
+	mData compress_p(std::string namebase, std::ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos);
 
 	void compress_p(std::vector<Posting>& pList, std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::vector<mData>>& dict, int indexnum = 0);
 
