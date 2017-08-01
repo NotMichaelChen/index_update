@@ -8,7 +8,7 @@
 #include "Matcher/graph.h"
 #include "Matcher/distancetable.h"
 #include "Matcher/translate.h"
-#include "documentstore.h"
+#include "Structures/documentstore.h"
 
 using namespace std;
 
