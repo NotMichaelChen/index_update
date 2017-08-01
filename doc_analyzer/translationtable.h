@@ -11,7 +11,6 @@
 
 #include "Matcher/translate.h"
 
-
 class TranslationTable {
 public:
     TranslationTable();
@@ -21,11 +20,6 @@ public:
     void erase(int docID);
     
 private:
-    //TEMPORARY DATA STRUCTURES
-    //Holds a list of translations associated with a document
-    //<docid, translations>
-    //transtable index indicates where fragID should begin applying
-    std::unordered_map<int, std::vector<Translation>> transtable;
     //key: docID
     //val: translations
     cpp_redis::redis_client client;

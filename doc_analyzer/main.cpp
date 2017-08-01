@@ -16,6 +16,8 @@ int matchertest(int argc, char **argv);
 int doctest();
 
 int main(int argc, char **argv) {
+    //return doctest();
+    //return matchertest(argc, argv);
     return 0;
 }
 

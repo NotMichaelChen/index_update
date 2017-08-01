@@ -26,7 +26,7 @@ DocumentStore::DocumentStore() : nextid(0) {
     client.select(0);
     
     client.setnx("nextid", "0");
-    client.commit();
+    client.sync_commit();
 }
 
 DocumentTuple DocumentStore::getDocument(string url) {
