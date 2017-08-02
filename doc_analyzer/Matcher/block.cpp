@@ -32,8 +32,9 @@ vector<Block*> getCommonBlocks(int minsize, StringEncoder& se) {
     multimap<unsigned int, vector<int>> potentialblocks;
     
     //Get all possible blocks in the old file
-    for(auto olditer = se.getOldIter(); olditer != se.getOldEnd(); ++olditer) {
-        vector<int> newblock(olditer, olditer+minsize+1);
+    //no need to subtract 1 from se.getOldEnd, since it points past the end
+    for(auto olditer = se.getOldIter(); olditer != se.getOldEnd() - minsize; ++olditer) {
+        vector<int> newblock(olditer, olditer+minsize);
         //hash the block before inserting oldloc
         unsigned int blockhash = hashVector(newblock);
         //calculation is equivalent to getting the index of olditer
@@ -42,8 +43,8 @@ vector<Block*> getCommonBlocks(int minsize, StringEncoder& se) {
     }
     
     //Check each block in the new file for a match with a block in the old file
-    for(auto newiter = se.getNewIter(); newiter != se.getNewEnd(); ++newiter) {
-        vector<int> blockcheck(newiter, newiter+minsize+1);
+    for(auto newiter = se.getNewIter(); newiter != se.getNewEnd() - minsize; ++newiter) {
+        vector<int> blockcheck(newiter, newiter+minsize);
         unsigned int blockhash = hashVector(blockcheck);
         
         //Get all blocks that match the current block's hash
@@ -80,8 +81,8 @@ void extendBlocks(vector<Block*>& allblocks, StringEncoder& se) {
         //indexes are now pointing beyond the block
         int oldfileindex = allblocks[index]->oldloc + blocklength;
         int newfileindex = allblocks[index]->newloc + blocklength;
-        auto olditer = se.getOldIter();
-        auto newiter = se.getNewIter();
+        auto olditer = se.getOldIter()+oldfileindex;
+        auto newiter = se.getNewIter()+newfileindex;
         
         //Attempt to extend the block
         while(olditer != se.getOldEnd() && newiter != se.getNewEnd() && *olditer == *newiter) {
@@ -89,6 +90,8 @@ void extendBlocks(vector<Block*>& allblocks, StringEncoder& se) {
             allblocks[index]->run.push_back(*olditer);
             ++olditer;
             ++newiter;
+            ++oldfileindex;
+            ++newfileindex;
         }
         
         //if we successfully extended the block, check for possible overlaps
@@ -99,9 +102,9 @@ void extendBlocks(vector<Block*>& allblocks, StringEncoder& se) {
                 int overlaplength = (*overlapchecker)->run.size()-1;
                 
                 if((*overlapchecker)->oldloc >= allblocks[index]->oldloc &&
-                    (*overlapchecker)->oldloc+overlaplength <= oldfileindex &&
+                    (*overlapchecker)->oldloc+overlaplength <= (olditer - se.getOldIter()) &&
                     (*overlapchecker)->newloc >= allblocks[index]->newloc &&
-                    (*overlapchecker)->newloc+overlaplength <= newfileindex)
+                    (*overlapchecker)->newloc+overlaplength <= (newiter - se.getNewIter()))
                 {
                     delete *overlapchecker;
                     overlapchecker = allblocks.erase(overlapchecker);
