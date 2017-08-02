@@ -30,15 +30,15 @@ void makePosts(string& url, unsigned int doc_id, string& oldpage, string& newpag
     int fragID = 0;
     
     //Encode both files as lists of numbers
-    StringEncoder se(oldpage, newpage);
+    Matcher::StringEncoder se(oldpage, newpage);
 
     //-else, run the graph based matching algorithm on the two versions
-    vector<Block*> commonblocks = getCommonBlocks(se, MIN_BLOCK_SIZE, MAX_BLOCK_COUNT, 5);
+    vector<Matcher::Block*> commonblocks = Matcher::getCommonBlocks(se, MIN_BLOCK_SIZE, MAX_BLOCK_COUNT, 5);
     
     //Get the translation and posting list
-    vector<Translation> translist = getTranslations(se.getOldSize(), se.getNewSize(), commonblocks);
+    vector<Matcher::Translation> translist = Matcher::getTranslations(se.getOldSize(), se.getNewSize(), commonblocks);
     //TODO: get the maximum fragid and pass it in
-    auto postingslist = getPostings(commonblocks, doc_id, 0, se);
+    auto postingslist = Matcher::getPostings(commonblocks, doc_id, 0, se);
     //Number of fragIDs used is exactly proportional to the number of positional postings inserted
     fragID += postingslist.second.size();
 

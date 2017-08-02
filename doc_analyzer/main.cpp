@@ -23,11 +23,11 @@ int main(int argc, char **argv) {
 }
 
 int doctest() {
-    DocumentStore store;
+    Structures::DocumentStore store;
     
     store.insertDocument("www.abc.com", "This is a document", 123, "23-01-3203");
     store.insertDocument("www.def.com", "Different document", 2, "12-03-2323");
-    DocumentTuple doc = store.getDocument("www.abc.com");
+    Structures::DocumentTuple doc = store.getDocument("www.abc.com");
     cout << doc.docID << " " << doc.doc << " " << doc.maxfragID << " " << doc.timestamp << endl;
     doc = store.getDocument("www.def.com");
     cout << doc.docID << " " << doc.doc << " " << doc.maxfragID << " " << doc.timestamp << endl;
@@ -83,59 +83,59 @@ int matchertest(int argc, char **argv) {
     string newfile{ istreambuf_iterator<char>(newstream), istreambuf_iterator<char>() };
     
     //Encode both files as lists of numbers
-    StringEncoder se(oldfile, newfile);
+    Matcher::StringEncoder se(oldfile, newfile);
     
     //Find common blocks between the two files
-    vector<Block*> commonblocks = getCommonBlocks(10, se);
+    vector<Matcher::Block*> commonblocks = Matcher::getCommonBlocks(10, se);
     
-    extendBlocks(commonblocks, se);
-    resolveIntersections(commonblocks);
+    Matcher::extendBlocks(commonblocks, se);
+    Matcher::resolveIntersections(commonblocks);
     
     int counter = 0;
-    for(Block* i : commonblocks){
+    for(Matcher::Block* i : commonblocks){
         cout << *i << endl;
         counter++;
     }
     cout << counter << endl;
     
-    BlockGraph G(commonblocks);
-    vector<Block*> vertices = G.getAllVertices();
-    for(Block* i : vertices) {
+    Matcher::BlockGraph G(commonblocks);
+    vector<Matcher::Block*> vertices = G.getAllVertices();
+    for(Matcher::Block* i : vertices) {
         cout << *i << endl;
         
-        vector<Block*> edges = G.getAdjacencyList(i);
-        for(Block* j : edges)
+        vector<Matcher::Block*> edges = G.getAdjacencyList(i);
+        for(Matcher::Block* j : edges)
             cout << "\t" << *j << endl;
     }
     cout << endl;
     
-    vector<Block*> topsort = topologicalSort(G);
-    for(Block* b : topsort) {
+    vector<Matcher::Block*> topsort = Matcher::topologicalSort(G);
+    for(Matcher::Block* b : topsort) {
         cout << *b << " ";
     }
     cout << endl;
     
-    DistanceTable disttable(blocks, G, topsort);
-    vector<DistanceTable::TableEntry> bestlist = disttable.findAllBestPaths();
+    Matcher::DistanceTable disttable(blocks, G, topsort);
+    vector<Matcher::DistanceTable::TableEntry> bestlist = disttable.findAllBestPaths();
     
     cout << "Steps\tWeight\tPath" << endl;
     for(size_t i = 0; i < bestlist.size(); ++i) {
         if(bestlist[i].current == nullptr) break;
         
-        vector<Block*> path = disttable.tracePath(bestlist[i]);
+        vector<Matcher::Block*> path = disttable.tracePath(bestlist[i]);
         cout << bestlist[i].steps << "\t" << bestlist[i].distance << "\t";
-        for(Block* j : path) {
+        for(Matcher::Block* j : path) {
             //cout << j;
             cout << *j << " ";
         }
         cout << endl;
     }
     
-    vector<Block*> finalpath = disttable.findOptimalPath(5);
+    vector<Matcher::Block*> finalpath = disttable.findOptimalPath(5);
     
-    vector<Translation> translist = getTranslations(se.getOldSize(), se.getNewSize(), finalpath);
+    vector<Matcher::Translation> translist = Matcher::getTranslations(se.getOldSize(), se.getNewSize(), finalpath);
     
-    for(Translation t : translist) {
+    for(Matcher::Translation t : translist) {
         cout << t.loc << " " << t.oldlen << " " << t.newlen << endl;
     }
     

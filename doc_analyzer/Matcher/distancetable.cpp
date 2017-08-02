@@ -10,129 +10,131 @@
 
 using namespace std;
 
-DistanceTable::DistanceTable(int blocklimit, BlockGraph& graph, vector<Block*>& toporder) : maxsteps(blocklimit) {
-    //Initialize all vertices in graph
-    //Since order doesn't matter, use toporder
-    for(Block* vertex : toporder) {
-        this->initVertex(vertex);
-    }
-    
-    //Fill out the dist list for each vertex
-    for(Block* vertex : toporder) {
-        vector<Block*> adjacencylist = graph.getAdjacencyList(vertex);
-        for(Block* neighbor : adjacencylist) {
-            this->mergeIntoNext(vertex, neighbor);
+namespace Matcher {
+    DistanceTable::DistanceTable(int blocklimit, BlockGraph& graph, vector<Block*>& toporder) : maxsteps(blocklimit) {
+        //Initialize all vertices in graph
+        //Since order doesn't matter, use toporder
+        for(Block* vertex : toporder) {
+            this->initVertex(vertex);
         }
-    }
-}
-
-vector<DistanceTable::TableEntry> DistanceTable::findAllBestPaths() {
-    //Initialize our vector to fit the results
-    //The actual list may be shorter than maxsteps if that graph can be traversed using
-    //less than "maxsteps" hops
-    vector<DistanceTable::TableEntry> bestlist;
-    bestlist.resize(maxsteps, DistanceTable::TableEntry(-1, -1, nullptr, nullptr));
-    
-    //find the longest distance
-    for(auto iter = tablelist.begin(); iter != tablelist.end(); iter++) {        
-        vector<DistanceTable::TableEntry> testtable = iter->second;
-        for(size_t i = 0; i < testtable.size(); i++) {;
-            if(testtable[i].distance > bestlist[i].distance) {
-                bestlist[i] = testtable[i];
+        
+        //Fill out the dist list for each vertex
+        for(Block* vertex : toporder) {
+            vector<Block*> adjacencylist = graph.getAdjacencyList(vertex);
+            for(Block* neighbor : adjacencylist) {
+                this->mergeIntoNext(vertex, neighbor);
             }
         }
     }
     
-    //Trim any null pairs remaining
-    while(bestlist.back().current == nullptr)
-        bestlist.pop_back();
-    
-    return bestlist;
-}
-
-vector<Block*> DistanceTable::findOptimalPath(int a) {
-    vector<DistanceTable::TableEntry> bestlist = findAllBestPaths();
-    //int refers to steps, not weight
-    DistanceTable::TableEntry bestending(-1, -1, nullptr, nullptr);
-    
-    int prevtotalweight = 0;
-    for(size_t i = 0; i < bestlist.size(); ++i) {
-        int curtotalweight = bestlist[i].distance;
-        if(curtotalweight == 0) break;
+    vector<DistanceTable::TableEntry> DistanceTable::findAllBestPaths() {
+        //Initialize our vector to fit the results
+        //The actual list may be shorter than maxsteps if that graph can be traversed using
+        //less than "maxsteps" hops
+        vector<DistanceTable::TableEntry> bestlist;
+        bestlist.resize(maxsteps, DistanceTable::TableEntry(-1, -1, nullptr, nullptr));
         
-        int margin = curtotalweight - prevtotalweight;
-        //ax - y > 0?
-        //If there isn't enough saved common text to take the next pair, then return the current one
-        if(margin < a*(i+1)) {
-            //Number of steps is one greater than the index
-            bestending = bestlist[i];
-            break;
+        //find the longest distance
+        for(auto iter = tablelist.begin(); iter != tablelist.end(); iter++) {        
+            vector<DistanceTable::TableEntry> testtable = iter->second;
+            for(size_t i = 0; i < testtable.size(); i++) {;
+                if(testtable[i].distance > bestlist[i].distance) {
+                    bestlist[i] = testtable[i];
+                }
+            }
         }
         
-        prevtotalweight = curtotalweight;
+        //Trim any null pairs remaining
+        while(bestlist.back().current == nullptr)
+            bestlist.pop_back();
+        
+        return bestlist;
     }
     
-    if(bestending.current == nullptr)
-        bestending = bestlist.back();
+    vector<Block*> DistanceTable::findOptimalPath(int a) {
+        vector<DistanceTable::TableEntry> bestlist = findAllBestPaths();
+        //int refers to steps, not weight
+        DistanceTable::TableEntry bestending(-1, -1, nullptr, nullptr);
+        
+        int prevtotalweight = 0;
+        for(size_t i = 0; i < bestlist.size(); ++i) {
+            int curtotalweight = bestlist[i].distance;
+            if(curtotalweight == 0) break;
+            
+            int margin = curtotalweight - prevtotalweight;
+            //ax - y > 0?
+            //If there isn't enough saved common text to take the next pair, then return the current one
+            if(margin < a*(i+1)) {
+                //Number of steps is one greater than the index
+                bestending = bestlist[i];
+                break;
+            }
+            
+            prevtotalweight = curtotalweight;
+        }
+        
+        if(bestending.current == nullptr)
+            bestending = bestlist.back();
+        
+        return tracePath(bestending);
+    }
     
-    return tracePath(bestending);
-}
-
-vector<Block*> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
-    vector<Block*> path;
-    if(ending.current == nullptr)
+    vector<Block*> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
+        vector<Block*> path;
+        if(ending.current == nullptr)
+            return path;
+        
+        path.push_back(ending.current);
+        DistanceTable::TableEntry candidate = ending;
+        
+        while(candidate.prev != nullptr) {
+            path.push_back(candidate.prev);
+            candidate = getPreviousEntry(candidate);
+        }
+        
+        reverse(path.begin(), path.end());
+        
         return path;
-    
-    path.push_back(ending.current);
-    DistanceTable::TableEntry candidate = ending;
-    
-    while(candidate.prev != nullptr) {
-        path.push_back(candidate.prev);
-        candidate = getPreviousEntry(candidate);
     }
     
-    reverse(path.begin(), path.end());
-    
-    return path;
-}
-
-void DistanceTable::mergeIntoNext(Block* prev, Block* next) {
-    int weight = next->run.size();
-    
-    //If neighbor's distlist is not large enough for comparing, resize it
-    if(tablelist[next].size() < tablelist[prev].size()+1)
-        tablelist[next].resize(tablelist[prev].size()+1, DistanceTable::TableEntry(-1, -1, nullptr, nullptr));
-
-    //Compare each entry in prev to the entry in next+1
-    for(size_t i = 0; i < tablelist[prev].size(); i++) {
-        if(tablelist[prev][i].current == nullptr)
-            continue;
+    void DistanceTable::mergeIntoNext(Block* prev, Block* next) {
+        int weight = next->run.size();
         
-        if(tablelist[prev][i].distance + weight > tablelist[next][i+1].distance) {
-            tablelist[next][i+1].steps = tablelist[prev][i].steps + 1;
-            tablelist[next][i+1].distance = tablelist[prev][i].distance + weight;
-            tablelist[next][i+1].current = next;
-            tablelist[next][i+1].prev = prev;
+        //If neighbor's distlist is not large enough for comparing, resize it
+        if(tablelist[next].size() < tablelist[prev].size()+1)
+            tablelist[next].resize(tablelist[prev].size()+1, DistanceTable::TableEntry(-1, -1, nullptr, nullptr));
+    
+        //Compare each entry in prev to the entry in next+1
+        for(size_t i = 0; i < tablelist[prev].size(); i++) {
+            if(tablelist[prev][i].current == nullptr)
+                continue;
+            
+            if(tablelist[prev][i].distance + weight > tablelist[next][i+1].distance) {
+                tablelist[next][i+1].steps = tablelist[prev][i].steps + 1;
+                tablelist[next][i+1].distance = tablelist[prev][i].distance + weight;
+                tablelist[next][i+1].current = next;
+                tablelist[next][i+1].prev = prev;
+            }
         }
+    
+        //If the table exceeds the number of steps, remove the extra entry
+        if(tablelist[next].size() > maxsteps)
+            tablelist[next].pop_back();
     }
-
-    //If the table exceeds the number of steps, remove the extra entry
-    if(tablelist[next].size() > maxsteps)
-        tablelist[next].pop_back();
-}
-
-DistanceTable::TableEntry DistanceTable::getPreviousEntry(DistanceTable::TableEntry te) {
-    if(te.steps < 2)
-        return DistanceTable::TableEntry(-1, -1, nullptr, nullptr);
-    //subtract one to offset step/index difference, subtract another one to get previous step
-    return tablelist[te.prev][te.steps-2];
-}
-
-void DistanceTable::initVertex(Block* V) {
-    if(tablelist.find(V) == tablelist.end()) {
-        vector<DistanceTable::TableEntry> tableinit;
-        tableinit.push_back(DistanceTable::TableEntry(1, V->run.size(), V, nullptr));
-        //Assume that nullptr refers to the source node
-        tablelist[V] = tableinit;
+    
+    DistanceTable::TableEntry DistanceTable::getPreviousEntry(DistanceTable::TableEntry te) {
+        if(te.steps < 2)
+            return DistanceTable::TableEntry(-1, -1, nullptr, nullptr);
+        //subtract one to offset step/index difference, subtract another one to get previous step
+        return tablelist[te.prev][te.steps-2];
+    }
+    
+    void DistanceTable::initVertex(Block* V) {
+        if(tablelist.find(V) == tablelist.end()) {
+            vector<DistanceTable::TableEntry> tableinit;
+            tableinit.push_back(DistanceTable::TableEntry(1, V->run.size(), V, nullptr));
+            //Assume that nullptr refers to the source node
+            tablelist[V] = tableinit;
+        }
     }
 }
