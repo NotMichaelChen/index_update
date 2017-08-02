@@ -7,6 +7,7 @@
 #include <sstream>
 #include <map>
 #include <string>
+#include <cstdio>
 #include <dirent.h>
 
 #include "reader.hpp"
@@ -16,7 +17,7 @@
 #include "strless.hpp"
 
 #define NO_DOC 10 //temporary use
-#define POSTING_LIMIT 1000 //make sure doesn't exceed memory limit
+#define POSTING_LIMIT 100 //make sure doesn't exceed memory limit
 #define INDEX "./test_data/compressedIndex"
 #define INFO "./test_data/docInfo"
 #define PDIR "./disk_index/positional/"
@@ -134,6 +135,7 @@ void Compressor::copy_and_paste(ifstream& ifile, ofstream& ofile, long start, lo
 		ifile.get(c);
 		ofile << c;
 	}
+    //cout << "Copy and pasting finished." << endl;
 }
 
 void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int indexnum, map<unsigned int, vector<mData>>& dict){
@@ -142,6 +144,7 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 	ifstream filei;
 	ofstream ofile;
     string pdir(PDIR);
+    char flag = 'Z';//determine the name of the output file
 	filez.open(pdir + "Z" + to_string(indexnum));
 	filei.open(pdir + "I" + to_string(indexnum));
 
@@ -149,6 +152,7 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 	if(ofile.tellp() != 0){
 		ofile.close();
 		ofile.open(pdir + "I0", ios::ate | ios::binary);
+        flag = 'I';
 	}
 
 	long ostart;
@@ -171,13 +175,17 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 			//decode and merge
 			//update meta data corresponding to the term
 			vector<Posting> vp1 = Reader::decompress(file1, it1->termID, dict);
+            vector<Posting> vp2 = Reader::decompress(file2, it2->termID, dict);
+/*
             for( vector<Posting>::iterator it = vp1.begin(); it != vp1.end(); it ++){
                 cout << it->termID << ' ' << it->docID << ' ' << it->fragID << ' ' << it->pos << endl;
             }
-			vector<Posting> vp2 = Reader::decompress(file2, it2->termID, dict);
+            cout << endl;
             for( vector<Posting>::iterator it = vp2.begin(); it != vp2.end(); it ++){
                 cout << it->termID << ' ' << it->docID << ' ' << it->fragID << ' ' << it->pos << endl;
             }
+            cout << endl;
+*/
 			vector<Posting> vpout; //store the sorted result
 
 			//use NextGQ to write the sorted vector of Posting to disk
@@ -186,8 +194,9 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 			while( vpit1 != vp1.end() && vpit2 != vp2.end() ){
 				//NextGQ
 				if( *vpit1 < *vpit2 ){
-                    cout << vpit1->termID << ' ' << vpit1->docID << ' ' << vpit1->fragID << ' ' << vpit1->pos << endl;
-                    cout << vpit2->termID << ' ' << vpit2->docID << ' ' << vpit2->fragID << ' ' << vpit2->pos << endl;
+                    //cout << vpit1->termID << ' ' << vpit1->docID << ' ' << vpit1->fragID << ' ' << vpit1->pos << endl;
+                    //cout << vpit2->termID << ' ' << vpit2->docID << ' ' << vpit2->fragID << ' ' << vpit2->pos << endl;
+
 					vpout.push_back(*vpit1);
 					vpit1 ++;
 				}
@@ -200,17 +209,21 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 					break;
 				}
 			}
-            if( vpit1 != vp1.end()){
+            while( vpit1 != vp1.end()){
                 vpout.push_back(*vpit1);
                 vpit1 ++;
             }
-            else if( vpit2 != vp2.end()){
+            while( vpit2 != vp2.end()){
                 vpout.push_back(*vpit2);
                 vpit2 ++;
             }
-
+/*
+            for( vector<Posting>::iterator it = vpout.begin(); it != vpout.end(); it ++){
+                cout << it->termID << ' ' << it->docID << ' ' << it->fragID << ' ' << it->pos << endl;
+            }
+*/
 			update_t_meta(it1->termID, file1, file2, dict);
-			compress_p(vpout, filemeta, dict, indexnum + 1);
+			compress_p(vpout, filemeta, dict, indexnum + 1, flag);
 			it1 ++;
 			it2 ++;
 		}
@@ -223,26 +236,43 @@ void Compressor::merge(map<string, vector<f_meta>, strless>& filemeta, int index
 			it2 ++;
 		}
 	}
-	//following can be streamlined so that it is copied till end of file
+    cout << "NextGQ finished." << endl;
+
+	//copy and paste the unfinished index
 	if (it1 != v1.end() ){
-		for(vector<f_meta>::iterator it = it1; it != v1.end(); it++){
-			copy_and_paste(filez, ofile, it->start_pos, it->end_pos);
-		}
+        cout << "Filez not finished." << endl;
+        filez.seekg(it1->start_pos);
+    	char c;
+    	while(filez.get(c)){
+    		ofile << c;
+    	}
 	}
 	if (it2 != v2.end() ){
-		for(vector<f_meta>::iterator it = it2; it != v2.end(); it++){
-			copy_and_paste(filei, ofile, it2->start_pos, it2->end_pos);
-		}
+        cout << "Filei not finished." << endl;
+        filez.seekg(it2->start_pos);
+    	char c;
+    	while(filez.get(c)){
+    		ofile << c;
+    	}
 	}
 	//update_f_meta(filemeta, pdir + "Z" + to_string(indexnum), pdir + "I" + to_string(indexnum));
 	filez.close();
 	filei.close();
 	ofile.close();
-	//TODO: delete two old files
-}
+    string filename1 = pdir + "Z" + to_string(indexnum);
+    string filename2 = pdir + "I" + to_string(indexnum);
 
-//TODO
-//!none_of(begin(files), std::end(files), string("I") + to_string(indexnum))
+    //deleting two files
+    if( remove( filename1.c_str() ) != 0 )
+        cout << "Error deleting file" << endl;
+    else
+        cout << "File successfully deleted" << endl;
+
+    if( remove( filename2.c_str() ) != 0 )
+        cout << "Error deleting file" << endl;
+    else
+        cout << "File successfully deleted" << endl;
+}
 
 bool Compressor::check_contain(vector<string> v, string f){
     for( vector<string>::iterator it = v.begin(); it != v.end(); it ++){
@@ -252,6 +282,7 @@ bool Compressor::check_contain(vector<string> v, string f){
 }
 
 void Compressor::merge_test(map<string, vector<f_meta>, strless>& filemeta, map<unsigned int, vector<mData>>& dict){
+    cout << "Merge testing " << endl;
 	int indexnum = 0;
 	string dir = string(PDIR);
 	vector<string> files = read_directory(dir);
@@ -368,7 +399,7 @@ vector<uint8_t> Compressor::compress(std::vector<unsigned int>& field, int metho
 	}
 }
 
-mData Compressor::compress_p(string namebase, ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
+mData Compressor::compress_p(string namebase, ofstream& ofile, f_meta& fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
     string filename = string(PDIR) + namebase;
 
 	std::vector<unsigned int> v_last_id;
@@ -418,27 +449,41 @@ mData Compressor::compress_p(string namebase, ofstream& ofile, f_meta fm, std::v
 	return meta;
 }
 
-void Compressor::compress_p(std::vector<Posting>& pList, std::map<string, vector<f_meta>, strless>& filemeta, map<unsigned int, vector<mData>>& dict, int indexnum){
+void Compressor::compress_p(std::vector<Posting>& pList, std::map<string, vector<f_meta>, strless>& filemeta, map<unsigned int, vector<mData>>& dict, int indexnum, char prefix){
 	//pass in forward index of same termID
 	//compress positional index
 	ofstream ofile;//positional inverted index
     string pdir(PDIR);
-	string filename = pdir + "Z" + to_string(indexnum);
     string namebase;
-	ofile.open(filename, ofstream::app | ofstream::binary);
+    string filename;
+    if(prefix == 'a'){
+        filename = pdir + "Z" + to_string(indexnum);
+    	ofile.open(filename, ofstream::app | ofstream::binary);
 
-	if(ofile.tellp() != 0){
-        cout << filename << " already exists." << endl;
-		ofile.close();
-		filename = pdir + "I" + to_string(indexnum);
-        ofile.open(filename, ios::ate | ios::binary);
-        namebase = string("I") + to_string(indexnum);
-	}else{
+    	if(ofile.tellp() != 0){
+            cout << filename << " already exists." << endl;
+    		ofile.close();
+    		filename = pdir + "I" + to_string(indexnum);
+            ofile.open(filename, ios::ate | ios::binary);
+            namebase = string("I") + to_string(indexnum);
+    	}else{
+            namebase = string("Z") + to_string(indexnum);
+        }
+    }else{
+        filename = pdir + prefix + to_string(indexnum);
+    	ofile.open(filename, ofstream::app | ofstream::binary);
         namebase = string("Z") + to_string(indexnum);
     }
 
     if (ofile.is_open()){
-        cout << " Compressing and writing to " << namebase << endl;
+        cout << "Compressing and writing to " << namebase << endl;
+/*
+        for( vector<Posting>::iterator it = pList.begin(); it != pList.end(); it ++){
+            cout << it->termID << ' ' << it->docID << ' ' << it->fragID << ' ' << it->pos << endl;
+        }
+        cout << "end of plist" << endl;
+*/
+
         std::vector<unsigned int> v_docID;
     	std::vector<unsigned int> v_fragID;
     	std::vector<unsigned int> v_pos;
@@ -447,9 +492,10 @@ void Compressor::compress_p(std::vector<Posting>& pList, std::map<string, vector
     	unsigned int num_of_p = 0;//number of posting of a certain term
 
     	unsigned int currID = pList[0].termID;//the ID of the term that is currently processing
-    	for(std::vector<Posting>::iterator it = pList.begin(); it != pList.end(); it++){
-            //cout << "for loop" << endl;
-    		while(it->termID == currID){
+        vector<Posting>::iterator it = pList.begin();
+    	while( it != pList.end() ){
+            //cout << it->termID << ' ' << it->docID << ' ' << it->fragID << ' ' << it->pos << endl;
+    		while(it->termID == currID && it != pList.end()){
     			v_docID.push_back(it->docID);
     			v_fragID.push_back(it->fragID);
     			v_pos.push_back(it->pos);
@@ -470,23 +516,11 @@ void Compressor::compress_p(std::vector<Posting>& pList, std::map<string, vector
     		v_docID.clear();
     		v_fragID.clear();
     		v_pos.clear();
-            v_docID.push_back(it->docID);
-            v_fragID.push_back(it->fragID);
-            v_pos.push_back(it->pos);
     	}
 
     	ofile.close();
 
-        for( map<unsigned int, vector<mData>>::iterator it = dict.begin(); it != dict.end(); it ++){
-            cout << it->first << endl;
-            vector<mData> vec = it->second;
-            for( vector<mData>::iterator ite = vec.begin(); ite != vec.end(); ite ++){
-                cout << ite->filename << ' ' << ite->start_pos << endl;
-            }
-            cout << endl;
-        }
-        
-        merge_test(filemeta, dict);//see if need to merge
+        //merge_test(filemeta, dict);//see if need to merge
     }else{
         cerr << "File cannot be opened." << endl;
     }
@@ -537,6 +571,7 @@ void Compressor::start_compress(map<string, vector<f_meta>, strless>& filemeta, 
 			if (invert_index.size() == POSTING_LIMIT){ // make sure doesn't exceed memory
 				std::sort(invert_index.begin(), invert_index.end(), less_than_key());
 				compress_p(invert_index, filemeta, dict);
+                merge_test(filemeta, dict);//see if need to merge
                 cout << "Exceeds" << endl;
 				invert_index.clear();
 			}
@@ -545,6 +580,7 @@ void Compressor::start_compress(map<string, vector<f_meta>, strless>& filemeta, 
 	}
     std::sort(invert_index.begin(), invert_index.end(), less_than_key());
     compress_p(invert_index, filemeta, dict);
+    merge_test(filemeta, dict);//see if need to merge
     cout << "Last bunch" << endl;
     invert_index.clear();
 
@@ -739,8 +775,6 @@ int main(){
         cout << endl;
     }
     */
-
-
 
     /*Querior q;
     string str;
