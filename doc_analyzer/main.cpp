@@ -75,18 +75,20 @@ int matchertest(int argc, char **argv) {
     }
     
     //Get filestreams of the two files
-    ifstream oldfile(oldfilename);
-    ifstream newfile(newfilename);
+    ifstream oldstream(oldfilename);
+    ifstream newstream(newfilename);
+    
+    //https://www.reddit.com/r/learnprogramming/comments/3qotqr/how_can_i_read_an_entire_text_file_into_a_string/cwh8m4d/
+    string oldfile{ istreambuf_iterator<char>(oldstream), istreambuf_iterator<char>() };
+    string newfile{ istreambuf_iterator<char>(newstream), istreambuf_iterator<char>() };
     
     //Encode both files as lists of numbers
-    StringEncoder se;
-    vector<int> oldstream = se.encodeFile(oldfile);
-    vector<int> newstream = se.encodeFile(newfile);
+    StringEncoder se(oldfile, newfile);
     
     //Find common blocks between the two files
-    vector<Block*> commonblocks = getCommonBlocks(10, oldstream, newstream);
+    vector<Block*> commonblocks = getCommonBlocks(10, se);
     
-    extendBlocks(commonblocks, oldstream, newstream);
+    extendBlocks(commonblocks, se);
     resolveIntersections(commonblocks);
     
     int counter = 0;
@@ -131,7 +133,7 @@ int matchertest(int argc, char **argv) {
     
     vector<Block*> finalpath = disttable.findOptimalPath(5);
     
-    vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);
+    vector<Translation> translist = getTranslations(se.getOldSize(), se.getNewSize(), finalpath);
     
     for(Translation t : translist) {
         cout << t.loc << " " << t.oldlen << " " << t.newlen << endl;

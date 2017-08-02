@@ -59,34 +59,6 @@ StringEncoder::StringEncoder(string& oldfile, string& newfile) : nextcode(0) {
     }
 }
 
-vector<int> StringEncoder::encodeFile(ifstream& file) {
-    vector<int> encodedlist;
-    if(!file) {
-        cout << "Error: Could not open file" << endl;
-        exit(EXIT_FAILURE);
-    }
-    
-    //Assume given file is already parsed
-    
-    string word;
-    while(file >> word) {
-        transform(word.begin(), word.end(), word.begin(), ::tolower);
-        
-        //Add the token/word into the dictionary if it's not in there yet,
-        //giving it a unique identifier as indicated by nextcode
-        if(dictionary.find(word) == dictionary.end()) {
-            dictionary[word] = nextcode;
-            lookup.push_back(word);
-            nextcode++;
-        }
-        
-        //Add the integer representation of the word into the list of ints
-        encodedlist.push_back(dictionary[word]);
-    }
-    
-    return encodedlist;
-}
-
 //Decodes a stream of ints into a list of words
 //Unknown ints are replaced with ??
 vector<string> StringEncoder::decodeStream(vector<int>& stream) {
@@ -113,8 +85,16 @@ vector<int>::const_iterator StringEncoder::getOldIter() {
     return oldencoded.cbegin();
 }
 
+vector<int>::const_iterator StringEncoder::getOldEnd() {
+    return oldencoded.cend();
+}
+
 vector<int>::const_iterator StringEncoder::getNewIter() {
     return newencoded.cbegin();
+}
+
+vector<int>::const_iterator StringEncoder::getNewEnd() {
+    return newencoded.cend();
 }
 
 int StringEncoder::getOldSize() {

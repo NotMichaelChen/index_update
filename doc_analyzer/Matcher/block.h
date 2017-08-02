@@ -4,6 +4,8 @@
 #include <vector>
 #include <iostream>
 
+#include "stringencoder.h"
+
 //Represents a block of text which may be common between the two files
 struct Block {
     //The "run" of common text
@@ -20,8 +22,8 @@ bool compareOld(const Block* lhs, const Block* rhs);
 //Compare blocks based on location in new file
 bool compareNew(const Block* lhs, const Block* rhs);
 
-std::vector<Block*> getCommonBlocks(int minsize, const std::vector<int>& oldfile, const std::vector<int>& newfile);
-void extendBlocks(std::vector<Block*>& allblocks, const std::vector<int>& oldfile, const std::vector<int>& newfile);
+std::vector<Block*> getCommonBlocks(int minsize, StringEncoder& se);
+void extendBlocks(std::vector<Block*>& allblocks, StringEncoder& se);
 void resolveIntersections(std::vector<Block*>& allblocks);
 unsigned int hashVector(std::vector<int>& v);
 

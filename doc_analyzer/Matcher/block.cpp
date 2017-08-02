@@ -5,6 +5,8 @@
 #include <map>
 #include <iostream>
 
+#include "stringencoder.h"
+
 using namespace std;
 
 ostream& operator<<(ostream& os, const Block& bl) {
@@ -20,7 +22,7 @@ bool compareNew(const Block* lhs, const Block* rhs) {
 }
 
 //Gets all common blocks between the two files of length minsize
-vector<Block*> getCommonBlocks(int minsize, const vector<int>& oldfile, const vector<int>& newfile) {
+vector<Block*> getCommonBlocks(int minsize, StringEncoder& se) {
     vector<Block*> commonblocks;
     
     //Represents all possible blocks from the old file
@@ -30,17 +32,18 @@ vector<Block*> getCommonBlocks(int minsize, const vector<int>& oldfile, const ve
     multimap<unsigned int, vector<int>> potentialblocks;
     
     //Get all possible blocks in the old file
-    for(size_t i = 0; i <= oldfile.size() - minsize; i++) {
-        vector<int> newblock(&oldfile[i], &oldfile[i+minsize]);
+    for(auto olditer = se.getOldIter(); olditer != se.getOldEnd(); ++olditer) {
+        vector<int> newblock(olditer, olditer+minsize+1);
         //hash the block before inserting oldloc
         unsigned int blockhash = hashVector(newblock);
-        newblock.push_back(i);
+        //calculation is equivalent to getting the index of olditer
+        newblock.push_back(olditer - se.getOldIter());
         potentialblocks.insert(make_pair(blockhash, newblock));
     }
     
     //Check each block in the new file for a match with a block in the old file
-    for(size_t i = 0; i <= newfile.size() - minsize; i++) {
-        vector<int> blockcheck(&newfile[i], &newfile[i+minsize]);
+    for(auto newiter = se.getNewIter(); newiter != se.getNewEnd(); ++newiter) {
+        vector<int> blockcheck(newiter, newiter+minsize+1);
         unsigned int blockhash = hashVector(blockcheck);
         
         //Get all blocks that match the current block's hash
@@ -53,7 +56,7 @@ vector<Block*> getCommonBlocks(int minsize, const vector<int>& oldfile, const ve
                 Block* newblock = new Block;
                 newblock->run = blockcheck;
                 newblock->oldloc = oldloc;
-                newblock->newloc = i;
+                newblock->newloc = newiter - se.getNewIter();
                 
                 commonblocks.push_back(newblock);
             }
@@ -66,7 +69,7 @@ vector<Block*> getCommonBlocks(int minsize, const vector<int>& oldfile, const ve
 }
 
 //Attempt to extend common blocks
-void extendBlocks(vector<Block*>& allblocks, const vector<int>& oldfile, const vector<int>& newfile) {
+void extendBlocks(vector<Block*>& allblocks, StringEncoder& se) {
     //Sort based on old locations
     sort(allblocks.begin(), allblocks.end(), compareOld);
     
@@ -77,13 +80,15 @@ void extendBlocks(vector<Block*>& allblocks, const vector<int>& oldfile, const v
         //indexes are now pointing beyond the block
         int oldfileindex = allblocks[index]->oldloc + blocklength;
         int newfileindex = allblocks[index]->newloc + blocklength;
+        auto olditer = se.getOldIter();
+        auto newiter = se.getNewIter();
         
         //Attempt to extend the block
-        while(oldfileindex < oldfile.size() && newfileindex < newfile.size() && oldfile[oldfileindex] == newfile[newfileindex]) {
+        while(olditer != se.getOldEnd() && newiter != se.getNewEnd() && *olditer == *newiter) {
             //Append the new word
-            allblocks[index]->run.push_back(oldfile[oldfileindex]);
-            oldfileindex++;
-            newfileindex++;
+            allblocks[index]->run.push_back(*olditer);
+            ++olditer;
+            ++newiter;
         }
         
         //if we successfully extended the block, check for possible overlaps

@@ -18,6 +18,9 @@ public:
     
     std::vector<int>::const_iterator getOldIter();
     std::vector<int>::const_iterator getNewIter();
+    std::vector<int>::const_iterator getOldEnd();
+    std::vector<int>::const_iterator getNewEnd();
+
     
     int getOldSize();
     int getNewSize();
@@ -27,8 +30,8 @@ private:
     std::vector<int> oldencoded;
     std::vector<int> newencoded;
     //lists of terms that appear only in the old or new file
-    std::vector<int> oldexclusive;
-    std::vector<int> newexclusive;
+    std::vector<std::string> oldexclusive;
+    std::vector<std::string> newexclusive;
     //Maps words to numbers
     std::unordered_map<std::string, int> dictionary;
     //Maps numbers (index) to words

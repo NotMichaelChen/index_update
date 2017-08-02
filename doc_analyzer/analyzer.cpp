@@ -37,8 +37,8 @@ void makePosts(string& url, unsigned int doc_id, string& oldpage, string& newpag
     StringEncoder se(oldpage, newpage);
     
     //Find common blocks between the two files
-    vector<Block*> commonblocks = getCommonBlocks(MIN_BLOCK_SIZE, se.getOldIter(), se.getNewIter());
-    extendBlocks(commonblocks, se.getOldIter(), se.getNewIter());
+    vector<Block*> commonblocks = getCommonBlocks(MIN_BLOCK_SIZE, se);
+    extendBlocks(commonblocks, se);
     resolveIntersections(commonblocks);
     
     //Create a graph of the common blocks
