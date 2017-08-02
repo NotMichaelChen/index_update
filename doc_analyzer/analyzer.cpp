@@ -1,17 +1,12 @@
 #include "analyzer.h"
 
 #include <vector>
-#include <unordered_map>
 #include <utility>
-#include <algorithm>
 
 #include "Matcher/matcher.h"
 #include "Matcher/stringencoder.h"
-#include "postings.h"
-#include "Matcher/block.h"
-#include "Matcher/graph.h"
-#include "Matcher/distancetable.h"
 #include "Matcher/translate.h"
+#include "postings.h"
 
 #define MIN_BLOCK_SIZE 10
 #define MAX_BLOCK_COUNT 20

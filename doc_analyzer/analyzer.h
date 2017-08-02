@@ -1,7 +1,6 @@
 #ifndef ANALYZER_H
 #define ANALYZER_H
 
-#include <vector>
 #include <string>
 #include <utility>
 
