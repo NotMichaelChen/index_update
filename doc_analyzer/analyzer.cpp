@@ -1,6 +1,5 @@
 #include "analyzer.h"
 
-#include <fstream>
 #include <vector>
 #include <unordered_map>
 #include <utility>
@@ -17,18 +16,7 @@
 
 using namespace std;
 
-/* TODO
- * max fragid can be found by looking at the translation list's size for the given document
- * decide whether to store max fragid in document store or use above trick
- * are the translation lists/document store global or passed in?
- * find out where posting structs should be defined
- * implement document store
- * implement block selection count calculation
- * time to start merging code with Fengyuan?
- * refactor everything
- */
-
-void indexUpdate(string& url, ifstream& newpage) {
+void indexUpdate(string& url, string& newpage) {
     //-fetch the previous version, and the did of the document, from a tuple store or database (TBD)
 
     //-call makePosts(URL, did, currentpage, previouspage), which generates and returns the new postings that you are creating by your matching algorithm (that is, non-positional and position postings) and the additional translation statements to be appended.
@@ -40,23 +28,17 @@ void indexUpdate(string& url, ifstream& newpage) {
     //-and store the currentpage instead of the previouspage in the tuple store.
 }
 
-void makePosts(string& url, unsigned int doc_id, ifstream& oldpage, ifstream& newpage) {
+void makePosts(string& url, unsigned int doc_id, string& oldpage, string& newpage) {
     //-check if there was a previous version, if not create postings with fragid = 0
     int fragID;
-    
-    if(!oldpage.is_open()) {
-        fragID = 0;
-    }
 
     //-else, run the graph based matching algorithm on the two versions
     //Encode both files as lists of numbers
-    StringEncoder se;
-    vector<int> oldstream = se.encodeFile(oldpage);
-    vector<int> newstream = se.encodeFile(newpage);
+    StringEncoder se(oldpage, newpage);
     
     //Find common blocks between the two files
-    vector<Block*> commonblocks = getCommonBlocks(MIN_BLOCK_SIZE, oldstream, newstream);
-    extendBlocks(commonblocks, oldstream, newstream);
+    vector<Block*> commonblocks = getCommonBlocks(MIN_BLOCK_SIZE, se.getOldIter(), se.getNewIter());
+    extendBlocks(commonblocks, se.getOldIter(), se.getNewIter());
     resolveIntersections(commonblocks);
     
     //Create a graph of the common blocks
@@ -68,9 +50,9 @@ void makePosts(string& url, unsigned int doc_id, ifstream& oldpage, ifstream& ne
     vector<Block*> finalpath = disttable.findOptimalPath(5);
     
     //Get the translation and posting list
-    vector<Translation> translist = getTranslations(oldstream.size(), newstream.size(), finalpath);
+    vector<Translation> translist = getTranslations(se.getOldSize(), se.getNewSize(), finalpath);
     //TODO: get the maximum fragid and pass it in
-    auto postingslist = getPostings(commonblocks, doc_id, 0, oldstream, newstream, se);
+    auto postingslist = getPostings(commonblocks, doc_id, 0, se);
     //Number of fragIDs used is exactly proportional to the number of positional postings inserted
     fragID += postingslist.second.size();
 
@@ -79,7 +61,7 @@ void makePosts(string& url, unsigned int doc_id, ifstream& oldpage, ifstream& ne
 
 //TODO: refactor and decide if this should be one or two functions
 pair<vector<NonPositionalPosting>, vector<PositionalPosting>>
-getPostings(vector<Block*>& commonblocks, unsigned int doc_id, unsigned int fragID, vector<int>& oldstream, vector<int>& newstream, StringEncoder& se) {
+getPostings(vector<Block*>& commonblocks, unsigned int doc_id, unsigned int fragID, StringEncoder& se) {
     //Which block to skip next
     int blockindex = 0;
     unordered_map<string, NonPositionalPosting> nppostingsmap;
@@ -89,7 +71,7 @@ getPostings(vector<Block*>& commonblocks, unsigned int doc_id, unsigned int frag
     
     //Sort blocks based on oldindex first
     sort(commonblocks.begin(), commonblocks.end(), compareOld);
-    while(index < oldstream.size()) {
+    while(index < se.getOldSize()) {
         if(index >= commonblocks[blockindex]->oldloc) {
             //This causes i to be located right after the common block
             index += commonblocks[blockindex]->run.size();
@@ -98,7 +80,7 @@ getPostings(vector<Block*>& commonblocks, unsigned int doc_id, unsigned int frag
         else {
             //Edited sections in old file are considered "deleted", so decrement frequency
             
-            string decodedword = se.decodeNum(oldstream[index]);
+            string decodedword = se.decodeNum(*(se.getOldIter()+index));
             //Word already indexed
             if(nppostingsmap.find(decodedword) != nppostingsmap.end()) {
                 nppostingsmap.at(decodedword).freq -= 1;
@@ -114,7 +96,7 @@ getPostings(vector<Block*>& commonblocks, unsigned int doc_id, unsigned int frag
     index = 0;
     blockindex = 0;
     sort(commonblocks.begin(), commonblocks.end(), compareNew);
-    while(index < newstream.size()) {
+    while(index < se.getNewSize()) {
         if(index >= commonblocks[blockindex]->newloc) {
             //This causes i to be located right after the common block
             index += commonblocks[blockindex]->run.size();
@@ -122,7 +104,7 @@ getPostings(vector<Block*>& commonblocks, unsigned int doc_id, unsigned int frag
         }
         else {
             //Edited sections in new file are considered "inserted"
-            string decodedword = se.decodeNum(oldstream[index]);
+            string decodedword = se.decodeNum(*(se.getNewIter()+index));
             //Word already indexed in nonpositional map
             if(nppostingsmap.find(decodedword) != nppostingsmap.end()) {
                 nppostingsmap.at(decodedword).freq += 1;

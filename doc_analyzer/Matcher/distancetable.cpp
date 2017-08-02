@@ -122,6 +122,8 @@ void DistanceTable::mergeIntoNext(Block* prev, Block* next) {
 }
 
 DistanceTable::TableEntry DistanceTable::getPreviousEntry(DistanceTable::TableEntry te) {
+    if(te.steps < 2)
+        return DistanceTable::TableEntry(-1, -1, nullptr, nullptr);
     //subtract one to offset step/index difference, subtract another one to get previous step
     return tablelist[te.prev][te.steps-2];
 }
