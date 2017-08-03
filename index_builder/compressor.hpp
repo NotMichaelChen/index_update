@@ -15,7 +15,7 @@ public:
 
   	void update_f_meta(std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::string s1, std::string s2);
 
-	void update_t_meta(unsigned int termID, std::string file1, std::string file2, std::map<unsigned int, std::vector<mData>>& dict);
+	void update_t_meta(unsigned int termID, std::string file, std::map<unsigned int, std::vector<mData>>& dict);
 
 	void copy_and_paste(std::ifstream& ifile, std::ofstream& ofile, long start, long end);
 
@@ -37,9 +37,9 @@ public:
 
 	std::vector<uint8_t> compress(std::vector<unsigned int>& field, int method, int sort, std::vector<uint8_t> &meta_data_biv);
 
-	mData compress_p(std::string namebase, std::ofstream& ofile, f_meta fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos);
+	mData compress_p(std::string namebase, std::ofstream& ofile, f_meta& fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos);
 
-	void compress_p(std::vector<Posting>& pList, std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::vector<mData>>& dict, int indexnum = 0);
+	void compress_p(std::vector<Posting>& pList, std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::vector<mData>>& dict, int indexnum = 0, char prefix = 'a');
 
 	void start_compress(std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::vector<mData>>& dict);
 };
