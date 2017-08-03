@@ -9,7 +9,7 @@
 using namespace std;
 
 namespace Structures {
-    DocumentStore::DocumentStore() : nextid(0) {
+    DocumentStore::DocumentStore() {
         #ifdef _WIN32
             //! Windows netword DLL init
             WORD version = MAKEWORD(2, 2);
@@ -85,6 +85,13 @@ namespace Structures {
     }
     
     int DocumentStore::getNextDocID() {
-        return nextid;
+        string nextid;
+        client.get("nextid", [&nextid](cpp_redis::reply& reply) {
+            nextid = reply.as_string();
+        });
+        
+        client.sync_commit();
+        
+        return stoi(nextid);
     }
 }

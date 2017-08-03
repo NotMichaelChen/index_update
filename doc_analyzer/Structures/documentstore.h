@@ -28,7 +28,6 @@ namespace Structures {
         //key: url
         //val: docID, doc, maxfragID, timestamp
         cpp_redis::redis_client client;
-        int nextid;
     };
 }
 

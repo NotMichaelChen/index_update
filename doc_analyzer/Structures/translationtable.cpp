@@ -70,8 +70,7 @@ namespace Structures {
     }
     
     void TranslationTable::erase(int docID) {
-        vector<string> keys = {to_string(docID)};
-        client.del(keys);
+        client.del( {to_string(docID)} );
         client.commit();
     }
     
