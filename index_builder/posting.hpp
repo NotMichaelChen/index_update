@@ -20,4 +20,16 @@ public:
 	unsigned int pos;
 };
 
+class nPosting{
+public:
+	nPosting ();
+	~nPosting ();
+	nPosting (unsigned int id, unsigned int d, unsigned int f, unsigned int s = 1);
+
+	unsigned int termID;
+	unsigned int docID;
+	unsigned int freq;
+	unsigned int sign;
+};
+
 #endif

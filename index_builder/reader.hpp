@@ -16,7 +16,9 @@ public:
 
 	static std::vector<unsigned int> VBDecode(std::vector<char>& vec);
 
-	static std::vector<Posting> decompress(std::string namebase, unsigned int termID, std::map<unsigned int, std::vector<mData>>& dict);
+	static std::vector<Posting> decompress_p(std::string namebase, unsigned int termID, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict);
+
+	std::vector<nPosting> decompress_np(std::string namebase, unsigned int termID, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict);
 };
 
 #endif
