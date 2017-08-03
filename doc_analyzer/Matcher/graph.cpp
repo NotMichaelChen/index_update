@@ -18,7 +18,7 @@ namespace Matcher {
         sort(commonblocks.begin(), commonblocks.end(), compareOld);
         
         //Create adjacency list for every block
-        for(int i = 0; i < commonblocks.size(); i++) {
+        for(size_t i = 0; i < commonblocks.size(); i++) {
             Block* current = commonblocks[i];
             G[current] = vector<Block*>();
             

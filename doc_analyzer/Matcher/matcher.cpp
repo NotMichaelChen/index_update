@@ -35,7 +35,7 @@ namespace Matcher {
         unordered_map<string, NonPositionalPosting> nppostingsmap;
         unordered_map<string, PositionalPosting> ppostingsmap;
         
-        unsigned int index = 0;
+        int index = 0;
         
         //Sort blocks based on oldindex first
         sort(commonblocks.begin(), commonblocks.end(), compareOld);

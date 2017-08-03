@@ -22,25 +22,20 @@ namespace Matcher {
         return lhs->newloc < rhs->newloc;
     }
     
-    //Gets all common blocks between the two files of length minsize
     vector<Block*> getCommonBlocks(int minsize, StringEncoder& se) {
         vector<Block*> commonblocks;
-        
-        //Represents all possible blocks from the old file
-        //Last element of vector is oldloc
-        //<hash, block>
-        //Hash is computed without oldloc in vector
-        multimap<unsigned int, vector<int>> potentialblocks;
-        
+       
+        //Stores a "candidate block", extracted from the old doc
+        //Each candidate can be matched multiple times with blocks from the new doc 
+        multimap<unsigned int, Block> potentialblocks;
+       
         //Get all possible blocks in the old file
         //no need to subtract 1 from se.getOldEnd, since it points past the end
         for(auto olditer = se.getOldIter(); olditer != se.getOldEnd() - minsize; ++olditer) {
             vector<int> newblock(olditer, olditer+minsize);
-            //hash the block before inserting oldloc
             unsigned int blockhash = hashVector(newblock);
-            //calculation is equivalent to getting the index of olditer
-            newblock.push_back(olditer - se.getOldIter());
-            potentialblocks.insert(make_pair(blockhash, newblock));
+            Block tempblock(olditer - se.getOldIter(), -1, newblock);
+            potentialblocks.insert(make_pair(blockhash, tempblock));
         }
         
         //Check each block in the new file for a match with a block in the old file
@@ -50,20 +45,16 @@ namespace Matcher {
             
             //Get all blocks that match the current block's hash
             auto blockmatchrange = potentialblocks.equal_range(blockhash);
-            for(auto iter = blockmatchrange.first; iter != blockmatchrange.second; ++iter) {
-                //Remove oldloc before confirming equality
-                int oldloc = (*iter).second.back();
-                (*iter).second.pop_back();
-                if(blockcheck == (*iter).second) {
-                    Block* newblock = new Block;
-                    newblock->run = blockcheck;
-                    newblock->oldloc = oldloc;
-                    newblock->newloc = newiter - se.getNewIter();
+            for(auto matchedblock = blockmatchrange.first; matchedblock != blockmatchrange.second; ++matchedblock) {
+                if(blockcheck == matchedblock->second.run) {
+                    Block* match = new Block(
+                        matchedblock->second.oldloc,
+                        newiter - se.getNewIter(),
+                        matchedblock->second.run
+                    );
                     
-                    commonblocks.push_back(newblock);
+                    commonblocks.push_back(match);
                 }
-                //Put oldloc back for later use
-                (*iter).second.push_back(oldloc);
             }
         }
         
@@ -140,10 +131,12 @@ namespace Matcher {
                 if(allblocks[j]->oldloc + allblocks[j]->run.size()-1 > allblocks[i]->oldloc + allblocks[i]->run.size()-1) {
                     //calculate how much the current block needs to shrink by
                     int shrunksize = allblocks[j]->oldloc - allblocks[i]->oldloc;
-                    Block* shrunkblock = new Block;
-                    shrunkblock->run = vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize);
-                    shrunkblock->oldloc = allblocks[i]->oldloc;
-                    shrunkblock->newloc = allblocks[i]->newloc;
+                    Block* shrunkblock = new Block(
+                        allblocks[i]->oldloc,
+                        allblocks[i]->newloc,
+                        vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)
+                    );
+                    
                     addedblocks.push_back(shrunkblock);
                 }
             }
@@ -159,10 +152,12 @@ namespace Matcher {
                 
                 if(allblocks[j]->newloc + allblocks[j]->run.size()-1 > allblocks[i]->newloc + allblocks[i]->run.size()-1) {
                     int shrunksize = allblocks[j]->newloc - allblocks[i]->newloc;
-                    Block* shrunkblock = new Block;
-                    shrunkblock->run = vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize);
-                    shrunkblock->oldloc = allblocks[i]->oldloc;
-                    shrunkblock->newloc = allblocks[i]->newloc;
+                    Block* shrunkblock = new Block(
+                        allblocks[i]->oldloc,
+                        allblocks[i]->newloc,
+                        vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)
+                    );
+                    
                     addedblocks.push_back(shrunkblock);
                 }
             }

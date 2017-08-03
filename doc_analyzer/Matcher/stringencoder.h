@@ -8,20 +8,25 @@
 #include <map>
 
 namespace Matcher {
-    //Encodes the two versions of a file into lists of integers
+    //Encodes two versions of a file into lists of integers.
+    //Also stores information about terms exclusive to either version
     class StringEncoder {
     public:
         StringEncoder(std::string& oldfile, std::string& newfile);
         
+        //Decodes a stream of integers into a list of words
+        //Unknown ints are replaced with ??
         std::vector<std::string> decodeStream(std::vector<int>& stream);
+        //Decodes an individual integer into a single word
         std::string decodeNum(int num);
         
+        //Iterators for accessing the encoded documents
         std::vector<int>::const_iterator getOldIter();
         std::vector<int>::const_iterator getNewIter();
         std::vector<int>::const_iterator getOldEnd();
         std::vector<int>::const_iterator getNewEnd();
     
-        
+        //Accessing the size of the encoded documents
         int getOldSize();
         int getNewSize();
         
