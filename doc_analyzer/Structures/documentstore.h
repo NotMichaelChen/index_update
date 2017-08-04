@@ -14,6 +14,7 @@ namespace Structures {
         
         unsigned int docID;
         std::string doc;
+        //Refers to the next available fragID
         unsigned int maxfragID;
         std::string timestamp;
     };
