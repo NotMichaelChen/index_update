@@ -6,7 +6,7 @@
 #include "Matcher/matcher.h"
 #include "Matcher/stringencoder.h"
 #include "Matcher/translate.h"
-#include "postings.h"
+#include "externalpostings.h"
 
 #define MIN_BLOCK_SIZE 10
 #define MAX_BLOCK_COUNT 20

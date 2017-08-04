@@ -5,16 +5,16 @@
 #include <utility>
 #include <vector>
 
-#include "postings.h"
+#include "externalpostings.h"
 #include "Matcher/translate.h"
 #include "Structures/documentstore.h"
 
 struct MatcherInfo {
-    MatcherInfo(std::vector<NonPositionalPosting> n, std::vector<PositionalPosting> p, std::vector<Matcher::Translation> t)
+    MatcherInfo(std::vector<ExternNPposting> n, std::vector<ExternPposting> p, std::vector<Matcher::Translation> t)
         : NPpostings(n), Ppostings(p), translations(t) {}
     
-    std::vector<NonPositionalPosting> NPpostings;
-    std::vector<PositionalPosting> Ppostings;
+    std::vector<ExternNPposting> NPpostings;
+    std::vector<ExternPposting> Ppostings;
     std::vector<Matcher::Translation> translations;
 };
 

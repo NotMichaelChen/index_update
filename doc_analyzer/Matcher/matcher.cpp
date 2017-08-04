@@ -5,7 +5,7 @@
 #include "Matcher/block.h"
 #include "Matcher/graph.h"
 #include "Matcher/distancetable.h"
-#include "postings.h"
+#include "externalpostings.h"
 
 using namespace std;
 
@@ -28,12 +28,12 @@ namespace Matcher {
     }
     
     //TODO: refactor and decide if this should be one or two functions
-    pair<vector<NonPositionalPosting>, vector<PositionalPosting>>
+    pair<vector<ExternNPposting>, vector<ExternPposting>>
     getPostings(vector<Block*>& commonblocks, unsigned int doc_id, unsigned int fragID, StringEncoder& se) {
         //Which block to skip next
         int blockindex = 0;
-        unordered_map<string, NonPositionalPosting> nppostingsmap;
-        unordered_map<string, PositionalPosting> ppostingsmap;
+        unordered_map<string, ExternNPposting> nppostingsmap;
+        unordered_map<string, ExternPposting> ppostingsmap;
         
         int index = 0;
         
@@ -54,7 +54,7 @@ namespace Matcher {
                     nppostingsmap.at(decodedword).freq -= 1;
                 }
                 else {
-                    NonPositionalPosting newposting(decodedword, doc_id, -1);
+                    ExternNPposting newposting(decodedword, doc_id, -1);
                     nppostingsmap.insert(make_pair(decodedword, newposting));
                 }
                 ++index;
@@ -78,20 +78,20 @@ namespace Matcher {
                     nppostingsmap.at(decodedword).freq += 1;
                 }
                 else {
-                    NonPositionalPosting newposting(decodedword, doc_id, 1);
+                    ExternNPposting newposting(decodedword, doc_id, 1);
                     nppostingsmap.insert(make_pair(decodedword, newposting));
                 }
                 //Always insert positional posting for a word
-                PositionalPosting newposting(decodedword, doc_id, fragID, index);
+                ExternPposting newposting(decodedword, doc_id, fragID, index);
                 ppostingsmap.insert(make_pair(decodedword, newposting));
                 ++index;
                 ++fragID;
             }
         }
         
-        vector<NonPositionalPosting> nppostingslist;
+        vector<ExternNPposting> nppostingslist;
         nppostingslist.reserve(nppostingsmap.size());
-        vector<PositionalPosting> ppostingslist;
+        vector<ExternPposting> ppostingslist;
         ppostingslist.reserve(ppostingsmap.size());
         
         for(auto kv : nppostingsmap) {

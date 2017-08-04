@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "postings.h"
+#include "externalpostings.h"
 #include "block.h"
 #include "stringencoder.h"
 
@@ -12,7 +12,7 @@ namespace Matcher {
     std::vector<Block*> getCommonBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter);
     //Specifically generates postings given a vector of blocks
     //fragID refers to the next ID to use
-    std::pair<std::vector<NonPositionalPosting>, std::vector<PositionalPosting>>
+    std::pair<std::vector<ExternNPposting>, std::vector<ExternPposting>>
         getPostings(std::vector<Block*>& commonblocks, unsigned int doc_id, unsigned int fragID, StringEncoder& se);
 }
 #endif
