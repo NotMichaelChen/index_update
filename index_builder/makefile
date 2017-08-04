@@ -1,20 +1,18 @@
-PROG = buildCollection
-CC = g++
-FLAGS = -g -Wall -std=c++11
-OGJS = index.o dictionary.o buildCollection.o
+rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
-$(PROG): $(OGJS)
-	$(CC) $(FLAGS) -o $(PROG) $(OGJS)
+CC=g++
+CFLAGS+=-I. -Wall -std=c++11
+VPATH = %.cpp %.o Matcher
+DEPS = $(call rwildcard,, *.hpp)
+SRC = $(call rwildcard,, *.cpp)
+OBJ = $(SRC:.cpp=.o)
 
-buildCollection.o: index.hpp dictionary.hpp
-	$(CC) $(FLAGS) -c buildCollection.cpp
+%.o: %.cpp $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
-index.o: index.hpp
-	$(CC) $(FLAGS) -c index.cpp
-
-dictionary.o: dictionary.hpp
-	$(CC) $(FLAGS) -c dictionary.cpp
+INDEX: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS)
 
 .PHONY: clean
 clean:
-	rm -rf *.o
+	find . -type f -name '*.o' -delete
