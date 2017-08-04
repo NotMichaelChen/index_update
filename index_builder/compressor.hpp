@@ -47,7 +47,7 @@ public:
 
 	mDatanp compress_np(std::string namebase, std::ofstream& ofile, f_meta& fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_freq, std::vector<unsigned int>& v_sign);
 
-	void compress_np(std::vector<nPosting>& npList, std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict);
+	void compress_np(std::vector<nPosting>& npList, std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict, int indexnum = 0, char prefix = 'a');
 
 	void merge_np(std::map<std::string, std::vector<f_meta>, strless>& filemeta, int indexnum, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict);
 };

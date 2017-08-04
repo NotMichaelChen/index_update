@@ -30,11 +30,12 @@ struct mData{
 struct mDatanp{
 	std::string filename;
 	long start_pos;
+	long end_pos;
 	long meta_doc_start;
 	long meta_freq_start;
 	long posting_start;
 	long freq_start;
-	long positivity_start;
+	long sign_start;
 };
 
 #endif
