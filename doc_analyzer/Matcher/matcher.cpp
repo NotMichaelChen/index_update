@@ -33,7 +33,7 @@ namespace Matcher {
         //Which block to skip next
         int blockindex = 0;
         unordered_map<string, ExternNPposting> nppostingsmap;
-        unordered_map<string, ExternPposting> ppostingsmap;
+        vector<ExternPposting> ppostingslist;
         
         int index = 0;
         
@@ -69,6 +69,8 @@ namespace Matcher {
                 //This causes i to be located right after the common block
                 index += commonblocks[blockindex]->run.size();
                 ++blockindex;
+                //When we skip a block of common text, we need a new fragID
+                ++fragID;
             }
             else {
                 //Edited sections in new file are considered "inserted"
@@ -83,22 +85,16 @@ namespace Matcher {
                 }
                 //Always insert positional posting for a word
                 ExternPposting newposting(decodedword, doc_id, fragID, index);
-                ppostingsmap.insert(make_pair(decodedword, newposting));
+                ppostingslist.push_back(newposting);
                 ++index;
-                ++fragID;
             }
         }
         
         vector<ExternNPposting> nppostingslist;
         nppostingslist.reserve(nppostingsmap.size());
-        vector<ExternPposting> ppostingslist;
-        ppostingslist.reserve(ppostingsmap.size());
         
         for(auto kv : nppostingsmap) {
             nppostingslist.push_back(kv.second);
-        }
-        for(auto kv : ppostingsmap) {
-            ppostingslist.push_back(kv.second);
         }
         
         return make_pair(nppostingslist, ppostingslist);

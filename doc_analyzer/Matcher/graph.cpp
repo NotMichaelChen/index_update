@@ -86,35 +86,4 @@ namespace Matcher {
         }
         toporder.push_back(current);
     }
-    
-    //Finds the best (longest) path through the graph
-    vector<Block*> findBestPath(map<Block*, vector<pair<int, Block*>>>& disttable) {
-        int greatest = 0;
-        int steps = 0;
-        Block* ending = nullptr;
-        //find the longest distance
-        for(auto iter = disttable.begin(); iter != disttable.end(); iter++) {
-            vector<pair<int, Block*>> table = iter->second;
-            for(size_t i = 0; i < table.size(); i++) {
-                if(table[i].first > greatest) {
-                    ending = table[i].second;
-                    greatest = table[i].first;
-                    steps = i;
-                }
-            }
-        }
-        
-        //find the path leading to the longest distance
-        vector<Block*> path;
-        path.push_back(ending);
-        steps--;
-        Block* next = ending;
-        while(steps > 0) {
-            next = disttable[next][steps].second;
-            path.push_back(next);
-            steps--;
-        }
-        
-        return path;
-    }
 }
