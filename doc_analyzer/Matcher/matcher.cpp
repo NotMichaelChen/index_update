@@ -40,7 +40,7 @@ namespace Matcher {
         //Sort blocks based on oldindex first
         sort(commonblocks.begin(), commonblocks.end(), compareOld);
         while(index < se.getOldSize()) {
-            if(index >= commonblocks[blockindex]->oldloc) {
+            if(blockindex < commonblocks.size() && index >= commonblocks[blockindex]->oldloc) {
                 //This causes i to be located right after the common block
                 index += commonblocks[blockindex]->run.size();
                 ++blockindex;
@@ -65,7 +65,7 @@ namespace Matcher {
         blockindex = 0;
         sort(commonblocks.begin(), commonblocks.end(), compareNew);
         while(index < se.getNewSize()) {
-            if(index >= commonblocks[blockindex]->newloc) {
+            if(blockindex < commonblocks.size() && index >= commonblocks[blockindex]->newloc) {
                 //This causes i to be located right after the common block
                 index += commonblocks[blockindex]->run.size();
                 ++blockindex;

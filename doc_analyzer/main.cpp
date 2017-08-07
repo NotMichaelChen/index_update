@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include <vector>
 
+#include "Matcher/matcher.h"
 #include "Matcher/stringencoder.h"
 #include "Matcher/block.h"
 #include "Matcher/graph.h"
@@ -133,11 +134,25 @@ int matchertest(int argc, char **argv) {
     
     vector<Matcher::Block*> finalpath = disttable.findOptimalPath(5);
     
+    for(Matcher::Block* b : finalpath)
+        cout << *b << endl;
+    
     vector<Matcher::Translation> translist = Matcher::getTranslations(se.getOldSize(), se.getNewSize(), finalpath);
     
     for(Matcher::Translation t : translist) {
         cout << t.loc << " " << t.oldlen << " " << t.newlen << endl;
     }
+    
+    auto postings = Matcher::getPostings(finalpath, 0, 0, se);
+    
+    for(auto p : postings.first) {
+        cout << p.term << " " << p.docID << " " << p.freq << endl;
+    }
+    
+    for(auto p : postings.second) {
+        cout << p.term << " " << p.docID << " " << p.fragID << " " << p.pos <<  endl;
+    }
+        
     
     return 0;
 }
