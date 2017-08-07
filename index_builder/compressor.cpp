@@ -97,8 +97,6 @@ void Compressor::merge_p(map<string, vector<f_meta>, strless>& filemeta, int ind
 
     cout << "Merging into " << flag << indexnum + 1 << "------------------------------------" << endl;
 
-	long ostart;
-	long oend;
 	string file1 = "Z" + to_string(indexnum);
 	string file2 = "I" + to_string(indexnum);
 	vector<f_meta>& v1 = filemeta[file1];
@@ -602,7 +600,6 @@ vector<uint8_t> Compressor::compress_freq(std::vector<unsigned int>& field, int 
 		std::vector<uint8_t> field_biv;
 		std::vector<uint8_t> biv;
 
-		int prev;
 		int size_block;
 		while(it != field.end()){
 			size_block = 0;

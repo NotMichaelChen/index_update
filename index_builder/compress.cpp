@@ -17,6 +17,7 @@
 #include "compressor.hpp"
 #include "strless.hpp"
 #include "comparison.hpp"
+#include "builder.hpp"
 
 #define NO_DOC 10 //temporary use
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
@@ -29,9 +30,13 @@ using namespace std;
 
 int main(){
 	Compressor comp;
-    map<string, unsigned int> lexical;
+	Builder bu;
+    map<string, unsigned int, strless> lexical;
 	map<unsigned int, std::pair<vector<mData>, vector<mDatanp>>> dict;
 	map<string, vector<f_meta>, strless> filemeta;
+	bu.build_lexical(lexical);
+	bu.display_lexical(lexical);
+	cin.get();
 	comp.start_compress(filemeta, dict);
 
     for( map<unsigned int, pair<vector<mData>, vector<mDatanp>>>::iterator it = dict.begin(); it != dict.end(); it ++){
