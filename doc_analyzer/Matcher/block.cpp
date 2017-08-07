@@ -69,12 +69,10 @@ namespace Matcher {
         //Index of block to be extended
         size_t index = 0;
         while(index < allblocks.size()) {
-            size_t blocklength = allblocks[index]->run.size();
+            size_t oldblocklength = allblocks[index]->run.size();
             //indexes are now pointing beyond the block
-            int oldfileindex = allblocks[index]->oldloc + blocklength;
-            int newfileindex = allblocks[index]->newloc + blocklength;
-            auto olditer = se.getOldIter()+oldfileindex;
-            auto newiter = se.getNewIter()+newfileindex;
+            auto olditer = se.getOldIter() + (allblocks[index]->oldendloc()+1);
+            auto newiter = se.getNewIter() + (allblocks[index]->newendloc()+1);
             
             //Attempt to extend the block
             while(olditer != se.getOldEnd() && newiter != se.getNewEnd() && *olditer == *newiter) {
@@ -82,21 +80,17 @@ namespace Matcher {
                 allblocks[index]->run.push_back(*olditer);
                 ++olditer;
                 ++newiter;
-                ++oldfileindex;
-                ++newfileindex;
             }
             
             //if we successfully extended the block, check for possible overlaps
-            if(allblocks[index]->run.size() > blocklength) {
+            if(allblocks[index]->run.size() > oldblocklength) {
                 auto overlapchecker = allblocks.begin() + index + 1;
                 //Potential overlap as long as the other block's begin is before this block's end
-                while(overlapchecker != allblocks.end() && (*overlapchecker)->oldloc < oldfileindex) {
-                    int overlaplength = (*overlapchecker)->run.size()-1;
-                    
+                while(overlapchecker != allblocks.end() && (*overlapchecker)->oldloc < (olditer - se.getOldIter())) {
                     if((*overlapchecker)->oldloc >= allblocks[index]->oldloc &&
-                        (*overlapchecker)->oldloc+overlaplength <= (olditer - se.getOldIter()) &&
+                        (*overlapchecker)->oldendloc() <= (olditer - se.getOldIter()) &&
                         (*overlapchecker)->newloc >= allblocks[index]->newloc &&
-                        (*overlapchecker)->newloc+overlaplength <= (newiter - se.getNewIter()))
+                        (*overlapchecker)->newendloc() <= (newiter - se.getNewIter()))
                     {
                         delete *overlapchecker;
                         overlapchecker = allblocks.erase(overlapchecker);
@@ -121,14 +115,14 @@ namespace Matcher {
         for(size_t i = 0; i < allblocks.size(); i++) {
             for(size_t j = i+1; j < allblocks.size(); j++) {
                 //break if intersections are not possible anymore
-                if(allblocks[j]->oldloc > allblocks[i]->oldloc + allblocks[i]->run.size()-1)
+                if(allblocks[j]->oldloc > allblocks[i]->oldendloc())
                     break;
                 
                 //Intersection occurs if B.end > A.end > B.begin > A.begin
                 //We know that B.begin > A.begin (iterating in sorted order)
                 //We know that A.end > B.begin (is our breaking condition)
                 //Thus we only need to check B.end > A.end
-                if(allblocks[j]->oldloc + allblocks[j]->run.size()-1 > allblocks[i]->oldloc + allblocks[i]->run.size()-1) {
+                if(allblocks[j]->oldendloc() > allblocks[i]->oldendloc()) {
                     //calculate how much the current block needs to shrink by
                     int shrunksize = allblocks[j]->oldloc - allblocks[i]->oldloc;
                     Block* shrunkblock = new Block(
@@ -147,10 +141,10 @@ namespace Matcher {
         
         for(size_t i = 0; i < allblocks.size(); i++) {
             for(size_t j = i+1; j < allblocks.size(); j++) {
-                if(allblocks[j]->newloc > allblocks[i]->newloc + allblocks[i]->run.size()-1)
+                if(allblocks[j]->newloc > allblocks[i]->newendloc())
                     break;
                 
-                if(allblocks[j]->newloc + allblocks[j]->run.size()-1 > allblocks[i]->newloc + allblocks[i]->run.size()-1) {
+                if(allblocks[j]->newendloc() > allblocks[i]->newendloc()) {
                     int shrunksize = allblocks[j]->newloc - allblocks[i]->newloc;
                     Block* shrunkblock = new Block(
                         allblocks[i]->oldloc,

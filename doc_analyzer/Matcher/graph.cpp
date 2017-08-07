@@ -25,12 +25,8 @@ namespace Matcher {
             //All potential neighbors will be strictly after the current block
             for(size_t neighborindex = i+1; neighborindex < commonblocks.size(); neighborindex++) {
                 Block* neighbor = commonblocks[neighborindex];
-                //Must be >= not > since oldloc+length extends 1 position beyond the run
-                if(neighbor->oldloc >= current->oldloc + (current->run).size() &&
-                    neighbor->newloc >= current->newloc + (current->run).size())
-                {
+                if(neighbor->oldloc > current->oldendloc() && neighbor->newloc > current->newendloc())
                     this->insertNeighbor(current, neighbor);
-                }
             }
         }
         
