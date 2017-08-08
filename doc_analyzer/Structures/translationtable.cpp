@@ -87,6 +87,7 @@ namespace Structures {
         int i = 0;
         while(getline(stringtrans, token, '-')) {
             nums[i] = stoi(token);
+            ++i;
         }
         
         return Matcher::Translation(nums[0], nums[1], nums[2]);

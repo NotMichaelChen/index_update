@@ -58,7 +58,7 @@ namespace Matcher {
     int applyTranslation(int oldindex, Translation t) {
         if(oldindex < t.loc)
             return oldindex;
-        else if(oldindex > t.loc + t.oldlen)
+        else if(oldindex >= t.loc + t.oldlen)
             return oldindex + (t.newlen - t.oldlen);
         else
             return -1;

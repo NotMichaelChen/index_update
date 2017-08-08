@@ -2,6 +2,7 @@
 #include <fstream>
 #include <getopt.h>
 #include <vector>
+#include <algorithm>
 
 #include "Matcher/matcher.h"
 #include "Matcher/stringencoder.h"
@@ -16,10 +17,29 @@ using namespace std;
 
 int matchertest(int argc, char **argv);
 int doctest();
+int transtest();
 
 int main(int argc, char **argv) {
     //return doctest();
-    return matchertest(argc, argv);
+    return transtest();
+    //return matchertest(argc, argv);
+    return 0;
+}
+
+int transtest() {
+    Structures::TranslationTable table;
+    vector<Matcher::Translation> trans;
+    trans.push_back(Matcher::Translation(2, 4, 6));
+    trans.push_back(Matcher::Translation(3, 5, 7));
+    trans.push_back(Matcher::Translation(4, 6, 9));
+    
+    table.insert(trans, 0);
+    reverse(trans.begin(), trans.end());
+    table.insert(trans, 1);
+    int loc = table.apply(0, 0, 5);
+    
+    cout << loc << endl;
+    
     return 0;
 }
 
