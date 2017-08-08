@@ -73,7 +73,7 @@ namespace Matcher {
             prevtotalweight = curtotalweight;
         }
         
-        if(bestending.current == nullptr)
+        if(bestending.current == nullptr && !bestlist.empty())
             bestending = bestlist.back();
         
         return tracePath(bestending);

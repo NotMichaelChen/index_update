@@ -24,14 +24,15 @@ namespace Matcher {
     
     vector<Block*> getCommonBlocks(int minsize, StringEncoder& se) {
         vector<Block*> commonblocks;
+        if(se.getOldSize() < minsize || se.getNewSize() < minsize)
+            return commonblocks;
        
         //Stores a "candidate block", extracted from the old doc
         //Each candidate can be matched multiple times with blocks from the new doc 
         multimap<unsigned int, Block> potentialblocks;
        
         //Get all possible blocks in the old file
-        //no need to subtract 1 from se.getOldEnd, since it points past the end
-        for(auto olditer = se.getOldIter(); olditer != se.getOldEnd() - minsize; ++olditer) {
+        for(auto olditer = se.getOldIter(); olditer != se.getOldEnd() - (minsize-1); ++olditer) {
             vector<int> newblock(olditer, olditer+minsize);
             unsigned int blockhash = hashVector(newblock);
             Block tempblock(olditer - se.getOldIter(), -1, newblock);
@@ -39,7 +40,7 @@ namespace Matcher {
         }
         
         //Check each block in the new file for a match with a block in the old file
-        for(auto newiter = se.getNewIter(); newiter != se.getNewEnd() - minsize; ++newiter) {
+        for(auto newiter = se.getNewIter(); newiter != se.getNewEnd() - (minsize-1); ++newiter) {
             vector<int> blockcheck(newiter, newiter+minsize);
             unsigned int blockhash = hashVector(blockcheck);
             
