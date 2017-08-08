@@ -37,7 +37,10 @@ int main(){
 	bu.build_lexical(lexical);
 	bu.display_lexical(lexical);
 	cin.get();
-	comp.start_compress(filemeta, dict);
+
+	vector<Posting> p_index;
+	vector<nPosting> np_index;
+	comp.start_compress(p_index, np_index, filemeta, dict);
 
     for( map<unsigned int, pair<vector<mData>, vector<mDatanp>>>::iterator it = dict.begin(); it != dict.end(); it ++){
         cout << it->first << endl;

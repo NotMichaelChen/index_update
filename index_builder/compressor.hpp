@@ -8,6 +8,7 @@
 #include "meta.hpp"
 #include "posting.hpp"
 #include "strless.hpp"
+#include "externalpostings.hpp"
 
 class Compressor{
 public:
@@ -41,7 +42,7 @@ public:
 
 	void compress_p(std::vector<Posting>& pList, std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict, int indexnum = 0, char prefix = 'a');
 
-	void start_compress(std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict);
+	void start_compress(std::vector<Posting>& p_index, std::vector<nPosting>& np_index, std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict);
 
 	std::vector<uint8_t> compress_freq(std::vector<unsigned int>& field, int method, int sort, std::vector<uint8_t> &meta_data_biv);
 
@@ -50,6 +51,10 @@ public:
 	void compress_np(std::vector<nPosting>& npList, std::map<std::string, std::vector<f_meta>, strless>& filemeta, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict, int indexnum = 0, char prefix = 'a');
 
 	void merge_np(std::map<std::string, std::vector<f_meta>, strless>& filemeta, int indexnum, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict);
+
+	void update_p(vector<ExternPposting> external, map<string, unsigned int, strless> lexical, map<string, vector<f_meta>, strless>& filemeta, vector<Posting> p_index, map<unsigned int, std::pair<vector<mData>, vector<mDatanp>>>& dict);
+
+	void update_np(vector<ExternNPposting> external, map<string, unsigned int, strless> lexical, map<string, vector<f_meta>, strless>& filemeta, vector<nPosting> np_index, map<unsigned int, std::pair<vector<mData>, vector<mDatanp>>>& dict);
 };
 
 #endif

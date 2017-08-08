@@ -17,6 +17,7 @@
 #include "strless.hpp"
 #include "compressor.hpp"
 #include "comparison.hpp"
+#include "externalpostings.hpp"
 
 #define NO_DOC 10 //temporary use
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
@@ -479,9 +480,7 @@ void Compressor::compress_p(std::vector<Posting>& pList, std::map<string, vector
     }
 }
 
-void Compressor::start_compress(map<string, vector<f_meta>, strless>& filemeta, map<unsigned int, std::pair<vector<mData>, vector<mDatanp>>>& dict){
-	vector<Posting> p_index;
-    vector<nPosting> np_index;
+void Compressor::start_compress(vector<Posting>& p_index, vector<nPosting>& np_index, map<string, vector<f_meta>, strless>& filemeta, map<unsigned int, std::pair<vector<mData>, vector<mDatanp>>>& dict){
 	ifstream index;
 	ifstream info;
 	index.open(INDEX);
@@ -558,8 +557,8 @@ void Compressor::start_compress(map<string, vector<f_meta>, strless>& filemeta, 
                 np_index.clear();
 			}
 		}
-
 	}
+	/*
     cout << "Last bunch " << p_index.size() << endl;
     std::sort(p_index.begin(), p_index.end());//, less_than_key()
     int prevTermID = p_index[0].termID;
@@ -587,6 +586,7 @@ void Compressor::start_compress(map<string, vector<f_meta>, strless>& filemeta, 
     merge_test(filemeta, dict);//see if need to merge
     p_index.clear();
     np_index.clear();
+	*/
 
 	index.close();
 	info.close();
@@ -885,4 +885,45 @@ void Compressor::merge_np(map<string, vector<f_meta>, strless>& filemeta, int in
 
     if( remove( filename2.c_str() ) != 0 )
         cout << "Error deleting file" << endl;
+}
+
+void Compressor::update_p(vector<ExternPposting> external, map<string, unsigned int, strless> lexical, map<string, vector<f_meta>, strless>& filemeta, vector<Posting> p_index, map<unsigned int, std::pair<vector<mData>, vector<mDatanp>>>& dict){
+	unsigned int termID;
+	for( vector<ExternPposting>::iterator it = external.begin(); it != external.end(); it++){
+		termID = lexical[it->term];
+		Posting p(termID, it->docID, it->fragID, it->pos);
+		p_index.push_back(p);
+		if( p_index.size() == POSTING_LIMIT ){
+			cout << "Memory limit reaches." << endl;
+			std::sort(p_index.begin(), p_index.end());
+			compress_p(p_index, filemeta, dict);
+			merge_test(filemeta, dict);//see if need to merge
+			p_index.clear();
+		}
+	}
+}
+
+void Compressor::update_np(vector<ExternNPposting> external, map<string, unsigned int, strless> lexical, map<string, vector<f_meta>, strless>& filemeta, vector<nPosting> np_index, map<unsigned int, std::pair<vector<mData>, vector<mDatanp>>>& dict){
+	unsigned int termID;
+	unsigned int freq;
+	unsigned int sign;
+	for( vector<ExternNPposting>::iterator it = external.begin(); it != external.end(); it++){
+		termID = lexical[it->term];
+		if( it->freq >= 0 ){
+			freq = it->freq;
+			sign = 1;
+		}else{
+			freq = -it->freq;
+			sign = 0;
+		}
+		nPosting p(termID, it->docID, freq, sign);
+		np_index.push_back(p);
+		if( np_index.size() == POSTING_LIMIT ){
+			cout << "Memory limit reaches." << endl;
+			std::sort(np_index.begin(), np_index.end());
+			compress_np(np_index, filemeta, dict);
+			merge_test(filemeta, dict);//see if need to merge
+			np_index.clear();
+		}
+	}
 }
