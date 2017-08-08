@@ -14,10 +14,10 @@
 #include "reader.hpp"
 #include "posting.hpp"
 #include "meta.hpp"
-#include "compressor.hpp"
+#include "indexer.hpp"
 #include "strless.hpp"
 #include "comparison.hpp"
-#include "builder.hpp"
+#include "lexicon.hpp"
 
 #define NO_DOC 10 //temporary use
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
@@ -29,36 +29,16 @@
 using namespace std;
 
 int main(){
-	Compressor comp;
-	Builder bu;
-    map<string, unsigned int, strless> lexical;
-	map<unsigned int, std::pair<vector<mData>, vector<mDatanp>>> dict;
-	map<string, vector<f_meta>, strless> filemeta;
-	bu.build_lexical(lexical);
-	bu.display_lexical(lexical);
+	Indexer ind;
+	Lexicon lex;
+	lex.build_lexical();
+	lex.display_lexical();
 	cin.get();
 
-	vector<Posting> p_index;
-	vector<nPosting> np_index;
-	comp.start_compress(p_index, np_index, filemeta, dict);
+	ind.start_compress();
+	ind.display_dict();
+	ind.display_meta();
 
-    for( map<unsigned int, pair<vector<mData>, vector<mDatanp>>>::iterator it = dict.begin(); it != dict.end(); it ++){
-        cout << it->first << endl;
-        vector<mData> vec = it->second.first;
-        for( vector<mData>::iterator ite = vec.begin(); ite != vec.end(); ite ++){
-            cout << ite->filename << ' ' << ite->start_pos << ' ';
-        }
-        cout << endl;
-    }
-
-    for( map<string, vector<f_meta>, strless>::iterator it = filemeta.begin(); it != filemeta.end(); it++){
-        cout << it->first << endl;
-        vector<f_meta> vec = it->second;
-        for( vector<f_meta>::iterator ite = vec.begin(); ite != vec.end(); ite++){
-            cout << ite->termID << ' ';
-        }
-        cout << endl;
-    }
     /*Querior q;
     string str;
     cin >> str;

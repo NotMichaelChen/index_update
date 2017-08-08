@@ -3,13 +3,12 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include "builder.hpp"
+#include "lexicon.hpp"
 #include "strless.hpp"
 using namespace std;
 
 typedef map<string, unsigned int, strless> lexmap;
-
-void Builder::build_lexical(lexmap lex){
+void Lexicon::build_lexical(){
     int count = 0;
     string line;
     string term;
@@ -27,8 +26,12 @@ void Builder::build_lexical(lexmap lex){
     }
 }
 
-void Builder::display_lexical(lexmap lex){
+void Lexicon::display_lexical(){
     for(lexmap::iterator it = lex.begin(); it != lex.end(); ++it){
         cout << it->first << ' ' << it->second << endl;
     }
+}
+
+unsigned int Lexicon::get_id(string term){
+    return lex[term];
 }
