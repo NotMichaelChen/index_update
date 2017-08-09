@@ -369,6 +369,7 @@ vector<uint8_t> Indexer::compress(std::vector<unsigned int>& field, int method, 
 
 mData Indexer::compress_p(string namebase, ofstream& ofile, f_meta& fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
     string filename = string(PDIR) + namebase;
+	int method = 1;// 1: Variable Bytes Encoding
 
 	std::vector<unsigned int> v_last_id;
 	std::vector<uint8_t> docID_biv;
@@ -380,14 +381,15 @@ mData Indexer::compress_p(string namebase, ofstream& ofile, f_meta& fm, std::vec
 	std::vector<uint8_t> size_frag_biv;
 	std::vector<uint8_t> size_pos_biv;
 
-	docID_biv = compress(v_docID, 1, 1, size_doc_biv, v_last_id);
+	docID_biv = compress(v_docID, method, 1, size_doc_biv, v_last_id);
 	last_id_biv = VBEncode(v_last_id);
 
-	fragID_biv = compress(v_fragID, 1, 0, size_frag_biv);
-	pos_biv = compress(v_pos, 1, 0, size_pos_biv);
+	fragID_biv = compress(v_fragID, method, 0, size_frag_biv);
+	pos_biv = compress(v_pos, method, 0, size_pos_biv);
 
 	mData meta;
     meta.filename = namebase;
+	meta.comp_method = method;
 
 	fm.start_pos = ofile.tellp();
     meta.start_pos = ofile.tellp();
@@ -633,6 +635,7 @@ vector<uint8_t> Indexer::compress_freq(std::vector<unsigned int>& field, int met
 
 mDatanp Indexer::compress_np(string namebase, ofstream& ofile, f_meta& fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_freq, std::vector<unsigned int>& v_sign){
     string filename = string(NPDIR) + namebase;
+	int method = 1;
 
 	std::vector<unsigned int> v_last_id;
 	std::vector<uint8_t> docID_biv;
@@ -643,10 +646,10 @@ mDatanp Indexer::compress_np(string namebase, ofstream& ofile, f_meta& fm, std::
 	std::vector<uint8_t> size_doc_biv;
 	std::vector<uint8_t> size_freq_biv;
 
-	docID_biv = compress(v_docID, 1, 1, size_doc_biv, v_last_id);
+	docID_biv = compress(v_docID, method, 1, size_doc_biv, v_last_id);
 	last_id_biv = VBEncode(v_last_id);
 
-	freq_biv = compress_freq(v_freq, 1, 0, size_freq_biv);
+	freq_biv = compress_freq(v_freq, method, 0, size_freq_biv);
 
     //compress sign vector
     vector<unsigned int>::iterator it = v_sign.begin();
@@ -667,6 +670,7 @@ mDatanp Indexer::compress_np(string namebase, ofstream& ofile, f_meta& fm, std::
 
 	mDatanp meta;
     meta.filename = namebase;
+	meta.comp_method = method;
 
 	fm.start_pos = ofile.tellp();
     meta.start_pos = ofile.tellp();
@@ -1065,6 +1069,28 @@ std::vector<nPosting> Indexer::decompress_np(string namebase, unsigned int termI
         cerr << "File cannot be opened." << endl;
     }
     return result;
+}
+
+vector<unsigned int> Indexer::decompress_np(string namebase, long start, long end){
+	Reader r;
+	ifstream ifile;
+    string filename = string(NPDIR) + namebase;
+	ifile.open(filename, ios::binary);
+
+    if(ifile.is_open()){
+        //cout << namebase << " Opened for Decompressing" << endl;
+    	char c;
+    	vector<char> readin;
+    	vector<unsigned int> field;
+
+    	ifile.seekg(start);
+    	while(ifile.tellg() != end){
+    		ifile.get(c);
+    		readin.push_back(c);
+    	}
+        field = r.VBDecode(readin);
+	}
+	return field;
 }
 
 void Indexer::update_p(vector<ExternPposting> external){

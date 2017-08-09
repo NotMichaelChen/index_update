@@ -69,6 +69,8 @@ public:
 	void display_meta();
 
 	void display_dict();
+
+	std::vector<unsigned int> Indexer::decompress_np(std::string namebase, long start, long end);
 };
 
 #endif
