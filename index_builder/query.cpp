@@ -8,8 +8,11 @@
 
 using namespace std;
 
-bool Querior::NextGEQ(Lstptr lp, ){
-
+bool Querior::NextGEQ(Lstptr* lp, unsigned int id){
+    while( lp->currentID < id ){
+        (*lp) ++;
+    }
+    
 }
 
 lstptr* Querior::openlist(string term, Indexer& ind){

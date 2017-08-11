@@ -29,6 +29,12 @@
 #define NPDIR "./disk_index/non_positional/"
 
 std::vector<std::string> Indexer::read_directory( std::string path ){
+	/**
+	 * List all the files in a directory.
+	 *
+	 * @param: the path of a directory
+	 * @return: the names of all the files in this directory.
+	 */
 	std::vector <std::string> result;
 	dirent* de;
 	DIR* dp;
@@ -48,13 +54,21 @@ std::vector<std::string> Indexer::read_directory( std::string path ){
 }
 
 void Indexer::update_f_meta(string s1, string s2){
+	/* Delete the existence of two files in the file meta data map.
+	 * Normally the two files has the same index number.
+	 * Function is called after finnishing merging.
+	 *
+	 * @param: names(including directory of two files)
+	 */
 	filemeta.erase(s1);
 	filemeta.erase(s2);
 }
 
 void Indexer::update_t_meta(unsigned int termID, string file){
-	//delete old metadata, compress_p will take care of adding new
-	//vector<mData>& metavec= dict[termID];
+	/* Update the meta data of a term.
+	 * Delete the record of a file contains this term,
+	 * because this file no longer contains it.
+	 */
 	for( vector<mData>::iterator it = dict[termID].first.begin(); it != dict[termID].first.end(); it++){
 		if( it->filename == file ) {
             dict[termID].first.erase(it);
@@ -71,6 +85,10 @@ void Indexer::update_t_meta(unsigned int termID, string file){
 }
 
 void Indexer::copy_and_paste(ifstream& ifile, ofstream& ofile, long start, long end){
+	/* Copy the compressed posting list and paste to
+	 * a new file without decompressing given the start
+	 * and end postion of such posting list.
+	 */
 	ifile.seekg(start);
 	char c;
 	while(ifile.tellg() != end){
@@ -81,12 +99,16 @@ void Indexer::copy_and_paste(ifstream& ifile, ofstream& ofile, long start, long 
 }
 
 void Indexer::merge_p(int indexnum){
-    //cout << "Merging index " << indexnum << endl;
+    /**
+	 * Merge two positional index.
+	 */
 	ifstream filez;
 	ifstream filei;
 	ofstream ofile;
     string pdir(PDIR);
-    char flag = 'Z';//determine the name of the output file
+
+	//determine the name of the output file, if "Z" file exists, than compressed to "I" file.
+    char flag = 'Z';
 	filez.open(pdir + "Z" + to_string(indexnum));
 	filei.open(pdir + "I" + to_string(indexnum));
 
@@ -106,13 +128,14 @@ void Indexer::merge_p(int indexnum){
 	vector<f_meta>::iterator it1 = v1.begin();
 	vector<f_meta>::iterator it2 = v2.begin();
 
-	//Go through the meta data of each file, do
-	//if there is a termID appearing in both, decode the part and merge
-	//else copy and paste the corresponding part of postinglist
-	//update the corresponding fileinfo of that termID
-	//assume that the posting of one term can be stored in memory
+	/**
+	 * Go through the meta data of each file, do
+	 * if there is a termID appearing in both, decode the part and merge
+	 * else copy and paste the corresponding part of postinglist
+	 * update the corresponding fileinfo of that termID
+	 * assume that the posting of one term can be stored in memory
+	 */
 	while( it1 != v1.end() && it2 != v2.end() ){
-        //cout << it1->termID << ' ' << it2->termID << endl; //TODO
 		if( it1->termID == it2->termID ){
 			//decode and merge
 			//update meta data corresponding to the term
@@ -126,9 +149,6 @@ void Indexer::merge_p(int indexnum){
 			while( vpit1 != vp1.end() && vpit2 != vp2.end() ){
 				//NextGQ
 				if( *vpit1 < *vpit2 ){
-                    //cout << vpit1->termID << ' ' << vpit1->docID << ' ' << vpit1->fragID << ' ' << vpit1->pos << endl;
-                    //cout << vpit2->termID << ' ' << vpit2->docID << ' ' << vpit2->fragID << ' ' << vpit2->pos << endl;
-
 					vpout.push_back(*vpit1);
 					vpit1 ++;
 				}
@@ -149,33 +169,28 @@ void Indexer::merge_p(int indexnum){
                 vpout.push_back(*vpit2);
                 vpit2 ++;
             }
-            /*
-            for( vector<Posting>::iterator it = vpout.begin(); it != vpout.end(); it ++){
-                cout << it->termID << ' ' << it->docID << ' ' << it->fragID << ' ' << it->pos << endl;
-            }
-            */
-			//update_t_meta(it1->termID, file1, dict);
-            //update_t_meta(it2->termID, file2, dict);
+
 			compress_p(vpout, indexnum + 1, flag);
 			it1 ++;
 			it2 ++;
 		}
 		else if( it1->termID < it2->termID ){
 			vector<Posting> vp = decompress_p(file1, it1->termID);
-            //update_t_meta(it1->termID, file1, dict);
             compress_p(vp, indexnum + 1, flag);
 			it1 ++;
 		}
 		else if( it1->termID > it2->termID ){
             vector<Posting> vp = decompress_p(file2, it2->termID);
-            //update_t_meta(it2->termID, file2, dict);
             compress_p(vp, indexnum + 1, flag);
 			it2 ++;
 		}
 	}
 
-    //decompress from the old index and then compress to the new one to update metadata is time-consuming
-    //need to find a more efficient way to update metadata while tranfering positngs
+    /**
+	 * TODO: decompress from the old index and then compress to
+	 * the new one to update metadata is time-consuming
+     * need to find a more efficient way to update metadata while tranfering positngs
+	 */
 	while (it1 != v1.end() ){
         vector<Posting> vp = decompress_p(file1, it1->termID);
         //update_t_meta(it1->termID, file1, dict);
@@ -184,7 +199,6 @@ void Indexer::merge_p(int indexnum){
 	}
 	while (it2 != v2.end() ){
         vector<Posting> vp = decompress_p(file2, it2->termID);
-        //update_t_meta(it2->termID, file2, dict);
         compress_p(vp, indexnum + 1, flag);
         it2 ++;
 	}
@@ -205,17 +219,7 @@ void Indexer::merge_p(int indexnum){
 
     update_f_meta(file1, file2);
 
-    for( map<string, vector<f_meta>, strless>::iterator it = filemeta.begin(); it != filemeta.end(); it++){
-        //cout << it->first << endl;
-        vector<f_meta> vec = it->second;
-        for( vector<f_meta>::iterator ite = vec.begin(); ite != vec.end(); ite++){
-            //cout << ite->termID << ' ';
-        }
-        //cout << endl;
-    }
-
     //deleting two files
-
     if( remove( filename1.c_str() ) != 0 )
         cout << "Error deleting file" << endl;
 
@@ -224,6 +228,7 @@ void Indexer::merge_p(int indexnum){
 }
 
 bool Indexer::check_contain(vector<string> v, string f){
+	//check if a vector contains an element
     for( vector<string>::iterator it = v.begin(); it != v.end(); it ++){
         if( *it == f) return true;
     }
@@ -231,7 +236,11 @@ bool Indexer::check_contain(vector<string> v, string f){
 }
 
 void Indexer::merge_test(){
-    //cout << "Merge testing " << endl;
+    /**
+	 * Test if there are two files of same index number on disk.
+	 * If there is, merge them and then call merge_test again until
+	 * all index numbers has only one file each.
+	 */
 	int indexnum = 0;
 	string dir = string(PDIR);
     string npdir = string(NPDIR);
@@ -251,7 +260,7 @@ void Indexer::merge_test(){
     indexnum = 0;
     vector<string> npfiles = read_directory(npdir);
     while(check_contain(npfiles, fnp)){
-		//if In exists already, merge In with Zn
+		//if Ln exists already, merge In with Xn
         npfiles.clear();
 		merge_np(indexnum);
 		indexnum ++;
@@ -262,12 +271,18 @@ void Indexer::merge_test(){
 }
 
 void Indexer::write(vector<uint8_t> num, ofstream& ofile){
+	/**
+	 * Write the compressed posting to file byte by byte.
+	 */
 	for(vector<uint8_t>::iterator it = num.begin(); it != num.end(); it++){
 		ofile.write(reinterpret_cast<const char*>(&(*it)), 1);
 	}
 }
 
 std::vector<char> Indexer::read_com(ifstream& infile){
+	/**
+	 * Read compressed posting from file byte by byte.
+	 */
 	char c;
 	vector<char> result;
 	while(infile.get(c)){
@@ -277,6 +292,12 @@ std::vector<char> Indexer::read_com(ifstream& infile){
 }
 
 std::vector<uint8_t> Indexer::VBEncode(unsigned int num){
+	/**
+	 * Variable byte encoding.
+	 *
+	 * @param: an umsigned interger to be compressed
+	 * @return: a vector of bytes
+	 */
 	vector<uint8_t> result;
 	uint8_t b;
 	while(num >= 128){
@@ -295,6 +316,9 @@ std::vector<uint8_t> Indexer::VBEncode(unsigned int num){
 }
 
 std::vector<uint8_t> Indexer::VBEncode(vector<unsigned int>& nums){
+	/**
+	 * Encode a vector of unsigned intergers.
+	 */
 	vector<uint8_t> biv;
 	vector<uint8_t> result;
 	for( vector<unsigned int>::iterator it = nums.begin(); it != nums.end(); it ++){
@@ -305,6 +329,10 @@ std::vector<uint8_t> Indexer::VBEncode(vector<unsigned int>& nums){
 }
 
 vector<uint8_t> Indexer::compress(std::vector<unsigned int>& field, int method, int sort, vector<uint8_t> &meta_data_biv, vector<unsigned int> &last_id_biv){
+	/**
+	 * Compress the document ID field and store the last ID of each block to last_id_biv,
+	 * and store the length of each block to meta_data_biv.
+	 */
 	std::vector<unsigned int> block;
 	std::vector<unsigned int>::iterator it = field.begin();
 	std::vector<uint8_t> field_biv;
@@ -336,6 +364,11 @@ vector<uint8_t> Indexer::compress(std::vector<unsigned int>& field, int method, 
 }
 
 vector<uint8_t> Indexer::compress(std::vector<unsigned int>& field, int method, int sort, vector<uint8_t> &meta_data_biv){
+	/**
+	 * Compress fragment ID and positions, and store the length of each block to meta_data_biv.
+	 * meta_data_biv here is acutally not a binary vector.
+	 * TODO: the meta_data_biv should not be binary vector, instead it should be vector of unsigned int.
+	 */
 	std::vector<unsigned int> block;
 	std::vector<unsigned int>::iterator it = field.begin();
 	std::vector<uint8_t> field_biv;
@@ -368,7 +401,11 @@ vector<uint8_t> Indexer::compress(std::vector<unsigned int>& field, int method, 
 }
 
 mData Indexer::compress_p(string namebase, ofstream& ofile, f_meta& fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_fragID, std::vector<unsigned int>& v_pos){
-    string filename = string(PDIR) + namebase;
+	/**
+	 * Write compressed positional postings to disk and store the corresponding start
+	 * and end position to metadata of the term.
+	 */
+	string filename = string(PDIR) + namebase;
 	int method = 1;// 1: Variable Bytes Encoding
 
 	std::vector<unsigned int> v_last_id;
@@ -420,8 +457,11 @@ mData Indexer::compress_p(string namebase, ofstream& ofile, f_meta& fm, std::vec
 }
 
 void Indexer::compress_p(vector<Posting>& pList, int indexnum, char prefix){
-	//pass in forward index of same termID
-	//compress positional index
+	/**
+	 * Compress positional index.
+	 *
+	 * @param: forward index of same termID
+	 */
 	ofstream ofile;//positional inverted index
     string pdir(PDIR);
     string namebase;
@@ -446,8 +486,6 @@ void Indexer::compress_p(vector<Posting>& pList, int indexnum, char prefix){
     }
 
     if (ofile.is_open()){
-        //cout << "Compressing and writing to " << namebase << endl;
-
         std::vector<unsigned int> v_docID;
     	std::vector<unsigned int> v_fragID;
     	std::vector<unsigned int> v_pos;
@@ -467,13 +505,11 @@ void Indexer::compress_p(vector<Posting>& pList, int indexnum, char prefix){
     			num_of_p ++;
     		}
     		fm.termID = currID;
-            //cout << "Current term " << currID << endl;
     		mmData = compress_p(namebase, ofile, fm, v_docID, v_fragID, v_pos);
     		mmData.num_posting = num_of_p;
     		filemeta[namebase].push_back(fm);
 
     		//add mmdata to the dictionary of corresponding term
-            //cout << currID << ' '<< mmData.filename << endl;
     		dict[currID].first.push_back(mmData);
             currID = it->termID;
 
@@ -483,13 +519,15 @@ void Indexer::compress_p(vector<Posting>& pList, int indexnum, char prefix){
     		v_pos.clear();
     	}
     	ofile.close();
-        //merge_test(filemeta, dict);//see if need to merge
     }else{
         cerr << "File cannot be opened." << endl;
     }
 }
 
 void Indexer::start_compress(){
+	/**
+	 * The very first function to call.
+	 */
 	ifstream index;
 	ifstream info;
 	index.open(INDEX);
@@ -502,6 +540,7 @@ void Indexer::start_compress(){
 	int num;
 
 	for(int i = 0; i < NO_DOC; i ++){
+		//For every forward index of document, do
 		vec.clear();
 		getline(info, line);//read docInfo
 		stringstream lineStream(line);
@@ -513,7 +552,7 @@ void Indexer::start_compress(){
 
 		index.seekg(stoi(vec[2]));
 		while(index.tellg() != (stoi(vec[2]) + stoi(vec[3]))){
-			//for every document, do
+			//While reading the same document, do
 			index.get(c);
 			bitset<8> byte(c);
 			num = 0; // store decoding termID
@@ -532,12 +571,12 @@ void Indexer::start_compress(){
 			p_index.push_back(p);
 
 
-			if (p_index.size() == POSTING_LIMIT){ // make sure doesn't exceed memory
-
+			if (p_index.size() == POSTING_LIMIT){
+				//When the vector of posting list can fit into memory, do
                 cout << "Memory limit reaches." << endl;
-                //cin.get();
-				std::sort(p_index.begin(), p_index.end());//, less_than_key()
-                //generate np_index
+				std::sort(p_index.begin(), p_index.end());
+
+                //Generate np_index
                 unsigned int prevTermID = p_index[0].termID;
                 unsigned int prevDocID = p_index[0].docID;
                 unsigned int freq = 0;
@@ -561,48 +600,21 @@ void Indexer::start_compress(){
                 }
                 compress_np(np_index);
 				compress_p(p_index);
-                merge_test();//see if need to merge
+                merge_test();
 				p_index.clear();
                 np_index.clear();
 			}
 		}
 	}
-	/*
-    cout << "Last bunch " << p_index.size() << endl;
-    std::sort(p_index.begin(), p_index.end());//, less_than_key()
-    int prevTermID = p_index[0].termID;
-    int prevDocID = p_index[0].docID;
-    unsigned int freq = 0;
-    vector<Posting>::iterator it = p_index.begin();
-    while(it != p_index.end()){
-        while( it->termID == prevTermID && it != p_index.end()){
-            while( it->docID == prevDocID && it != p_index.end()){
-                freq++;
-                it ++;
-            }
-            nPosting p(prevTermID, prevDocID, freq);
-            np_index.push_back(p);
-            freq = 0;
-            if(it != p_index.end())
-                prevDocID = it->docID;
-        }
-        if(it!=p_index.end())
-            prevTermID = it->termID;
-        else break;
-    }
-    compress_np(np_index, filemeta, dict);
-    compress_p(p_index, filemeta, dict);
-    merge_test(filemeta, dict);//see if need to merge
-    p_index.clear();
-    np_index.clear();
-	*/
 
 	index.close();
 	info.close();
 }
 
 vector<uint8_t> Indexer::compress_freq(std::vector<unsigned int>& field, int method, int sort, vector<uint8_t> &meta_data_biv){
-    //not using delta coding
+	/* Compress a field which doesn't require delta coding.
+	 * In this case, frequency. Frequency cannot be delta coded because it is not strictly increasing.
+	 */
 	std::vector<unsigned int> block;
 	std::vector<unsigned int>::iterator it = field.begin();
 	std::vector<uint8_t> field_biv;
@@ -634,7 +646,12 @@ vector<uint8_t> Indexer::compress_freq(std::vector<unsigned int>& field, int met
 }
 
 mDatanp Indexer::compress_np(string namebase, ofstream& ofile, f_meta& fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_freq, std::vector<unsigned int>& v_sign){
-    string filename = string(NPDIR) + namebase;
+	/**
+	 * Writing compressed non-positional postings to disk and store the starting and ending positions.
+	 * Similar to compress_p.
+	 */
+
+	string filename = string(NPDIR) + namebase;
 	int method = 1;
 
 	std::vector<unsigned int> v_last_id;
@@ -698,7 +715,10 @@ mDatanp Indexer::compress_np(string namebase, ofstream& ofile, f_meta& fm, std::
 }
 
 void Indexer::compress_np(vector<nPosting>& npList, int indexnum, char prefix){
-    ofstream ofile;//positional inverted index
+	/**
+	 * Open a file to write to and store the metadata of a term.
+	 */
+    ofstream ofile;//non-positional inverted index
     string pdir(NPDIR);
     string namebase;
     string filename;
@@ -747,7 +767,6 @@ void Indexer::compress_np(vector<nPosting>& npList, int indexnum, char prefix){
             //cout << "This file contains: " << fm.termID << endl;
 
     		//add mmdata to the dictionary of corresponding term
-            //cout << currID << ' '<< mmData.filename << endl;
     		dict[currID].second.push_back(mmDatanp);
             currID = it->termID;
 
@@ -765,7 +784,9 @@ void Indexer::compress_np(vector<nPosting>& npList, int indexnum, char prefix){
 }
 
 void Indexer::merge_np(int indexnum){
-    //cout << "Merging index " << indexnum << endl;
+    /**
+	 * Merge non-positional index.
+	 */
 	ifstream filez;
 	ifstream filei;
 	ofstream ofile;
@@ -791,11 +812,13 @@ void Indexer::merge_np(int indexnum){
 	vector<f_meta>::iterator it1 = v1.begin();
 	vector<f_meta>::iterator it2 = v2.begin();
 
-	//Go through the meta data of each file, do
-	//if there is a termID appearing in both, decode the part and merge
-	//else copy and paste the corresponding part of postinglist
-	//update the corresponding fileinfo of that termID
-	//assume that the posting of one term can be stored in memory
+	/**
+	 * Go through the meta data of each file, do
+	 * if there is a termID appearing in both, decode the part and merge
+	 * else copy and paste the corresponding part of postinglist
+	 * update the corresponding fileinfo of that termID
+	 * assume that the posting of one term can be stored in memory
+	 */
 	while( it1 != v1.end() && it2 != v2.end() ){
         //cout << it1->termID << ' ' << it2->termID << endl;
 		if( it1->termID == it2->termID ){
@@ -811,9 +834,6 @@ void Indexer::merge_np(int indexnum){
 			while( vpit1 != vp1.end() && vpit2 != vp2.end() ){
 				//NextGQ
 				if( *vpit1 < *vpit2 ){
-                    //cout << vpit1->termID << ' ' << vpit1->docID << ' ' << vpit1->fragID << ' ' << vpit1->pos << endl;
-                    //cout << vpit2->termID << ' ' << vpit2->docID << ' ' << vpit2->fragID << ' ' << vpit2->pos << endl;
-
 					vpout.push_back(*vpit1);
 					vpit1 ++;
 				}
@@ -837,33 +857,26 @@ void Indexer::merge_np(int indexnum){
                 vpout.push_back(*vpit2);
                 vpit2 ++;
             }
-            /*
-            for( vector<Posting>::iterator it = vpout.begin(); it != vpout.end(); it ++){
-                cout << it->termID << ' ' << it->docID << ' ' << it->fragID << ' ' << it->pos << endl;
-            }
-            */
-			//update_t_meta(it1->termID, file1, dict);
-            //update_t_meta(it2->termID, file2, dict);
 			compress_np(vpout, indexnum + 1, flag);
 			it1 ++;
 			it2 ++;
 		}
 		else if( it1->termID < it2->termID ){
 			vector<nPosting> vp = decompress_np(file1, it1->termID);
-            //update_t_meta(it1->termID, file1, dict);
             compress_np(vp, indexnum + 1, flag);
 			it1 ++;
 		}
 		else if( it1->termID > it2->termID ){
             vector<nPosting> vp = decompress_np(file2, it2->termID);
-            //update_t_meta(it2->termID, file2, dict);
             compress_np(vp, indexnum + 1, flag);
 			it2 ++;
 		}
 	}
 
-    //decompress from the old index and then compress to the new one to update metadata is time-consuming
-    //need to find a more efficient way to update metadata while tranfering positngs
+    /**
+	 * TODO: decompress from the old index and then compress to the new one to update metadata is time-consuming
+     * need to find a more efficient way to update metadata while tranfering positngs
+	 */
 	while (it1 != v1.end() ){
         vector<nPosting> vp = decompress_np(file1, it1->termID);
         compress_np(vp, indexnum + 1, flag);
@@ -900,6 +913,11 @@ void Indexer::merge_np(int indexnum){
 }
 
 std::vector<Posting> Indexer::decompress_p(string namebase, unsigned int termID){
+	/**
+	 * Decompress positional postings.
+	 * First read each field from disk and pass the bianry vector to decode.
+	 * Finally add the terms up since we used delta encoding before.
+	 */
 	Reader r;
 
 	ifstream ifile;
@@ -920,8 +938,6 @@ std::vector<Posting> Indexer::decompress_p(string namebase, unsigned int termID)
         vector<mData>::iterator currMVec;
 
         for( currMVec = mvec.begin(); currMVec != mvec.end(); currMVec ++){
-            //cout << currMVec->filename << endl;
-            //cout << currMVec->posting_start << ' ' << currMVec->frag_start << ' ' << currMVec->pos_start << endl;
             if( currMVec->filename == namebase )
                 break;
         }
@@ -944,8 +960,6 @@ std::vector<Posting> Indexer::decompress_p(string namebase, unsigned int termID)
 
     	ifile.seekg(currMVec->pos_start);
     	while(ifile.tellg() != currMVec->end_pos){
-            //cout << ifile.tellg() << endl;
-            //cout << currMVec->end_pos << endl;
     		ifile.get(c);
     		readin.push_back(c);
     	}
@@ -1072,6 +1086,9 @@ std::vector<nPosting> Indexer::decompress_np(string namebase, unsigned int termI
 }
 
 vector<unsigned int> Indexer::decompress_np(string namebase, long start, long end){
+	/**
+	 * Decompress the posting list given the file and start & end position.
+	*/
 	Reader r;
 	ifstream ifile;
     string filename = string(NPDIR) + namebase;
@@ -1094,6 +1111,9 @@ vector<unsigned int> Indexer::decompress_np(string namebase, long start, long en
 }
 
 void Indexer::update_p(vector<ExternPposting> external){
+	/**
+	 * Convert external posting to internal posting.
+	 */
 	unsigned int termID;
 	Lexicon lex;
 	for( vector<ExternPposting>::iterator it = external.begin(); it != external.end(); it++){
@@ -1111,6 +1131,9 @@ void Indexer::update_p(vector<ExternPposting> external){
 }
 
 void Indexer::update_np(vector<ExternNPposting> external){
+	/**
+	 * Update non_positional index.
+	 */
 	unsigned int termID;
 	unsigned int freq;
 	unsigned int sign;
@@ -1137,6 +1160,9 @@ void Indexer::update_np(vector<ExternNPposting> external){
 }
 
 void Indexer::display_dict(){
+	/**
+	 * Display the content of dictionary.
+	 */
 	for( map<unsigned int, pair<vector<mData>, vector<mDatanp>>>::iterator it = dict.begin(); it != dict.end(); it ++){
         cout << it->first << endl;
         vector<mData> vec = it->second.first;
@@ -1148,6 +1174,9 @@ void Indexer::display_dict(){
 }
 
 void Indexer::display_meta(){
+	/**
+	 * Display content of metadata/
+	 */
 	for( map<string, vector<f_meta>, strless>::iterator it = filemeta.begin(); it != filemeta.end(); it++){
         cout << it->first << endl;
         vector<f_meta> vec = it->second;

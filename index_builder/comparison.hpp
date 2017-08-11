@@ -1,3 +1,11 @@
+/**
+ * Overload the comparison operators used for comparing Posting and
+ * nPosting instantiations.
+ * For positional posting, first compare term ID, then, document ID,
+ * then fragment ID, then position in the fragment.
+ * For non-positinal positng, first compare the term Id, then document ID.
+ */
+
 #ifndef COMPARISON_H
 #define COMPARISON_H
 

@@ -9,6 +9,9 @@ using namespace std;
 
 typedef map<string, unsigned int, strless> lexmap;
 void Lexicon::build_lexical(){
+    /**
+     * Read term, termID pairs from file and build a map structure to store it.
+     */
     int count = 0;
     string line;
     string term;

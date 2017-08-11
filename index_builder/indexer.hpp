@@ -1,3 +1,6 @@
+/**
+ * For building the static index, dynamic index, extended lexicon, and file metadata.
+ */
 #ifndef INDEXER_H
 #define INDEXER_H
 

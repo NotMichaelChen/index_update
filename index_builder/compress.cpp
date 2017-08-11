@@ -19,7 +19,7 @@
 #include "comparison.hpp"
 #include "lexicon.hpp"
 
-#define NO_DOC 10 //temporary use
+#define NO_DOC 10 //when testing, only the first 10 documents are indexed
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
 #define INDEX "./test_data/compressedIndex"
 #define INFO "./test_data/docInfo"

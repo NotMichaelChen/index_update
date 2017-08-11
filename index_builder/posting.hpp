@@ -1,3 +1,7 @@
+/**
+ * Positional and non-positional posting structure.
+ */
+
 #ifndef POSTING_H
 #define POSTING_H
 

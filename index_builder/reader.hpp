@@ -1,3 +1,10 @@
+/*
+ * Contains three kinds of decoding function.
+ * Given a file containing foward index and a ending position, read the file until ending postition without decoding.
+ * Given a file and both starting and ending position, decode the bianry vector and return a vector of unsigned integer.
+ * Given a binary vector, return a decoded unsigned integer vector.
+ */
+
 #ifndef READER_H
 #define READER_H
 #include <fstream>
