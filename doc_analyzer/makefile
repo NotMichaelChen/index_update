@@ -14,7 +14,7 @@ OPTIMIZE = -g -O2
 %.o: %.cpp $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS) $(LIBS)
 
-LBS: $(OBJ)
+doc_analyzer: $(OBJ)
 	$(CC) -o ./exe/$@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
