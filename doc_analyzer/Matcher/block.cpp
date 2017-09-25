@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <map>
 #include <iostream>
+#include <memory>
 
 #include "stringencoder.h"
 
@@ -15,15 +16,15 @@ namespace Matcher {
         return os;
     }
     
-    bool compareOld(const Block* lhs, const Block* rhs) {
+    bool compareOld(const shared_ptr<Block>& lhs, const shared_ptr<Block>& rhs) {
         return lhs->oldloc < rhs->oldloc;
     }
-    bool compareNew(const Block* lhs, const Block* rhs) {
+    bool compareNew(const shared_ptr<Block>& lhs, const shared_ptr<Block>& rhs) {
         return lhs->newloc < rhs->newloc;
     }
     
-    vector<Block*> getCommonBlocks(int minsize, StringEncoder& se) {
-        vector<Block*> commonblocks;
+    vector<shared_ptr<Block>> getCommonBlocks(int minsize, StringEncoder& se) {
+        vector<shared_ptr<Block>> commonblocks;
         if(se.getOldSize() < minsize || se.getNewSize() < minsize)
             return commonblocks;
        
@@ -48,7 +49,7 @@ namespace Matcher {
             auto blockmatchrange = potentialblocks.equal_range(blockhash);
             for(auto matchedblock = blockmatchrange.first; matchedblock != blockmatchrange.second; ++matchedblock) {
                 if(blockcheck == matchedblock->second.run) {
-                    Block* match = new Block(
+                    shared_ptr<Block> match = make_shared<Block>(
                         matchedblock->second.oldloc,
                         newiter - se.getNewIter(),
                         matchedblock->second.run
@@ -63,7 +64,7 @@ namespace Matcher {
     }
     
     //Attempt to extend common blocks
-    void extendBlocks(vector<Block*>& allblocks, StringEncoder& se) {
+    void extendBlocks(vector<shared_ptr<Block>>& allblocks, StringEncoder& se) {
         //Sort based on old locations
         sort(allblocks.begin(), allblocks.end(), compareOld);
         
@@ -93,7 +94,6 @@ namespace Matcher {
                         (*overlapchecker)->newloc >= allblocks[index]->newloc &&
                         (*overlapchecker)->newendloc() <= (newiter - se.getNewIter()))
                     {
-                        delete *overlapchecker;
                         overlapchecker = allblocks.erase(overlapchecker);
                     }
                     else
@@ -107,9 +107,9 @@ namespace Matcher {
     
     //Resolve blocks that are intersecting
     //Should be run after extendBlocks
-    void resolveIntersections(vector<Block*>& allblocks) {
+    void resolveIntersections(vector<shared_ptr<Block>>& allblocks) {
         //List of blocks to add to the main list later
-        vector<Block*> addedblocks;
+        vector<shared_ptr<Block>> addedblocks;
         //First, sort based on old locations
         sort(allblocks.begin(), allblocks.end(), compareOld);
         
@@ -126,7 +126,7 @@ namespace Matcher {
                 if(allblocks[j]->oldendloc() > allblocks[i]->oldendloc()) {
                     //calculate how much the current block needs to shrink by
                     int shrunksize = allblocks[j]->oldloc - allblocks[i]->oldloc;
-                    Block* shrunkblock = new Block(
+                    shared_ptr<Block> shrunkblock = make_shared<Block>(
                         allblocks[i]->oldloc,
                         allblocks[i]->newloc,
                         vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)
@@ -147,7 +147,7 @@ namespace Matcher {
                 
                 if(allblocks[j]->newendloc() > allblocks[i]->newendloc()) {
                     int shrunksize = allblocks[j]->newloc - allblocks[i]->newloc;
-                    Block* shrunkblock = new Block(
+                    shared_ptr<Block> shrunkblock = make_shared<Block>(
                         allblocks[i]->oldloc,
                         allblocks[i]->newloc,
                         vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)

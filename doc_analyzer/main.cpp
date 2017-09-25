@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 #include "Matcher/matcher.h"
 #include "Matcher/stringencoder.h"
@@ -21,8 +22,8 @@ int transtest();
 
 int main(int argc, char **argv) {
     //return doctest();
-    return transtest();
-    //return matchertest(argc, argv);
+    //return transtest();
+    return matchertest(argc, argv);
     return 0;
 }
 
@@ -107,31 +108,31 @@ int matchertest(int argc, char **argv) {
     Matcher::StringEncoder se(oldfile, newfile);
     
     //Find common blocks between the two files
-    vector<Matcher::Block*> commonblocks = Matcher::getCommonBlocks(10, se);
+    vector<shared_ptr<Matcher::Block>> commonblocks = Matcher::getCommonBlocks(10, se);
     
     Matcher::extendBlocks(commonblocks, se);
     Matcher::resolveIntersections(commonblocks);
     
     int counter = 0;
-    for(Matcher::Block* i : commonblocks){
+    for(shared_ptr<Matcher::Block> i : commonblocks){
         cout << *i << endl;
         counter++;
     }
     cout << counter << endl;
     
     Matcher::BlockGraph G(commonblocks);
-    vector<Matcher::Block*> vertices = G.getAllVertices();
-    for(Matcher::Block* i : vertices) {
+    vector<shared_ptr<Matcher::Block>> vertices = G.getAllVertices();
+    for(shared_ptr<Matcher::Block> i : vertices) {
         cout << *i << endl;
         
-        vector<Matcher::Block*> edges = G.getAdjacencyList(i);
-        for(Matcher::Block* j : edges)
+        vector<shared_ptr<Matcher::Block>> edges = G.getAdjacencyList(i);
+        for(shared_ptr<Matcher::Block> j : edges)
             cout << "\t" << *j << endl;
     }
     cout << endl;
     
-    vector<Matcher::Block*> topsort = Matcher::topologicalSort(G);
-    for(Matcher::Block* b : topsort) {
+    vector<shared_ptr<Matcher::Block>> topsort = Matcher::topologicalSort(G);
+    for(shared_ptr<Matcher::Block> b : topsort) {
         cout << *b << " ";
     }
     cout << endl;
@@ -143,18 +144,18 @@ int matchertest(int argc, char **argv) {
     for(size_t i = 0; i < bestlist.size(); ++i) {
         if(bestlist[i].current == nullptr) break;
         
-        vector<Matcher::Block*> path = disttable.tracePath(bestlist[i]);
+        vector<shared_ptr<Matcher::Block>> path = disttable.tracePath(bestlist[i]);
         cout << bestlist[i].steps << "\t" << bestlist[i].distance << "\t";
-        for(Matcher::Block* j : path) {
+        for(shared_ptr<Matcher::Block> j : path) {
             //cout << j;
             cout << *j << " ";
         }
         cout << endl;
     }
     
-    vector<Matcher::Block*> finalpath = disttable.findOptimalPath(5);
+    vector<shared_ptr<Matcher::Block>> finalpath = disttable.findOptimalPath(5);
     
-    for(Matcher::Block* b : finalpath)
+    for(shared_ptr<Matcher::Block> b : finalpath)
         cout << *b << endl;
     
     vector<Matcher::Translation> translist = Matcher::getTranslations(se.getOldSize(), se.getNewSize(), finalpath);

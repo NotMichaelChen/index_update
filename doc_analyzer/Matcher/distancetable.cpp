@@ -11,17 +11,17 @@
 using namespace std;
 
 namespace Matcher {
-    DistanceTable::DistanceTable(int blocklimit, BlockGraph& graph, vector<Block*>& toporder) : maxsteps(blocklimit) {
+    DistanceTable::DistanceTable(int blocklimit, BlockGraph& graph, vector<shared_ptr<Block>>& toporder) : maxsteps(blocklimit) {
         //Initialize all vertices in graph
         //Since order doesn't matter, use toporder
-        for(Block* vertex : toporder) {
+        for(shared_ptr<Block> vertex : toporder) {
             this->initVertex(vertex);
         }
         
         //Fill out the dist list for each vertex
-        for(Block* vertex : toporder) {
-            vector<Block*> adjacencylist = graph.getAdjacencyList(vertex);
-            for(Block* neighbor : adjacencylist) {
+        for(shared_ptr<Block> vertex : toporder) {
+            vector<shared_ptr<Block>> adjacencylist = graph.getAdjacencyList(vertex);
+            for(shared_ptr<Block> neighbor : adjacencylist) {
                 this->mergeIntoNext(vertex, neighbor);
             }
         }
@@ -51,7 +51,7 @@ namespace Matcher {
         return bestlist;
     }
     
-    vector<Block*> DistanceTable::findOptimalPath(int a) {
+    vector<shared_ptr<Block>> DistanceTable::findOptimalPath(int a) {
         vector<DistanceTable::TableEntry> bestlist = findAllBestPaths();
         //int refers to steps, not weight
         DistanceTable::TableEntry bestending(-1, -1, nullptr, nullptr);
@@ -79,8 +79,8 @@ namespace Matcher {
         return tracePath(bestending);
     }
     
-    vector<Block*> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
-        vector<Block*> path;
+    vector<shared_ptr<Block>> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
+        vector<shared_ptr<Block>> path;
         if(ending.current == nullptr)
             return path;
         
@@ -97,7 +97,7 @@ namespace Matcher {
         return path;
     }
     
-    void DistanceTable::mergeIntoNext(Block* prev, Block* next) {
+    void DistanceTable::mergeIntoNext(shared_ptr<Block> prev, shared_ptr<Block> next) {
         int weight = next->run.size();
         
         //If neighbor's distlist is not large enough for comparing, resize it
@@ -129,7 +129,7 @@ namespace Matcher {
         return tablelist[te.prev][te.steps-2];
     }
     
-    void DistanceTable::initVertex(Block* V) {
+    void DistanceTable::initVertex(shared_ptr<Block> V) {
         if(tablelist.find(V) == tablelist.end()) {
             vector<DistanceTable::TableEntry> tableinit;
             tableinit.push_back(DistanceTable::TableEntry(1, V->run.size(), V, nullptr));

@@ -1,5 +1,8 @@
+#include "matcher.h"
+
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 #include "Matcher/stringencoder.h"
 #include "Matcher/block.h"
@@ -10,26 +13,26 @@
 using namespace std;
 
 namespace Matcher {
-    vector<Block*> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
+    vector<shared_ptr<Block>> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
         //Find common blocks between the two files
-        vector<Block*> commonblocks = getCommonBlocks(minblocksize, se);
+        vector<shared_ptr<Block>> commonblocks = getCommonBlocks(minblocksize, se);
         extendBlocks(commonblocks, se);
         resolveIntersections(commonblocks);
         
         //Create a graph of the common blocks
         BlockGraph G(commonblocks);
-        vector<Block*> topsort = topologicalSort(G);
+        vector<shared_ptr<Block>> topsort = topologicalSort(G);
         
         //Get the optimal set of blocks to select
         DistanceTable disttable(maxblockcount, G, topsort);
-        vector<Block*> finalpath = disttable.findOptimalPath(selectionparameter);
+        vector<shared_ptr<Block>> finalpath = disttable.findOptimalPath(selectionparameter);
         
         return finalpath;
     }
     
     //TODO: refactor and decide if this should be one or two functions
     pair<vector<ExternNPposting>, vector<ExternPposting>>
-    getPostings(vector<Block*>& commonblocks, unsigned int doc_id, unsigned int fragID, StringEncoder& se) {
+    getPostings(vector<shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int fragID, StringEncoder& se) {
         //Which block to skip next
         int blockindex = 0;
         unordered_map<string, ExternNPposting> nppostingsmap;

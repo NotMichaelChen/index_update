@@ -14,16 +14,16 @@ namespace Matcher {
     class DistanceTable {
     public:
         struct TableEntry {
-            TableEntry(int s, int d, Block* c, Block* p)
+            TableEntry(int s, int d, std::shared_ptr<Block> c, std::shared_ptr<Block> p)
             : steps(s), distance(d), current(c), prev(p) {}
             
             int steps;
             int distance;
-            Block* current;
-            Block* prev;
+            std::shared_ptr<Block> current;
+            std::shared_ptr<Block> prev;
         };
         
-        DistanceTable(int blocklimit, BlockGraph& graph, std::vector<Block*>& toporder);
+        DistanceTable(int blocklimit, BlockGraph& graph, std::vector<std::shared_ptr<Block>>& toporder);
         
         //Gets a list of every best path in the graph
         //index of vector refers to number of steps through graph (see assumption below)
@@ -37,20 +37,20 @@ namespace Matcher {
         //Thus a represents the cost of taking one block of text
         //NOTE: this pair represents <steps, block> instead of <weight, block>
         //weight can be obtained elsewhere
-        std::vector<Block*> findOptimalPath(int a);
+        std::vector<std::shared_ptr<Block>> findOptimalPath(int a);
         
         //Fills a vector with a path that ends at ending
         //path is in order of graph traversal
         //ending is included in the path as the last entry
-        std::vector<Block*> tracePath(TableEntry ending);
+        std::vector<std::shared_ptr<Block>> tracePath(TableEntry ending);
         
     private:
         //Initialize a vertex in the table
         //The vertex gets one entry in its distance list; (V.weight, nullptr)
         //This is because we can access any vertex in the graph in one step
-        void initVertex(Block* V);
+        void initVertex(std::shared_ptr<Block> V);
         //Merge the list from prev into the list of next, where next is a neighbor of prev
-        void mergeIntoNext(Block* prev, Block* next);
+        void mergeIntoNext(std::shared_ptr<Block> prev, std::shared_ptr<Block> next);
         //Gets the previous table entry given a current table entry
         TableEntry getPreviousEntry(TableEntry te);
         
@@ -58,7 +58,7 @@ namespace Matcher {
         //Each table is a list of distance and previous_block pairs, with the position
         //in the vector denoting the number of hops it takes from S.
         //**We assume that index=0 means 1 hop from S
-        std::map<Block*, std::vector<TableEntry>> tablelist;
+        std::map<std::shared_ptr<Block>, std::vector<TableEntry>> tablelist;
         //The maximum number of steps we're allowed to take through the graph
         int maxsteps;
     };

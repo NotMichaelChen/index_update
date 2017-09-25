@@ -1,6 +1,7 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
+#include <memory>
 #include <vector>
 #include <iostream>
 
@@ -27,18 +28,18 @@ namespace Matcher {
     std::ostream& operator<<(std::ostream& os, const Block& bl);
     
     //Compare blocks based on location in old file
-    bool compareOld(const Block* lhs, const Block* rhs);
+    bool compareOld(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
     //Compare blocks based on location in new file
-    bool compareNew(const Block* lhs, const Block* rhs);
+    bool compareNew(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
     
     //Gets all possible common blocks of text of size minsize
     //Blocks can be overlapping; this is fixed with the other two functions
-    std::vector<Block*> getCommonBlocks(int minsize, StringEncoder& se);
+    std::vector<std::shared_ptr<Block>> getCommonBlocks(int minsize, StringEncoder& se);
     //Extends common blocks, and removes blocks that are overlapped by the extended block
-    void extendBlocks(std::vector<Block*>& allblocks, StringEncoder& se);
+    void extendBlocks(std::vector<std::shared_ptr<Block>>& allblocks, StringEncoder& se);
     //Resolves blocks that may be only partially overlapping
     //This is done by adding extra blocks that represent the 
-    void resolveIntersections(std::vector<Block*>& allblocks);
+    void resolveIntersections(std::vector<std::shared_ptr<Block>>& allblocks);
     //Hashes a vector of ints
     //Not guaranteed to be optimal
     unsigned int hashVector(std::vector<int>& v);

@@ -9,7 +9,7 @@
 using namespace std;
 
 namespace Matcher {
-    vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<Block*> commonblocks) {
+    vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<shared_ptr<Block>> commonblocks) {
         vector<Translation> translist;
         if(commonblocks.size() == 0)
             return translist;
@@ -21,7 +21,7 @@ namespace Matcher {
         
         //Likely not necessary, but a useful guarantee
         sort(commonblocks.begin(), commonblocks.end(), compareOld);
-        for(Block* b : commonblocks) {
+        for(shared_ptr<Block> b : commonblocks) {
             int oldlength = b->oldloc - currentloc;
             int newlength = b->newloc - (currentloc+shift);
             
