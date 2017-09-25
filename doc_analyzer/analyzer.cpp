@@ -32,7 +32,7 @@ MatcherInfo makePosts(Structures::DocumentTuple& olddoc, string& newpage) {
     Matcher::StringEncoder se(olddoc.doc, newpage);
 
     //-else, run the graph based matching algorithm on the two versions
-    vector<Matcher::Block*> commonblocks = Matcher::getCommonBlocks(se, MIN_BLOCK_SIZE, MAX_BLOCK_COUNT, 5);
+    vector<Matcher::Block*> commonblocks = Matcher::getOptimalBlocks(se, MIN_BLOCK_SIZE, MAX_BLOCK_COUNT, 5);
     
     //Get the translation and posting list
     vector<Matcher::Translation> translist = Matcher::getTranslations(se.getOldSize(), se.getNewSize(), commonblocks);

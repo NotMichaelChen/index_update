@@ -10,7 +10,7 @@
 using namespace std;
 
 namespace Matcher {
-    vector<Block*> getCommonBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
+    vector<Block*> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
         //Find common blocks between the two files
         vector<Block*> commonblocks = getCommonBlocks(minblocksize, se);
         extendBlocks(commonblocks, se);
