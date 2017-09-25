@@ -78,6 +78,11 @@ int matchertest(int argc, char **argv) {
         }
     }
     
+    if(k.empty()) {
+        cout << "Error: No block count specified" << endl;
+        exit(EXIT_FAILURE);
+    }
+    
     int blocks = 0;
     size_t checker;
     blocks = stoi(k, &checker, 10);
