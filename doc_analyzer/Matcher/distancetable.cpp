@@ -44,8 +44,8 @@ namespace Matcher {
             }
         }
         
-        //Trim any null pairs remaining
-        while(bestlist.back().current == nullptr)
+        //Trim any null pairs remaining, but don't trim if the list is empty
+        while(bestlist.back().current == nullptr && bestlist.size() > 0)
             bestlist.pop_back();
         
         return bestlist;

@@ -60,7 +60,7 @@ namespace Structures {
         return finalposition;
     }
     
-    void TranslationTable::insert(vector<Matcher::Translation> trans, int docID) {
+    void TranslationTable::insert(vector<Matcher::Translation>& trans, int docID) {
         vector<string> val;
         for(Matcher::Translation& t : trans)
             val.push_back(transToString(t));
