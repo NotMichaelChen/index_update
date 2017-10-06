@@ -9,13 +9,15 @@
 #include "Matcher/translate.h"
 #include "Structures/documentstore.h"
 
+//A collection of positional/nonpositional postings and translation vector
 struct MatcherInfo {
-    MatcherInfo(std::vector<ExternNPposting> n, std::vector<ExternPposting> p, std::vector<Matcher::Translation> t)
-        : NPpostings(n), Ppostings(p), translations(t) {}
+    MatcherInfo(std::vector<ExternNPposting> n, std::vector<ExternPposting> p, std::vector<Matcher::Translation> t, int m)
+        : NPpostings(n), Ppostings(p), translations(t), maxfragID(m) {}
     
     std::vector<ExternNPposting> NPpostings;
     std::vector<ExternPposting> Ppostings;
     std::vector<Matcher::Translation> translations;
+    int maxfragID;
 };
 
 //Updates the index given a new page
