@@ -13,6 +13,7 @@
 #include "Matcher/translate.h"
 #include "Structures/documentstore.h"
 #include "Structures/translationtable.h"
+#include "Tests/blocktester.h"
 
 using namespace std;
 
@@ -23,7 +24,13 @@ int transtest();
 int main(int argc, char **argv) {
     //return doctest();
     //return transtest();
-    return matchertest(argc, argv);
+    //return matchertest(argc, argv);
+
+    Tests::blockTester bt;
+    bt.test();
+
+    cout << "All tests passed successfully" << endl;
+    
     return 0;
 }
 

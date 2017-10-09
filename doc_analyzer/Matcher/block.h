@@ -38,7 +38,7 @@ namespace Matcher {
     //Extends common blocks, and removes blocks that are overlapped by the extended block
     void extendBlocks(std::vector<std::shared_ptr<Block>>& allblocks, StringEncoder& se);
     //Resolves blocks that may be only partially overlapping
-    //This is done by adding extra blocks that represent the 
+    //This is done by adding extra blocks that represent the overlaps
     void resolveIntersections(std::vector<std::shared_ptr<Block>>& allblocks);
     //Hashes a vector of ints
     //Not guaranteed to be optimal
