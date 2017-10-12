@@ -24,7 +24,7 @@ namespace Structures {
     private:
         //key: docID
         //val: translations
-        cpp_redis::redis_client client;
+        cpp_redis::client client;
     };
 }
 #endif

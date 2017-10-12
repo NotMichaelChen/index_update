@@ -29,7 +29,7 @@ namespace Structures {
     private:
         //key: url
         //val: docID, doc, maxfragID, timestamp
-        cpp_redis::redis_client client;
+        cpp_redis::client client;
     };
 }
 
