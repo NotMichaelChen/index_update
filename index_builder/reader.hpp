@@ -1,3 +1,10 @@
+/*
+ * Contains three kinds of decoding function.
+ * Given a file containing foward index and a ending position, read the file until ending postition without decoding.
+ * Given a file and both starting and ending position, decode the bianry vector and return a vector of unsigned integer.
+ * Given a binary vector, return a decoded unsigned integer vector.
+ */
+
 #ifndef READER_H
 #define READER_H
 #include <fstream>
@@ -16,9 +23,7 @@ public:
 
 	static std::vector<unsigned int> VBDecode(std::vector<char>& vec);
 
-	static std::vector<Posting> decompress_p(std::string namebase, unsigned int termID, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict);
 
-	std::vector<nPosting> decompress_np(std::string namebase, unsigned int termID, std::map<unsigned int, std::pair<std::vector<mData>, std::vector<mDatanp>>>& dict);
 };
 
 #endif

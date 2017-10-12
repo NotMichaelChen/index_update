@@ -14,7 +14,8 @@ struct mData{
 	//need number of blocks?
 	std::string term;
 	int num_posting;//number of postings
-	//how a postinglist is stored in multiple files
+	int comp_method;//compress method, 1: Variable Bytes Encoding
+	//following is how a postinglist is stored in multiple files
 	std::string filename;
 	long start_pos;
 	long end_pos;
@@ -29,6 +30,7 @@ struct mData{
 
 struct mDatanp{
 	std::string filename;
+	int comp_method;
 	long start_pos;
 	long end_pos;
 	long meta_doc_start;
