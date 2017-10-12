@@ -17,6 +17,7 @@ namespace Structures {
         TranslationTable();
         int apply(int docID, int fragID, int position);
         void insert(std::vector<Matcher::Translation>& trans, int docID);
+        void dump();
         //If a document gets reindexed, throw away its translation list
         void erase(int docID);
         

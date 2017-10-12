@@ -83,6 +83,12 @@ namespace Structures {
         
         client.sync_commit();
     }
+
+    void DocumentStore::dump() {
+        //Ensure database is saved
+        client.save();
+        client.sync_commit();
+    }
     
     int DocumentStore::getNextDocID() {
         string nextid;
