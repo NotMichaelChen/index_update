@@ -2,11 +2,13 @@
 #define LSTPTR_H
 
 #include <vector>
+
 #include "meta.hpp"
+#include "indexer.hpp"
 
 class Lstptr{
 public:
-    Lstptr(std::vector<mDatanp>);
+    Lstptr(std::vector<mDatanp>, Indexer& ind);
     void operator++ ();
 
 private:

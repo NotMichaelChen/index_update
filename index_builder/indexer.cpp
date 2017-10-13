@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <dirent.h>
 #include <utility>
+#include <stdexcept>
 
 #include "reader.hpp"
 #include "posting.hpp"
@@ -1093,12 +1094,12 @@ vector<unsigned int> Indexer::decompress_np(string namebase, long start, long en
 	ifstream ifile;
     string filename = string(NPDIR) + namebase;
 	ifile.open(filename, ios::binary);
+    vector<unsigned int> field;
 
     if(ifile.is_open()){
         //cout << namebase << " Opened for Decompressing" << endl;
     	char c;
     	vector<char> readin;
-    	vector<unsigned int> field;
 
     	ifile.seekg(start);
     	while(ifile.tellg() != end){
@@ -1107,6 +1108,9 @@ vector<unsigned int> Indexer::decompress_np(string namebase, long start, long en
     	}
         field = r.VBDecode(readin);
 	}
+    else {
+        throw std::invalid_argument("Invalid file");
+    }
 	return field;
 }
 

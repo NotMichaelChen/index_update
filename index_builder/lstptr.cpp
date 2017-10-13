@@ -1,5 +1,9 @@
 #include <vector>
+
+#include "indexer.hpp"
 #include "meta.hpp"
+#include "lstptr.hpp"
+
 using namespace std;
 
 Lstptr::Lstptr(vector<mDatanp> np, Indexer& ind){

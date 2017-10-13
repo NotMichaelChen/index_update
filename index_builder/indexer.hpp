@@ -73,7 +73,7 @@ public:
 
 	void display_dict();
 
-	std::vector<unsigned int> Indexer::decompress_np(std::string namebase, long start, long end);
+	std::vector<unsigned int> decompress_np(std::string namebase, long start, long end);
 };
 
 #endif
