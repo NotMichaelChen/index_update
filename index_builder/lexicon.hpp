@@ -9,16 +9,29 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include "strless.hpp"
 
-class Lexicon{
-private:
-    map<string, unsigned int, strless> lex;
+struct Lex_data {
+    unsigned int termid;
+    //How many documents the term appeared in
+    int f_t;
+    //Where in the dynamic index the term appears in
+    long p_ptr;
+    long np_ptr;
+};
 
+class Lexicon {
 public:
-    void build_lexical();
-    void display_lexical();
-    unsigned int get_id(string term);
+    Lexicon();
+
+    Lex_data getEntry(std::string& term);
+    void updateFreq(std::string& term, int delta);
+    void updatePositional(std::string& term, long pos);
+    void updateNonPositional(std::string& term, long pos);
+
+private:
+    void initEntry(std::string& term);
+    std::map<std::string, Lex_data> lex;
+    unsigned int nextID;
 };
 
 #endif

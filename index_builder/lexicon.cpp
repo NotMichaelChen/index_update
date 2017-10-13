@@ -4,37 +4,46 @@
 #include <iostream>
 #include <map>
 #include "lexicon.hpp"
-#include "strless.hpp"
+
 using namespace std;
 
-typedef map<string, unsigned int, strless> lexmap;
-void Lexicon::build_lexical(){
-    /**
-     * Read term, termID pairs from file and build a map structure to store it.
-     */
-    int count = 0;
-    string line;
-    string term;
-    string ID;
-    ifstream ifile;
-    ifile.open("./test_data/termIDs");
+Lexicon::Lexicon() : nextID(0) {}
 
-    while(getline(ifile, line)){
-        count ++;
-        stringstream lineStream(line);
-        lineStream >> ID >> term;
-        lex[term] = stoi(ID);
-        cout << '\r' << count << " Finished.";
-        if( count == 1000000) break;
+Lex_data Lexicon::getEntry(string& term) {
+    if(lex.find(term) == lex.end()) {
+        initEntry(term);
     }
-}
-
-void Lexicon::display_lexical(){
-    for(lexmap::iterator it = lex.begin(); it != lex.end(); ++it){
-        cout << it->first << ' ' << it->second << endl;
-    }
-}
-
-unsigned int Lexicon::get_id(string term){
     return lex[term];
+}
+
+void Lexicon::updateFreq(string& term, int delta) {
+    if(lex.find(term) == lex.end()) {
+        initEntry(term);
+    }
+    lex[term].f_t += delta;
+}
+
+void Lexicon::updatePositional(string& term, int delta) {
+    if(lex.find(term) == lex.end()) {
+        initEntry(term);
+    }
+    lex[term].p_ptr += delta;
+}
+
+void Lexicon::updateNonPositional(string& term, int delta) {
+    if(lex.find(term) == lex.end()) {
+        initEntry(term);
+    }
+    lex[term].np_ptr += delta;
+}
+
+void Lexicon::initEntry(string& term) {
+    auto iter = lex.find(term);
+    //Only init the entry if it does not exist
+    if(iter == lex.end()) {
+        Lex_data entry;
+        entry.termid = nextID;
+        nextID++;
+        lex[term] = entry;
+    }
 }
