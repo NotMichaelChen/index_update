@@ -28,6 +28,12 @@ public:
     void updatePositional(std::string& term, long pos);
     void updateNonPositional(std::string& term, long pos);
 
+    //Dumps contents of lexicon into file called "lexdump"
+    void dump();
+    //Restores the lexicon from a file called "lexdump" on disk
+    //Returns true if restored from file
+    bool restore();
+
 private:
     void initEntry(std::string& term);
     std::map<std::string, Lex_data> lex;

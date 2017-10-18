@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include "lexicon.hpp"
 
 using namespace std;
@@ -46,4 +47,50 @@ void Lexicon::initEntry(string& term) {
         nextID++;
         lex[term] = entry;
     }
+}
+
+void Lexicon::dump() {
+    ofstream dumpfile;
+    dumpfile.open("lexdump");
+
+    dumpfile << lex.size() << "\n";
+    for(auto iter = lex.begin(); iter != lex.end(); ++iter) {
+        dumpfile << iter->first << " ";
+        dumpfile << iter->second.termid << " ";
+        dumpfile << iter->second.f_t << " ";
+        dumpfile << iter->second.p_ptr << " ";
+        dumpfile << iter->second.np_ptr << "\n";
+    }
+
+    dumpfile.close();
+}
+
+bool Lexicon::restore() {
+    ifstream dumpfile;
+    dumpfile.open("lexdump")
+
+    if(!dumpfile)
+        return false;
+
+    string line;
+    size_t convertlen;
+
+    getline(dumpfile, line);
+    lex.size = stoi(line, &convertlen);
+    if(convertlen == 0)
+        return false;
+
+    stringstream linebuf;
+
+    while(getline(dumpfile, line)) {
+        linebuf = stringstream(line);
+        string key;
+        Lex_data entry;
+        linebuf >> key >> entry.termid >> entry.f_t >> entry.p_ptr >> entry.np_ptr;
+        lex[key] = entry;
+    }
+
+    dumpfile.close();
+
+    return true;
 }
