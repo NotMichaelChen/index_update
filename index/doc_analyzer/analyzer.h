@@ -22,7 +22,7 @@ struct MatcherInfo {
 };
 
 //Updates the index given a new page
-MatcherInfo indexUpdate(std::string& url, std::string& newpage, std::string& timestamp, Structures::DocumentStore& docstore, Structures::TranslationTable& transtable);
+MatcherInfo indexUpdate(std::string& url, std::string& newpage, Structures::DocumentStore& docstore, Structures::TranslationTable& transtable);
 //Generates new postings and translations from the new page
 MatcherInfo makePosts(Structures::DocumentTuple& olddoc, std::string& newpage);
 
