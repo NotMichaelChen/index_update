@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 
+#include "lexicon.hpp"
 #include "Structures/documentstore.h"
 #include "Structures/translationtable.h"
 
@@ -16,6 +17,7 @@ private:
     std::map<std::string, std::vector<Posting>> positional_index;
     std::map<std::string, std::vector<nPosting>> nonpositional_index;
 
+    Lexicon lex;
     Structures::DocumentStore docstore;
     Structures::TranslationTable transtable;
 };
