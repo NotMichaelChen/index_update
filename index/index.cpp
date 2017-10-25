@@ -34,6 +34,9 @@ void Index::insert_document(std::string& url, std::string& newpage) {
     for(auto np_iter = results.NPpostings.begin(); np_iter != results.NPpostings.end(); np_iter++) {
         Lex_data entry = lex.getEntry(np_iter->term);
 
+        //Update entry freq
+        lex.updateFreq(np_iter->term, np_iter->freq);
+
         //Will always evaluate to either 0 or 1
         unsigned int sign = (np_iter->freq >= 0);
         unsigned int freq = std::abs(np_iter->freq);
