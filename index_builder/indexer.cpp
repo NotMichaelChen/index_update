@@ -527,6 +527,7 @@ void Indexer::compress_p(vector<Posting>& pList, int indexnum, char prefix){
 void Indexer::start_compress(){
 	/**
 	 * The very first function to call.
+	 * docInfo: docname, docID, offset, compressedSize(in varbyte), docLength
 	 */
 	ifstream index;
 	ifstream info;
@@ -540,7 +541,7 @@ void Indexer::start_compress(){
 	int num;
 
 	for(int i = 0; i < NO_DOC; i ++){
-		//For every forward index of document, do
+		//For every forward index of document, build dynamic index, if full, write to disk
 		vec.clear();
 		getline(info, line);//read docInfo
 		stringstream lineStream(line);
@@ -552,7 +553,7 @@ void Indexer::start_compress(){
 
 		index.seekg(stoi(vec[2]));
 		while(index.tellg() != (stoi(vec[2]) + stoi(vec[3]))){
-			//While reading the same document, do
+			//While reading the same document, decode forward index
 			index.get(c);
 			bitset<8> byte(c);
 			num = 0; // store decoding termID
@@ -567,12 +568,12 @@ void Indexer::start_compress(){
 			num += (byte.to_ulong())*pow(128, p);
 			pos ++;
 
-			Posting p(num, stoul(vec[1]), 0, pos);
+			Posting p(num, stoul(vec[1]), 0, pos); //num is termID
 			p_index.push_back(p);
 
 
 			if (p_index.size() == POSTING_LIMIT){
-				//When the vector of posting list can fit into memory, do
+				//When the vector of posting list cannot fit into memory, do
                 cout << "Memory limit reaches." << endl;
 				std::sort(p_index.begin(), p_index.end());
 
@@ -598,8 +599,8 @@ void Indexer::start_compress(){
                     }
                     else break;
                 }
-                compress_np(np_index);
-				compress_p(p_index);
+                compress_np(np_index); //write to disk to become static index
+				compress_p(p_index); //write to disk to become static index
                 merge_test();
 				p_index.clear();
                 np_index.clear();
@@ -645,7 +646,10 @@ vector<uint8_t> Indexer::compress_freq(std::vector<unsigned int>& field, int met
 	}
 }
 
-mDatanp Indexer::compress_np(string namebase, ofstream& ofile, f_meta& fm, std::vector<unsigned int>& v_docID, std::vector<unsigned int>& v_freq, std::vector<unsigned int>& v_sign){
+mDatanp Indexer::compress_np(string namebase, ofstream& ofile, f_meta& fm,
+	std::vector<unsigned int>& v_docID,
+	std::vector<unsigned int>& v_freq,
+	std::vector<unsigned int>& v_sign){
 	/**
 	 * Writing compressed non-positional postings to disk and store the starting and ending positions.
 	 * Similar to compress_p.
@@ -1093,12 +1097,12 @@ vector<unsigned int> Indexer::decompress_np(string namebase, long start, long en
 	ifstream ifile;
     string filename = string(NPDIR) + namebase;
 	ifile.open(filename, ios::binary);
+	vector<unsigned int> field;
 
     if(ifile.is_open()){
         //cout << namebase << " Opened for Decompressing" << endl;
     	char c;
     	vector<char> readin;
-    	vector<unsigned int> field;
 
     	ifile.seekg(start);
     	while(ifile.tellg() != end){
@@ -1106,6 +1110,7 @@ vector<unsigned int> Indexer::decompress_np(string namebase, long start, long en
     		readin.push_back(c);
     	}
         field = r.VBDecode(readin);
+
 	}
 	return field;
 }
