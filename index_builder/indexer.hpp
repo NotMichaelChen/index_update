@@ -17,8 +17,8 @@ class Indexer{
 private:
 	map<unsigned int, std::pair<vector<mData>, vector<mDatanp>>> dict;
 	map<string, vector<f_meta>, strless> filemeta;
-	vector<Posting> p_index;
-	vector<nPosting> np_index;
+	vector<Posting> p_index; //dynamic index
+	vector<nPosting> np_index; //dynamic index
 
 public:
 	std::vector<std::string> read_directory( std::string path );
