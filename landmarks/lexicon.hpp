@@ -6,8 +6,10 @@
 namespace Landmark {
 	class Lexicon {
 	public:
+		Lexicon();
+		int getWord(std::string word);
 	private:
-		std::unordered_map<unsigned int, std::string> lex;
+		std::unordered_map<std::string, unsigned int> lex;
 		unsigned int nextID;
 	};
 }
