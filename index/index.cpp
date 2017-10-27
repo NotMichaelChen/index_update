@@ -35,7 +35,10 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         Lex_data entry = lex.getEntry(np_iter->term);
 
         //Update entry freq
-        lex.updateFreq(np_iter->term, np_iter->freq);
+        if(np_iter->freq > 0 && !results.se.inOld(np_iter->term))
+			lex.updateFreq(np_iter->term, 1);
+		else if(np_iter->freq < 0 && !results.se.inNew(np_iter->term))
+			lex.updateFreq(np_iter->term, -1);
 
         //Will always evaluate to either 0 or 1
         unsigned int sign = (np_iter->freq >= 0);

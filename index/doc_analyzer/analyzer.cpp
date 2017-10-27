@@ -51,7 +51,7 @@ MatcherInfo makePosts(Structures::DocumentTuple& olddoc, string& newpage) {
     fragID += postingslist.second.size();
 
     //-generate postings and translation statements, and return them. (Question: how do we know the previous largest fragid for this document, so we know what to use as the next fragid? Maybe store with did in the tuple store?)
-    MatcherInfo posts(postingslist.first, postingslist.second, translist, fragID);
+    MatcherInfo posts(postingslist.first, postingslist.second, translist, se, fragID);
     
     return posts;
 }

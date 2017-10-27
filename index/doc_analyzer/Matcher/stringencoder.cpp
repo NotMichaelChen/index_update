@@ -53,10 +53,10 @@ namespace Matcher {
         newexclusive.reserve(newmap.size());
         
         for(auto kv : oldmap) {
-            oldexclusive.push_back(kv.first);
+            oldexclusive.insert(kv.first);
         }
         for(auto kv : newmap) {
-            newexclusive.push_back(kv.first);
+            newexclusive.insert(kv.first);
         }
     }
     
@@ -81,6 +81,14 @@ namespace Matcher {
             return lookup[num];
         else return "??";
     }
+    
+    bool StringEncoder::inOld(string& word) {
+		return oldexclusive.find(word) != oldexclusive.end();
+	}
+    
+    bool StringEncoder::inNew(string& word) {
+		return newexclusive.find(word) != newexclusive.end();
+	}
     
     vector<int>::const_iterator StringEncoder::getOldIter() {
         return oldencoded.cbegin();

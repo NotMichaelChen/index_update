@@ -20,6 +20,10 @@ namespace Matcher {
         //Decodes an individual integer into a single word
         std::string decodeNum(int num);
         
+        //Sees if a word is in the old document or new document
+        bool inOld(int num);
+        bool inNew(int num);
+        
         //Iterators for accessing the encoded documents
         std::vector<int>::const_iterator getOldIter();
         std::vector<int>::const_iterator getNewIter();
@@ -35,8 +39,8 @@ namespace Matcher {
         std::vector<int> oldencoded;
         std::vector<int> newencoded;
         //lists of terms that appear only in the old or new file
-        std::vector<std::string> oldexclusive;
-        std::vector<std::string> newexclusive;
+        std::set<std::string> oldexclusive;
+        std::set<std::string> newexclusive;
         //Maps words to numbers
         std::unordered_map<std::string, int> dictionary;
         //Maps numbers (index) to words
