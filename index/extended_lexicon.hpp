@@ -4,14 +4,13 @@
 #include <string>
 #include "meta.hpp"
 
-class ExtendedLexicon{
-
+class ExtendedLexicon {
 public:
     void addPositional();
     void addNonPositional();
 private:
-    std::map<unsigned int, std::vector<mDatanp>> exlexnp;
-    std::map<unsigned int, std::vector<mDatap>> exlexp;
+    std::map<std::string, std::vector<mDatanp>> exlexnp;
+    std::map<std::string, std::vector<mDatap>> exlexp;
 }
 
 #endif
