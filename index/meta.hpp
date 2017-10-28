@@ -2,13 +2,6 @@
 #define META_H
 
 #include <string>
-#include <vector>
-
-struct f_meta{
-	unsigned int termID;
-	long start_pos;
-	long end_pos;
-};
 
 struct mDatap{
 	//need number of blocks?

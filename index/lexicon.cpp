@@ -24,20 +24,6 @@ void Lexicon::updateFreq(string& term, int delta) {
     lex[term].f_t += delta;
 }
 
-void Lexicon::updatePositional(string& term, int delta) {
-    if(lex.find(term) == lex.end()) {
-        initEntry(term);
-    }
-    lex[term].p_ptr += delta;
-}
-
-void Lexicon::updateNonPositional(string& term, int delta) {
-    if(lex.find(term) == lex.end()) {
-        initEntry(term);
-    }
-    lex[term].np_ptr += delta;
-}
-
 void Lexicon::initEntry(string& term) {
     auto iter = lex.find(term);
     //Only init the entry if it does not exist
@@ -58,8 +44,6 @@ void Lexicon::dump() {
         dumpfile << iter->first << " ";
         dumpfile << iter->second.termid << " ";
         dumpfile << iter->second.f_t << " ";
-        dumpfile << iter->second.p_ptr << " ";
-        dumpfile << iter->second.np_ptr << "\n";
     }
 
     dumpfile.close();
@@ -86,7 +70,7 @@ bool Lexicon::restore() {
         linebuf = stringstream(line);
         string key;
         Lex_data entry;
-        linebuf >> key >> entry.termid >> entry.f_t >> entry.p_ptr >> entry.np_ptr;
+        linebuf >> key >> entry.termid >> entry.f_t;
         lex[key] = entry;
     }
 

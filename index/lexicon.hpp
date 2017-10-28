@@ -12,11 +12,7 @@
 
 struct Lex_data {
     unsigned int termid;
-    //How many documents the term appeared in
-    int f_t;
-    //Where in the dynamic index the term appears in
-    long p_ptr;
-    long np_ptr;
+    int f_t; //How many documents the term appeared in
 };
 
 class Lexicon {

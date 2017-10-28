@@ -12,11 +12,77 @@
 #include "Structures/translationtable.h"
 
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
+#define PDIR "./disk_index/positional/"//path to static positional index
+#define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 
 Index::Index() {
     docstore = Structures::DocumentStore();
     transtable = Structures::TranslationTable();
     lex = Lexicon();
+    exlex = ExtendedLexicon();
+}
+
+void Indexer::write_np(int indexnum, char prefix){
+	/**
+	 * Open a file to write to and store the metadata of a term.
+	 */
+    ofstream ofile;//non-positional inverted index
+    string pdir(NPDIR);
+    string namebase;
+    string filename;
+    if(prefix == 'a'){
+        //TODO: default state, compressing from dynamic index, not from merging
+        filename = pdir + "X" + to_string(indexnum);
+    	ofile.open(filename, ofstream::app | ofstream::binary);
+
+    	if(ofile.tellp() != 0){
+            cout << filename << " already exists." << endl;
+    		ofile.close();
+    		filename = pdir + "L" + to_string(indexnum);
+            ofile.open(filename, ios::ate | ios::binary);
+            namebase = string("L") + to_string(indexnum);
+    	}else{
+            namebase = string("X") + to_string(indexnum);
+        }
+    }else{
+        filename = pdir + prefix + to_string(indexnum);
+    	ofile.open(filename, ofstream::app | ofstream::binary);
+        namebase = prefix+ to_string(indexnum);
+    }
+
+    if (ofile.is_open()){
+        //cout << "Compressing and writing to " << namebase << endl;
+
+        std::vector<unsigned int> v_docID;
+    	std::vector<unsigned int> v_freq;
+        std::vector<unsigned int> v_sign;
+    	mDatanp mmDatanp;
+
+        unsigned int currID = 0;
+
+        auto it = nonpositional_index.begin();
+        while( it != nonpositional_index.end() ){
+            currID = it->first;
+            while( it->first == currID ){
+                v_docID.push_back(it->docID);
+    			v_freq.push_back(it->freq);
+                v_sign.push_back(it->sign);
+    			it ++;
+            }
+
+    		mmDatanp = compress_np(namebase, ofile, fm, v_docID, v_freq, v_sign);
+            exlex.addNonPositional(currID, mmDatanp);
+            currID = it->termID;
+
+    		v_docID.clear();
+    		v_freq.clear();
+    		v_sign.clear();
+    	}
+
+    	ofile.close();
+    }
+    else
+        cerr << "File cannot be opened." << endl;
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {
@@ -27,7 +93,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
     std::ostringstream oss;
     oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
     auto timestamp = oss.str();
-    
+
     MatcherInfo results = indexUpdate(url, newpage, timestamp, docstore, transtable);
 
     //Insert NP postings
@@ -43,11 +109,15 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         //Will always evaluate to either 0 or 1
         unsigned int sign = (np_iter->freq >= 0);
         unsigned int freq = std::abs(np_iter->freq);
-        
+
         nPosting posting(entry.termid, np_iter->docID, freq, sign);
         nonpositional_index[np_iter->term].push_back(posting);
         if(nonpositional_index.size() > POSTING_LIMIT) {
-            //TODO: do something here
+            //when dynamic index cannot fit into memory, write to disk
+            write_np();
+            nonpositional_index.clear();
+            merge_test();//TODO
+
         }
     }
 
@@ -62,4 +132,3 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         }
     }
 }
-
