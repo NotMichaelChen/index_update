@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-#include "externalpostings.h"
+#include "../externalpostings.h"
 #include "block.h"
 #include "stringencoder.h"
 
