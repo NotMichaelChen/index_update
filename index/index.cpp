@@ -161,13 +161,9 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         Lex_data entry = lex.getEntry(np_iter->term);
 
         //Update entry freq
-        lex.updateFreq(np_iter->term, np_iter->freq)
+        lex.updateFreq(np_iter->term, np_iter->freq);
 
-        //Will always evaluate to either 0 or 1
-        unsigned int sign = (np_iter->freq >= 0);
-        unsigned int freq = std::abs(np_iter->freq);
-
-        nPosting posting(entry.termid, np_iter->docID, freq, sign);
+        nPosting posting(entry.termid, np_iter->docID, np_iter->freq);
         nonpositional_index[np_iter->term].push_back(posting);
         if(nonpositional_index.size() > POSTING_LIMIT) {
             //when dynamic index cannot fit into memory, write to disk

@@ -23,7 +23,7 @@ struct Posting {
 
 struct nPosting {
 	nPosting() {}
-	nPosting(unsigned int id, unsigned int d, unsigned int f, unsigned int s = 1) {
+	nPosting(unsigned int id, unsigned int d, unsigned int f) {
         termID = id;
         docID = d;
         freq = f;
@@ -33,7 +33,6 @@ struct nPosting {
 	unsigned int termID;
 	unsigned int docID;
 	unsigned int freq;
-	unsigned int sign;
 };
 
 #endif
