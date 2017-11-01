@@ -24,7 +24,7 @@ public:
     Lexicon();
 
     Lex_data getEntry(std::string& term);
-    void updateFreq(std::string& term, int delta);
+    void updateFreq(std::string& term, int new_freq);
     void updatePositional(std::string& term, long pos);
     void updateNonPositional(std::string& term, long pos);
 
