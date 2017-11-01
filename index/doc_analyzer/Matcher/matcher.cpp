@@ -34,7 +34,7 @@ namespace Matcher {
     bool incrementIndex(int beginloc, size_t blocklength, int& index, int& blockindex);
 
     pair<vector<ExternNPposting>, vector<ExternPposting>>
-    getPostings(vector<shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int fragID, StringEncoder& se) {
+    getPostings(vector<shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int &fragID, StringEncoder& se) {
         //Which block to skip next
         int blockindex = 0;
         unordered_map<string, ExternNPposting> nppostingsmap;

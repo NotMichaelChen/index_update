@@ -46,9 +46,6 @@ MatcherInfo makePosts(Structures::DocumentTuple& olddoc, string& newpage) {
     //Get the translation and posting list
     vector<Matcher::Translation> translist = Matcher::getTranslations(se.getOldSize(), se.getNewSize(), commonblocks);
     auto postingslist = Matcher::getPostings(commonblocks, olddoc.docID, fragID, se);
-    
-    //Number of fragIDs used is exactly proportional to the number of positional postings inserted
-    fragID += postingslist.second.size();
 
     //-generate postings and translation statements, and return them. (Question: how do we know the previous largest fragid for this document, so we know what to use as the next fragid? Maybe store with did in the tuple store?)
     MatcherInfo posts(postingslist.first, postingslist.second, translist, se, fragID);
