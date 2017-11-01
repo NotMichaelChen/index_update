@@ -19,10 +19,9 @@ namespace Matcher {
         std::vector<std::string> decodeStream(std::vector<int>& stream);
         //Decodes an individual integer into a single word
         std::string decodeNum(int num);
-        
-        //Sees if a word is in the old document or new document
-        bool inOld(int num);
-        bool inNew(int num);
+
+        //Get the count of a word in the new document
+        int getNewCount(std::string word);
         
         //Iterators for accessing the encoded documents
         std::vector<int>::const_iterator getOldIter();
@@ -38,9 +37,8 @@ namespace Matcher {
         //old and new files in integer form
         std::vector<int> oldencoded;
         std::vector<int> newencoded;
-        //lists of terms that appear only in the old or new file
-        std::set<std::string> oldexclusive;
-        std::set<std::string> newexclusive;
+        //list of terms that appear in the new document and their frequency
+        std::unordered_map<std::string, int> newcount;
         //Maps words to numbers
         std::unordered_map<std::string, int> dictionary;
         //Maps numbers (index) to words

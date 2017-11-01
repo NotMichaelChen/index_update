@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-#include "externalpostings.h"
+#include "../externalpostings.h"
 #include "block.h"
 #include "stringencoder.h"
 
@@ -14,6 +14,6 @@ namespace Matcher {
     //Specifically generates postings given a vector of blocks
     //fragID refers to the next ID to use
     std::pair<std::vector<ExternNPposting>, std::vector<ExternPposting>>
-        getPostings(std::vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int fragID, StringEncoder& se);
+        getPostings(std::vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int& fragID, StringEncoder& se);
 }
 #endif

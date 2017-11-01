@@ -17,11 +17,11 @@ Lex_data Lexicon::getEntry(string& term) {
     return lex[term];
 }
 
-void Lexicon::updateFreq(string& term, int delta) {
+void Lexicon::updateFreq(string& term, int new_freq) {
     if(lex.find(term) == lex.end()) {
         initEntry(term);
     }
-    lex[term].f_t += delta;
+    lex[term].f_t = new_freq;
 }
 
 void Lexicon::initEntry(string& term) {
