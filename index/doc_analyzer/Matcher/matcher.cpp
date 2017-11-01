@@ -52,12 +52,9 @@ namespace Matcher {
                 //Edited sections in old file are considered "deleted", so decrement frequency
                 
                 string decodedword = se.decodeNum(*(se.getOldIter()+index));
-                //Word already indexed
-                if(nppostingsmap.find(decodedword) != nppostingsmap.end()) {
-                    nppostingsmap.at(decodedword).freq -= 1;
-                }
-                else {
-                    ExternNPposting newposting(decodedword, doc_id, -1);
+                //Word not indexed yet indexed
+                if(nppostingsmap.find(decodedword) == nppostingsmap.end()) {
+                    ExternNPposting newposting(decodedword, doc_id, se.getNewCount(decodedword));
                     nppostingsmap.insert(make_pair(decodedword, newposting));
                 }
                 ++index;
@@ -78,12 +75,9 @@ namespace Matcher {
             else {
                 //Edited sections in new file are considered "inserted"
                 string decodedword = se.decodeNum(*(se.getNewIter()+index));
-                //Word already indexed in nonpositional map
+                //Word not yet indexed in nonpositional map
                 if(nppostingsmap.find(decodedword) != nppostingsmap.end()) {
-                    nppostingsmap.at(decodedword).freq += 1;
-                }
-                else {
-                    ExternNPposting newposting(decodedword, doc_id, 1);
+                    ExternNPposting newposting(decodedword, doc_id, se.getNewCount(decodedword));
                     nppostingsmap.insert(make_pair(decodedword, newposting));
                 }
                 //Always insert positional posting for a word
