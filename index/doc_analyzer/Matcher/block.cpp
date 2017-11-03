@@ -15,6 +15,10 @@ namespace Matcher {
         os << bl.oldloc << "-" << bl.newloc << "-" << bl.run.size();
         return os;
     }
+
+    bool operator==(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs) {
+        return lhs->oldloc == rhs->oldloc && lhs->newloc == rhs->newloc && lhs->run.size() == rhs->run.size();
+    }
     
     bool compareOld(const shared_ptr<Block>& lhs, const shared_ptr<Block>& rhs) {
         return lhs->oldloc < rhs->oldloc;
@@ -25,7 +29,8 @@ namespace Matcher {
     
     vector<shared_ptr<Block>> getCommonBlocks(int minsize, StringEncoder& se) {
         vector<shared_ptr<Block>> commonblocks;
-        if(se.getOldSize() < minsize || se.getNewSize() < minsize)
+        //Impossible to have common blocks if one doc is smaller than the minimum block size
+        if(se.getOldSize() < minsize || se.getNewSize() < minsize || minsize < 1)
             return commonblocks;
        
         //Stores a "candidate block", extracted from the old doc
@@ -54,7 +59,7 @@ namespace Matcher {
                         newiter - se.getNewIter(),
                         matchedblock->second.run
                     );
-                    
+
                     commonblocks.push_back(match);
                 }
             }
@@ -109,6 +114,11 @@ namespace Matcher {
     //Should be run after extendBlocks
     void resolveIntersections(vector<shared_ptr<Block>>& allblocks) {
         //List of blocks to add to the main list later
+        //NOTE: It is impossible for blocks generated from intersection resolution to
+        //be a duplicate from an original block in allblocks.
+        //Consider a b c d e, a b c f c d e. "a b" would be generated from intersection resolution,
+        //but it is impossible for that block to be generated normally since it is possible to extend that block,
+        //so the extended version would be added, which is a b c.
         vector<shared_ptr<Block>> addedblocks;
         //First, sort based on old locations
         sort(allblocks.begin(), allblocks.end(), compareOld);
@@ -126,13 +136,16 @@ namespace Matcher {
                 if(allblocks[j]->oldendloc() > allblocks[i]->oldendloc()) {
                     //calculate how much the current block needs to shrink by
                     int shrunksize = allblocks[j]->oldloc - allblocks[i]->oldloc;
-                    shared_ptr<Block> shrunkblock = make_shared<Block>(
-                        allblocks[i]->oldloc,
-                        allblocks[i]->newloc,
-                        vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)
-                    );
-                    
-                    addedblocks.push_back(shrunkblock);
+                    //No point adding zero-length blocks
+                    if(shrunksize > 0) {                            
+                        shared_ptr<Block> shrunkblock = make_shared<Block>(
+                            allblocks[i]->oldloc,
+                            allblocks[i]->newloc,
+                            vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)
+                        );
+                        
+                        addedblocks.push_back(shrunkblock);
+                    }
                 }
             }
         }
@@ -147,17 +160,22 @@ namespace Matcher {
                 
                 if(allblocks[j]->newendloc() > allblocks[i]->newendloc()) {
                     int shrunksize = allblocks[j]->newloc - allblocks[i]->newloc;
-                    shared_ptr<Block> shrunkblock = make_shared<Block>(
-                        allblocks[i]->oldloc,
-                        allblocks[i]->newloc,
-                        vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)
-                    );
-                    
-                    addedblocks.push_back(shrunkblock);
+                    if(shrunksize > 0) {
+                        shared_ptr<Block> shrunkblock = make_shared<Block>(
+                            allblocks[i]->oldloc,
+                            allblocks[i]->newloc,
+                            vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)
+                        );
+                        
+                        addedblocks.push_back(shrunkblock);
+                    }
                 }
             }
         }
         
+        //remove duplicates
+        sort(addedblocks.begin(), addedblocks.end(), compareOld);
+        addedblocks.erase(unique(addedblocks.begin(), addedblocks.end()), addedblocks.end());
         //append the list of added blocks
         allblocks.insert(allblocks.end(), addedblocks.begin(), addedblocks.end());
     }

@@ -20,7 +20,7 @@ namespace Matcher {
         while(oldstream >> word) {
             transform(word.begin(), word.end(), word.begin(), ::tolower);
             
-            if(oldmap.find(word) == oldmap.end()) {
+            if(dictionary.find(word) == dictionary.end()) {
                 dictionary[word] = nextcode;
                 lookup.push_back(word);
                 ++nextcode;
