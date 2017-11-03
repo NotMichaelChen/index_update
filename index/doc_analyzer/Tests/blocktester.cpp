@@ -12,6 +12,8 @@ using namespace std;
 namespace Tests {
     void BlockTester::test() {
 		testgetCommonBlocks();
+		testextendBlocks();
+		testresolveIntersections();
     }
     
     void BlockTester::testgetCommonBlocks() {
@@ -57,6 +59,34 @@ namespace Tests {
 		assert(testvec.size() == 0);
 		testvec.clear();
 	}
+	
+	void BlockTester::testresolveIntersections() {
+		vector <shared_ptr<Matcher::Block>> testvec;
+		
+		resolveIntersectionsTest(testvec, "", "", 5);
+		assert(testvec.size() == 0);
+		testvec.clear();
+		
+		resolveIntersectionsTest(testvec, "", "a b c", 5);
+		assert(testvec.size() == 0);
+		testvec.clear();
+		
+		resolveIntersectionsTest(testvec, "cde", "", 5);
+		assert(testvec.size() == 0);
+		testvec.clear();
+		
+		resolveIntersectionsTest(testvec, "a b c d", "a b c d", 2);
+		assert(testvec.size() == 1);
+		testvec.clear();
+		
+		resolveIntersectionsTest(testvec, "a b c d e f g", "a b i a b c j c d e k c d e f g", 2);
+		assert(testvec.size() == 4);
+		testvec.clear();
+		
+		resolveIntersectionsTest(testvec, "a b c", "a b c", 10);
+		assert(testvec.size() == 0);
+		testvec.clear();
+	}
 
     //Test returns size of input
     size_t BlockTester::getCommonBlocksSize(string a, string b, int blocksize) {
@@ -70,5 +100,13 @@ namespace Tests {
 		Matcher::StringEncoder se(a, b);
         auto result = Matcher::getCommonBlocks(blocksize, se);
         Matcher::extendBlocks(allblocks, se);
+	}
+	
+	//Simulates running all three functions to produce a final list of blocks
+	void BlockTester::resolveIntersectionsTest(vector<shared_ptr<Matcher::Block>>& allblocks, string a, string b, int blocksize) {
+		Matcher::StringEncoder se(a, b);
+        auto result = Matcher::getCommonBlocks(blocksize, se);
+        Matcher::extendBlocks(allblocks, se);
+        Matcher::resolveIntersections(allblocks);
 	}
 }
