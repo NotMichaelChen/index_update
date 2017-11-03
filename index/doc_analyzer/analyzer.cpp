@@ -36,7 +36,7 @@ MatcherInfo indexUpdate(string& url, string& newpage, string& timestamp, Structu
 
 MatcherInfo makePosts(Structures::DocumentTuple& olddoc, string& newpage) {
     //-check if there was a previous version, if not create postings with fragid = 0
-    int fragID = olddoc.maxfragID;
+    unsigned int fragID = olddoc.maxfragID;
     
     Matcher::StringEncoder se(olddoc.doc, newpage);
 

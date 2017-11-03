@@ -9,7 +9,7 @@
 #include <Winsock2.h>
 #endif /* _WIN32 */
 
-#include "Matcher/translate.h"
+#include "../doc_analyzer/Matcher/translate.h"
 
 namespace Structures {
     class TranslationTable {
