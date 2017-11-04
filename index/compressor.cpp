@@ -8,9 +8,6 @@
 #include "index.hpp"
 #include "varbyte.hpp"
 
-#define PDIR "./disk_index/positional/"//path to static positional index
-#define NPDIR "./disk_index/non_positional/"//path to static non-positional index
-
 std::vector<std::string> Index::read_directory( std::string path ){
 	/**
 	 * List all the files in a directory.
@@ -44,224 +41,122 @@ bool Index::check_contain(std::vector<std::string> v, std::string f){
     return false;
 }
 
-void Index::write(std::vector<uint8_t> num, std::ofstream& ofile){
+template <typename T>
+void Index::write(std::vector<T> num, std::ofstream& ofile){
 	/**
 	 * Write the compressed posting to file byte by byte.
 	 */
-	for(std::vector<uint8_t>::iterator it = num.begin(); it != num.end(); it++){
-		ofile.write(reinterpret_cast<const char*>(&(*it)), 1);
+	for(typename std::vector<T>::iterator it = num.begin(); it != num.end(); it++){
+		ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
 	}
 }
 
-mDatap Index::compress_p(std::string namebase, std::ofstream& ofile,
-    std::vector<unsigned int>& v_docID,
-    std::vector<unsigned int>& v_fragID,
-    std::vector<unsigned int>& v_pos){
+template <typename T>
+void Index::compress_posting(std::string namebase,
+	std::ofstream& ofile, T ite, int positional){
 	/**
 	 * Write compressed positional postings to disk and store the corresponding start
 	 * and end position to metadata of the term.
 	 */
-	std::string filename = std::string(PDIR) + namebase;
-	int method = 1;// 1: Variable Bytes Encoding
-
-	std::vector<unsigned int> v_last_id;
-	std::vector<uint8_t> docID_biv;
-	std::vector<uint8_t> fragID_biv;
-	std::vector<uint8_t> pos_biv;
-
-	std::vector<uint8_t> last_id_biv;
-	std::vector<uint8_t> size_doc_biv;
-	std::vector<uint8_t> size_frag_biv;
-	std::vector<uint8_t> size_pos_biv;
-
-	docID_biv = compress(v_docID, method, 1, size_doc_biv, v_last_id);
-	last_id_biv = VBEncode(v_last_id);
-
-	fragID_biv = compress(v_fragID, method, 0, size_frag_biv);
-	pos_biv = compress(v_pos, method, 0, size_pos_biv);
-
-	mDatap meta;
-    meta.filename = namebase;
-	meta.comp_method = method;
-
+	mData meta;
+	meta.filename = namebase;
     meta.start_pos = ofile.tellp();
-	write(last_id_biv, ofile);
 
-	meta.meta_doc_start = ofile.tellp();
-	write(size_doc_biv, ofile);
+	unsigned int currID = 0;
+	int postingCount = 1;
+	std::string currTerm;
+	//declare vectors to store 128 values TODO: use arrays instead of vectors
+	std::vector<unsigned int> v_docID;
+	std::vector<unsigned int> v_second;
+	std::vector<unsigned int> v_third;
+	//declare vectors that will be written to file
+	std::vector<unsigned int> last_docID;
+	std::vector<unsigned int> size_of_block;
+	std::vector<uint8_t> docID_biv;
+	std::vector<uint8_t> second_biv;
+	std::vector<uint8_t> third_biv;
+	//initialize compression method, 1: varbyte
+	int doc_method = 1;
+	int second_method = 1;
+	int third_method = 1;
+	ite = nonpositional_index.begin();
 
-	meta.meta_frag_start = ofile.tellp();
-	write(size_frag_biv, ofile);
+ 	while( ite != nonpositional_index.end() ){
+ 		currID = ite->second->termID;
+ 		currTerm = ite->first;
+		//writing metadata to file
+		ofile.write(reinterpret_cast<const char *>(&currID), sizeof(currID));
+		ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
+		ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
+		if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
+		meta.posting_offset = ofile.tellp();
 
-	meta.meta_pos_start = ofile.tellp();
-	write(size_pos_biv, ofile);
+ 		while( ite->second->termID == currID && ite != nonpositional_index.end() ){
+			while( postingCount % (BLOCK+1) != 0 && ite->second->termID == currID && ite != nonpositional_index.end() ){
+				v_docID.push_back(ite->second->docID);
+	 			v_second.push_back(ite->second->second);
+	 			if(positional) v_third.push_back(ite->third);
+	 			ite ++;
+				postingCount ++;
+			}
+			//add last value of docID
+			ite --;
+			last_docID.push_back(ite->second->docID);
+			ite ++;
+			//compress block of 128
+			docID_biv = compress_field(v_docID, doc_method, 1);
+			if(positional){
+				second_biv = compress_field(v_second, second_method, 1); //compress fragmentID in positional posting
+				third_biv = compress_field(v_third, third_method, 1); //compress position in positional posting
+			}else{
+				second_biv = compress_field(v_second, second_method, 0); //compress frequency in nonpositional posting
+			}
+			//blocks of docID, followed by blocks of frequency
+			write<uint8_t>(docID_biv, ofile);
+			write<uint8_t>(second_biv, ofile);
+			if(positional) write<uint8_t>(third_biv, ofile);
 
-	meta.posting_start = ofile.tellp();
-	write(docID_biv, ofile);
+			v_docID.clear();
+			v_second.clear();
+			v_third.clear();
+			docID_biv.clear();
+			second_biv.clear();
+			third_biv.clear();
+ 		}
+		meta.postingCount_offset = ofile.tellp();
+		ofile.write(reinterpret_cast<const char *>(&postingCount), sizeof(postingCount));
+		write<unsigned int>(last_docID, ofile);
+		meta.size_offset = ofile.tellp();
+		write<unsigned int>(size_of_block, ofile);
+		postingCount = 0;
 
-	meta.frag_start = ofile.tellp();
-	write(fragID_biv, ofile);
-
-	meta.pos_start = ofile.tellp();
-	write(pos_biv, ofile);
-
-    meta.end_pos = ofile.tellp();
-
-	return meta;
+		meta.end_offset = ofile.tellp();
+		if(positional) exlex.addPositional(currTerm, meta);
+ 		else exlex.addNonPositional(currTerm, meta);
+ 	}//TODO: make compress compatible with frequency field
 }
 
-mDatanp Index::compress_np(std::string namebase, std::ofstream& ofile,
-	std::vector<unsigned int>& v_docID,
-	std::vector<unsigned int>& v_freq){
-	/**
-	 * Writing compressed non-positional postings to disk and store the starting and ending positions.
-	 * Similar to compress_p.
-	 */
-
-	std::string filename = std::string(NPDIR) + namebase;
-	int method = 1;
-
-	std::vector<unsigned int> v_last_id;
-	std::vector<uint8_t> docID_biv;
-	std::vector<uint8_t> freq_biv;
-
-	std::vector<uint8_t> last_id_biv;
-	std::vector<uint8_t> size_doc_biv;
-	std::vector<uint8_t> size_freq_biv;
-
-	docID_biv = compress(v_docID, method, 1, size_doc_biv, v_last_id);
-	last_id_biv = VBEncode(v_last_id);
-
-	freq_biv = compress_freq(v_freq, method, 0, size_freq_biv);
-
-	mDatanp meta;
-    meta.filename = namebase;
-	meta.comp_method = method;
-
-    meta.start_pos = ofile.tellp();
-	write(last_id_biv, ofile);
-
-	meta.meta_doc_start = ofile.tellp();
-	write(size_doc_biv, ofile);
-
-	meta.meta_freq_start = ofile.tellp();
-	write(size_freq_biv, ofile);
-
-	meta.posting_start = ofile.tellp();
-	write(docID_biv, ofile);
-
-	meta.freq_start = ofile.tellp();
-	write(freq_biv, ofile);
-
-    meta.end_pos = ofile.tellp();
-
-	return meta;
-}
-
-std::vector<uint8_t> Index::compress(std::vector<unsigned int>& field, int method, int sort, std::vector<uint8_t> &meta_data_biv, std::vector<unsigned int> &last_id_biv){
+std::vector<uint8_t> Index::compress_field(std::vector<unsigned int>& field, int method, int delta){
 	/**
 	 * Compress the document ID field and store the last ID of each block to last_id_biv,
 	 * and store the length of each block to meta_data_biv.
 	 */
-	std::vector<unsigned int> block;
-	std::vector<unsigned int>::iterator it = field.begin();
 	std::vector<uint8_t> field_biv;
-	std::vector<uint8_t> biv;
 
 	if(method){
-		unsigned int prev = 0;
-		int size_block;
-		while(it != field.end()){
-			size_block = 0;
-			block.clear();
-
-			while(size_block < 64 && it != field.end()){
-				block.push_back(*it - prev);
+		if(delta){
+			std::vector<unsigned int> delta;
+			std::vector<unsigned int>::iterator it = field.begin();
+			unsigned int prev = 0;
+			while(it != field.end()){
+				delta.push_back(*it - prev);
 				prev = *it;
-				size_block ++;
 				it ++;
 			}
-			biv = VBEncode(block);
-			last_id_biv.push_back(prev);//the last element of every block needs to be stored
-			field_biv.insert(field_biv.end(), biv.begin(), biv.end());
-			meta_data_biv.push_back(biv.size());//meta data stores the number of bytes after compression
 		}
-		return field_biv;
+		else field_biv = VBEncode(field);
 	}
-	else{
-		return field_biv;
-	}
-}
-
-std::vector<uint8_t> Index::compress(std::vector<unsigned int>& field, int method, int sort, std::vector<uint8_t> &meta_data_biv){
-	/**
-	 * Compress fragment ID and positions, and store the length of each block to meta_data_biv.
-	 * meta_data_biv here is acutally not a binary vector.
-	 * TODO: the meta_data_biv should not be binary vector, instead it should be vector of unsigned int.
-	 */
-	std::vector<unsigned int> block;
-	std::vector<unsigned int>::iterator it = field.begin();
-	std::vector<uint8_t> field_biv;
-	std::vector<uint8_t> biv;
-
-	if(method){
-		int prev;
-		int size_block;
-		while(it != field.end()){
-			size_block = 0;
-			block.clear();
-			prev = 0;//the first element of every block needs to be renumbered
-
-			while(size_block < 64 && it != field.end()){
-				block.push_back(*it - prev);
-				prev = *it;
-				size_block ++;
-				it ++;
-			}
-			biv = VBEncode(block);
-
-			field_biv.insert(field_biv.end(), biv.begin(), biv.end());
-			meta_data_biv.push_back(biv.size());//meta data stores the number of bytes after compression
-		}
-		return field_biv;
-	}
-	else{
-		return field_biv;
-	}
-}
-
-std::vector<uint8_t> Index::compress_freq(std::vector<unsigned int>& field, int method, int sort, std::vector<uint8_t> &meta_data_biv){
-	/* Compress a field which doesn't require delta coding.
-	 * In this case, frequency. Frequency cannot be delta coded because it is not strictly increasing.
-	 */
-	std::vector<unsigned int> block;
-	std::vector<unsigned int>::iterator it = field.begin();
-	std::vector<uint8_t> field_biv;
-	std::vector<uint8_t> biv;
-
-	if(method){
-
-		int size_block;
-		while(it != field.end()){
-			size_block = 0;
-			block.clear();
-
-			while(size_block < 64 && it != field.end()){
-                //std::cout <<"Freq " <<  *it << std::endl;
-				block.push_back(*it);
-				size_block ++;
-				it ++;
-			}
-			biv = VBEncode(block);
-
-			field_biv.insert(field_biv.end(), biv.begin(), biv.end());
-			meta_data_biv.push_back(biv.size());//meta data stores the number of bytes after compression
-		}
-		return field_biv;
-	}
-	else{
-		return field_biv;
-	}
+	return field_biv;
 }
 
 //TODO: decompress to positional index not a vector of posting
@@ -416,7 +311,8 @@ std::vector<nPosting> Index::decompress_np(std::string namebase, unsigned int te
     return result;
 }
 
-std::vector<char> Index::read_com(std::ifstream& infile, long end_pos){//read compressed forward index
+std::vector<char> Index::read_com(std::ifstream& infile, long end_pos){
+	//read compressed forward index
 	char c;
 	std::vector<char> result;
 	while(infile.tellg() != end_pos){

@@ -16,6 +16,9 @@
 #define PDIR "./disk_index/positional/"//path to static positional index
 #define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 
+typedef std::map<std::string, std::vector<Posting>>::iterator P_ITE;
+typedef std::map<std::string, std::vector<nPosting>>::iterator NP_ITE;
+
 Index::Index() {
     docstore = Structures::DocumentStore();
     transtable = Structures::TranslationTable();
@@ -48,34 +51,9 @@ void Index::write_p(int indexnum, char prefix){
     }
 
     if (ofile.is_open()){
-        std::vector<unsigned int> v_docID;
-    	std::vector<unsigned int> v_fragID;
-    	std::vector<unsigned int> v_pos;
-    	mData mmData;
-    	unsigned int num_of_p = 0;//number of posting of a certain term
-
-        auto it = positional_index.begin();
-        string currterm = it->first;
-    	while( it != positional_index.end() ){
-    		while(it->first == currterm && it != positional_index.end()){
-    			v_docID.push_back(it->second->docID);
-    			v_fragID.push_back(it->second->fragID);
-    			v_pos.push_back(it->second->pos);
-    			it ++;
-    			num_of_p ++;
-    		}
-
-    		mmData = compress_p(namebase, ofile, fm, v_docID, v_fragID, v_pos);
-    		mmData.num_posting = num_of_p;
-
-            exlex.addPositional(currterm, mmData);
-            currterm = it->first;
-
-    		num_of_p = 0;
-    		v_docID.clear();
-    		v_fragID.clear();
-    		v_pos.clear();
-    	}
+        P_ITE ite = positional_index.begin();
+        compress_field<P_ITE>(namebase, ofile, ite, 1);
+        
     	ofile.close();
     }else{
         cerr << "File cannot be opened." << endl;
@@ -83,9 +61,6 @@ void Index::write_p(int indexnum, char prefix){
 }
 
 void Index::write_np(int indexnum, char prefix){
-	/**
-	 * Open a file to write to and store the metadata of a term.
-	 */
     ofstream ofile;//non-positional inverted index
     string pdir(NPDIR);
     string namebase;
@@ -111,38 +86,12 @@ void Index::write_np(int indexnum, char prefix){
     }
 
     if (ofile.is_open()){
-        //cout << "Compressing and writing to " << namebase << endl;
-
-        std::vector<unsigned int> v_docID;
-    	std::vector<unsigned int> v_freq;
-        std::vector<unsigned int> v_sign;
-    	mDatanp mmDatanp;
-
-        unsigned int currID = 0;
-
-        auto it = nonpositional_index.begin();
-        while( it != nonpositional_index.end() ){
-            currID = it->first;
-            while( it->first == currID ){
-                v_docID.push_back(it->second->docID);
-    			v_freq.push_back(it->second->freq);
-                v_sign.push_back(it->second->sign);
-    			it ++;
-            }
-
-    		mmDatanp = compress_np(namebase, ofile, fm, v_docID, v_freq, v_sign);
-            exlex.addNonPositional(currID, mmDatanp);
-            currID = it->first;
-
-    		v_docID.clear();
-    		v_freq.clear();
-    		v_sign.clear();
-    	}
+        NP_ITE ite = nonpositional_index.begin();
+        compress_field<NP_ITE>(namebase, ofile, ite, 0);
 
     	ofile.close();
     }
-    else
-        cerr << "File cannot be opened." << endl;
+    else cerr << "File cannot be opened." << endl;
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {

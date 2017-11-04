@@ -11,14 +11,14 @@ struct Posting {
 	Posting(unsigned int id, unsigned int d, unsigned int f = 0, unsigned int p = 0) {
         termID = id;
         docID = d;
-        fragID = f;
-        pos = p;
+        second = f; //fragmentID
+        third = p; //position
     }
 
 	unsigned int termID;
 	unsigned int docID;
-	unsigned int fragID;
-	unsigned int pos;
+	unsigned int second;
+	unsigned int third;
 };
 
 struct nPosting {
@@ -26,12 +26,12 @@ struct nPosting {
 	nPosting(unsigned int id, unsigned int d, unsigned int f) {
         termID = id;
         docID = d;
-        freq = f;
+        second = f; //frequency
     }
 
 	unsigned int termID;
 	unsigned int docID;
-	unsigned int freq;
+	unsigned int second;
 };
 
 #endif
