@@ -37,3 +37,57 @@ std::vector<uint8_t> VBEncode(vector<unsigned int>& nums){
 	}
 	return result;
 }
+
+std::vector<unsigned int> VBDecode(ifstream& ifile, long start_pos, long end_pos){//ios::ate
+	ifile.seekg(start_pos);
+	char c;
+	unsigned int num;
+	int p;
+	vector<unsigned int> result;
+    if(end_pos == 0) end_pos = ifile.end;
+	vector<char> vec = read_com(ifile, end_pos);
+
+	for(vector<char>::iterator it = vec.begin(); it != vec.end(); it++){
+		c = *it;
+		bitset<8> byte(c);
+		num = 0;
+		p = 0;
+		while(byte[7] == 1){
+			byte.flip(7);
+			num += byte.to_ulong()*pow(128, p);
+			p++;
+			it ++;
+			c = *it;
+			byte = bitset<8>(c);
+		}
+		num += (byte.to_ulong())*pow(128, p);
+
+		result.push_back(num);
+	}
+	return result;
+}
+
+std::vector<unsigned int> VBDecode(vector<char>& vec){
+	unsigned int num;
+	vector<unsigned int> result;
+	char c;
+	int p;
+	for(vector<char>::iterator it = vec.begin(); it != vec.end(); it++){
+		c = *it;
+		bitset<8> byte(c);
+		num = 0;
+		p = 0;
+		while(byte[7] == 1){
+			byte.flip(7);
+			num += byte.to_ulong()*pow(128, p);
+			p++;
+			it ++;
+			c = *it;
+			byte = bitset<8>(c);
+		}
+		num += (byte.to_ulong())*pow(128, p);
+
+		result.push_back(num);
+	}
+	return result;
+}

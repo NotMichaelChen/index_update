@@ -30,7 +30,6 @@ struct mDatanp{
 	long meta_freq_start;
 	long posting_start;
 	long freq_start;
-	long sign_start;
 };
 
 #endif

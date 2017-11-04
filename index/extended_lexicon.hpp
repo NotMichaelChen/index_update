@@ -11,6 +11,6 @@ public:
 private:
     std::map<std::string, std::vector<mDatanp>> exlexnp;
     std::map<std::string, std::vector<mDatap>> exlexp;
-}
+};
 
 #endif
