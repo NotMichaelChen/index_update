@@ -14,7 +14,7 @@ struct Posting {
         fragID = f;
         pos = p;
     }
-    
+
 	unsigned int termID;
 	unsigned int docID;
 	unsigned int fragID;
@@ -27,7 +27,6 @@ struct nPosting {
         termID = id;
         docID = d;
         freq = f;
-        sign = s;
     }
 
 	unsigned int termID;
