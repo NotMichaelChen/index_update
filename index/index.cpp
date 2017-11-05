@@ -53,7 +53,7 @@ void Index::write_p(int indexnum, char prefix){
     if (ofile.is_open()){
         P_ITE ite = positional_index.begin();
         compress_field<P_ITE>(namebase, ofile, ite, 1);
-        
+
     	ofile.close();
     }else{
         cerr << "File cannot be opened." << endl;
@@ -61,6 +61,7 @@ void Index::write_p(int indexnum, char prefix){
 }
 
 void Index::write_np(int indexnum, char prefix){
+    //TODO: unify prefix to Z and I
     ofstream ofile;//non-positional inverted index
     string pdir(NPDIR);
     string namebase;

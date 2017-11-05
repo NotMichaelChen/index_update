@@ -54,10 +54,6 @@ void Index::write(std::vector<T> num, std::ofstream& ofile){
 template <typename T>
 void Index::compress_posting(std::string namebase,
 	std::ofstream& ofile, T ite, int positional){
-	/**
-	 * Write compressed positional postings to disk and store the corresponding start
-	 * and end position to metadata of the term.
-	 */
 	mData meta;
 	meta.filename = namebase;
     meta.start_pos = ofile.tellp();
@@ -133,16 +129,11 @@ void Index::compress_posting(std::string namebase,
 		meta.end_offset = ofile.tellp();
 		if(positional) exlex.addPositional(currTerm, meta);
  		else exlex.addNonPositional(currTerm, meta);
- 	}//TODO: make compress compatible with frequency field
+ 	}
 }
 
 std::vector<uint8_t> Index::compress_field(std::vector<unsigned int>& field, int method, int delta){
-	/**
-	 * Compress the document ID field and store the last ID of each block to last_id_biv,
-	 * and store the length of each block to meta_data_biv.
-	 */
 	std::vector<uint8_t> field_biv;
-
 	if(method){
 		if(delta){
 			std::vector<unsigned int> delta;
@@ -160,7 +151,7 @@ std::vector<uint8_t> Index::compress_field(std::vector<unsigned int>& field, int
 }
 
 //TODO: decompress to positional index not a vector of posting
-std::vector<Posting> Index::decompress_p(std::string namebase, unsigned int termID){
+void Index::decompress_block(std::string namebase, unsigned int termID){
 	/**
 	 * Decompress positional postings.
 	 * First read each field from disk and pass the bianry vector to decode.
@@ -177,9 +168,7 @@ std::vector<Posting> Index::decompress_p(std::string namebase, unsigned int term
     	char c;
     	std::vector<char> readin;
 
-    	std::vector<unsigned int> docID;
-    	std::vector<unsigned int> fragID;
-    	std::vector<unsigned int> pos;
+
 
         std::vector<mDatap>& mvec = dict[termID].first;
         std::vector<mDatap>::iterator currMVec;
@@ -360,14 +349,13 @@ void Index::merge_test(){
 	}
 }
 
-void Index::merge_p(int indexnum){
-    /**
-	 * Merge two positional index.
-	 */
+void Index::merge(int indexnum, int positional){
+
 	std::ifstream filez;
 	std::ifstream filei;
 	std::ofstream ofile;
-    std::string pdir(PDIR);
+	if(positional) std::string dir(PDIR);
+	else std::string dir(NPDIR);
 
 	//determine the name of the output file, if "Z" file exists, than compressed to "I" file.
     char flag = 'Z';
@@ -383,119 +371,41 @@ void Index::merge_p(int indexnum){
 
     std::cout << "Merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
 
-	std::string file1 = "Z" + std::to_string(indexnum);
-	std::string file2 = "I" + std::to_string(indexnum);
-	//std::vector<f_meta>& v1 = filemeta[file1];
-	//std::vector<f_meta>& v2 = filemeta[file2];
-	//std::vector<f_meta>::iterator it1 = v1.begin();
-	//std::vector<f_meta>::iterator it2 = v2.begin();
+	std::string namebase1 = "Z" + std::to_string(indexnum);
+	std::string namebase2 = "I" + std::to_string(indexnum);
 
-	/**
-	 * Go through the meta data of each file, do
-	 * if there is a termID appearing in both, decode the part and merge
-	 * else copy and paste the corresponding part of postinglist
-	 * update the corresponding fileinfo of that termID
-	 * assume that the posting of one term can be stored in memory
-	 */
+	unsigned int termIDZ, termIDI;
 
-	 /*
-	while( it1 != v1.end() && it2 != v2.end() ){
-		if( it1->termID == it2->termID ){
-			//decode and merge
-			//update meta data corresponding to the term
-			std::vector<Posting> vp1 = decompress_p(file1, it1->termID);
-            std::vector<Posting> vp2 = decompress_p(file2, it2->termID);
-			std::vector<Posting> vpout; //s§tore the sorted result
+	while( !filez.eof() || !filei.eof() ){
+		filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
+		filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
 
-			//use NextGQ to write the sorted std::vector of Posting to disk
-			std::vector<Posting>::iterator vpit1 = vp1.begin();
-			std::vector<Posting>::iterator vpit2 = vp2.begin();
-			while( vpit1 != vp1.end() && vpit2 != vp2.end() ){
-				//NextGQ
-				if( *vpit1 < *vpit2 ){
-					vpout.push_back(*vpit1);
-					vpit1 ++;
-				}
-				else if( *vpit1 > *vpit2 ){
-					vpout.push_back(*vpit2);
-					vpit2 ++;
-				}
-				else if ( *vpit1 == *vpit2 ){
-					std::cout << "Error: same posting appearing in different indexes." << std::endl;
-					break;
-				}
-			}
-            while( vpit1 != vp1.end()){
-                vpout.push_back(*vpit1);
-                vpit1 ++;
-            }
-            while( vpit2 != vp2.end()){
-                vpout.push_back(*vpit2);
-                vpit2 ++;
-            }
+		if( termIDZ < termIDI ) //copy from start to end
+		else if( termIDI < termIDZ ) //copy from start to end
+		else if( termIDI == termIDZ ){
+			int doc_methodi, second_methodi, third_methodi,
+			doc_methodz, second_methodz, third_methodz;
 
-			compress_p(vpout, indexnum + 1, flag);
-			it1 ++;
-			it2 ++;
-		}
-		else if( it1->termID < it2->termID ){
-			std::vector<Posting> vp = decompress_p(file1, it1->termID);
-            compress_p(vp, indexnum + 1, flag);
-			it1 ++;
-		}
-		else if( it1->termID > it2->termID ){
-            std::vector<Posting> vp = decompress_p(file2, it2->termID);
-            compress_p(vp, indexnum + 1, flag);
-			it2 ++;
+			filez.read(reinterpret_cast<char *>(&doc_methodz), sizeof(doc_methodz));
+			filez.read(reinterpret_cast<char *>(&second_methodz), sizeof(second_methodz));
+			filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
+			filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
+			if( positional ){
+				filez.read(reinterpret_cast<char *>(&third_methodz), sizeof(third_methodz));
+				filei.read(reinterpret_cast<char *>(&third_methodi), sizeof(doc_methodi));
 		}
 	}
 
-	*/
 
-    /**
-	 * TODO: decompress from the old index and then compress to
-	 * the new one to update metadata is time-consuming
-     * need to find a more efficient way to update metadata while tranfering positngs
-	 */
-
-	/*
-	while (it1 != v1.end() ){
-        std::vector<Posting> vp = decompress_p(file1, it1->termID);
-        //update_t_meta(it1->termID, file1, dict);
-        compress_p(vp, indexnum + 1, flag);
-        it1 ++;
-	}
-	while (it2 != v2.end() ){
-        std::vector<Posting> vp = decompress_p(file2, it2->termID);
-        compress_p(vp, indexnum + 1, flag);
-        it2 ++;
-	}
-
-	*/
 
 	filez.close();
 	filei.close();
 	ofile.close();
     std::string filename1 = pdir + "Z" + std::to_string(indexnum);
     std::string filename2 = pdir + "I" + std::to_string(indexnum);
-
-	/*
-    for( std::vector<f_meta>::iterator it = filemeta[file1].begin(); it != filemeta[file1].end(); it ++){
-        update_t_meta(it->termID, file1);
-    }
-
-    for( std::vector<f_meta>::iterator it = filemeta[file2].begin(); it != filemeta[file2].end(); it ++){
-        update_t_meta(it->termID, file2);
-    }
-	*/
-	//TODO: update ExtendedLexicon
-
     //deleting two files
-    if( remove( filename1.c_str() ) != 0 )
-        std::cout << "Error deleting file" << std::endl;
-
-    if( remove( filename2.c_str() ) != 0 )
-        std::cout << "Error deleting file" << std::endl;
+    if( remove( filename1.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
+    if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
 }
 
 void Index::merge_np(int indexnum){
