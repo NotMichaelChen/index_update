@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "Tests/blocktester.h"
+#include "doc_analyzer/Tests/blocktester.h"
 
 using namespace std;
 
