@@ -164,7 +164,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         lex.updateFreq(np_iter->term, np_iter->freq);
 
         nPosting posting(entry.termid, np_iter->docID, np_iter->freq);
-        nonpositional_index[np_iter->term].push_back(posting);
+        nonpositional_index[entry.termid].push_back(posting);
         if(nonpositional_index.size() > POSTING_LIMIT) {
             //when dynamic index cannot fit into memory, write to disk
             write_np();
@@ -179,7 +179,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         Lex_data entry = lex.getEntry(p_iter->term);
 
         Posting posting(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
-        positional_index[p_iter->term].push_back(posting);
+        positional_index[entry.termid].push_back(posting);
         if(positional_index.size() > POSTING_LIMIT) {
             //TODO: do something here
             write_p();

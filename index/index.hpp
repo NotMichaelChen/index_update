@@ -20,8 +20,8 @@ public:
     void write_np(int indexnum = 0, char prefix = 'a');
     void write_p(int indexnum, char prefix);
 private:
-    std::map<std::string, std::vector<Posting>> positional_index;
-    std::map<std::string, std::vector<nPosting>> nonpositional_index;
+    std::map<unsigned int, std::vector<Posting>> positional_index;
+    std::map<unsigned int, std::vector<nPosting>> nonpositional_index;
 
 	//std::map<std::string, std::vector<f_meta>, strless> filemeta; //extended lexicon
 
