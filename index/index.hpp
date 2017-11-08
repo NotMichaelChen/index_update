@@ -43,17 +43,15 @@ private:
 
     std::vector<uint8_t> compress_field(std::vector<unsigned int>& field, int method, int delta);
 
-    std::vector<Posting> decompress_p(std::string namebase, unsigned int termID);
-
-    std::vector<nPosting> decompress_np(std::string namebase, unsigned int termID);
+    void decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase);
 
     std::vector<char> read_com(std::ifstream& infile, long end_pos);
 
     void merge_test();
 
-    void merge_p(int indexnum);
+    void merge(int indexnum, int positional);
 
-    void merge_np(int indexnum);
+    void decompress_np_posting();
 };
 
 #endif

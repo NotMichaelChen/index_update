@@ -143,6 +143,7 @@ void Index::compress_posting(std::string namebase,
 }
 
 std::vector<uint8_t> Index::compress_field(std::vector<unsigned int>& field, int method, int delta){
+    /* the first entry of every block is NOT the delta of the last entry from the previous one */
 	std::vector<uint8_t> field_biv;
 	if(method){
 		if(delta){
@@ -160,162 +161,68 @@ std::vector<uint8_t> Index::compress_field(std::vector<unsigned int>& field, int
 	return field_biv;
 }
 
-//TODO: decompress to positional index not a vector of posting
-void Index::decompress_block(std::string namebase, unsigned int termID){
-	/**
-	 * Decompress positional postings.
-	 * First read each field from disk and pass the bianry vector to decode.
-	 * Finally add the terms up since we used delta encoding before.
-	 */
-
-	std::ifstream ifile;
+void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase){
+    /* Decompress positional postings and store them in map structure */
     std::string filename = std::string(PDIR) + namebase;
-	ifile.open(filename, std::ios::binary);
-    std::vector<Posting> result;
+    mData meta = getPositional(termID, namebase);
 
-    if(ifile.is_open()){
-        //std::cout << namebase << " Opened for Decompressing" << std::endl;
-    	char c;
-    	std::vector<char> readin;
+    int method1, method2, method3;
 
+    filez.read(reinterpret_cast<char *>(&method1), sizeof(method1));
+    filez.read(reinterpret_cast<char *>(&method2), sizeof(method2));
+    filez.read(reinterpret_cast<char *>(&method3), sizeof(method3));
 
+    ifile.seekg(meta.posting_offset);
+    std::vector<unsigned int> docID, fragID, pos;
+    int count;
+    //read all the alternating blocks from compressed index and decompress
+    int length = meta.postingCount_offset - meta.posting_offset;
+    char* buffer = new char [length];
+    ifile.read(buffer, length);
+    std::vector<unsigned int> decompressed = VBDecode(buffer, length);
+    std::vector<unsigned int>::iterator it = decompressed.begin();
+    unsigned int prevID; //TODO 3: assume only doc ID is delta encoded, which needs modification of previous code
 
-        std::vector<mDatap>& mvec = dict[termID].first;
-
-    	std::vector<unsigned int> docID;
-    	std::vector<unsigned int> fragID;
-    	std::vector<unsigned int> pos;
-
-        std::vector<mDatap>::iterator currMVec;
-
-        for( currMVec = exlex.getPositionalBegin(termID); currMVec != exlex.getPositionalEnd(termID); currMVec++){
-            if( currMVec->filename == namebase )
-                break;
+    while( it != decompressed.end() ){
+        count = 0;
+        prevID = 0;
+        while( count < BLOCK ){
+            docID.push_back( prevID + *it );
+            prevID = *it;
+            count ++;
+            it ++;
         }
-
-    	ifile.seekg(currMVec->posting_start);
-    	while(ifile.tellg() != currMVec->frag_start){
-    		ifile.get(c);
-    		readin.push_back(c);
-    	}
-        docID = VBDecode(readin);
-        readin.clear();
-
-    	ifile.seekg(currMVec->frag_start);
-    	while(ifile.tellg() != currMVec->pos_start){
-    		ifile.get(c);
-    		readin.push_back(c);
-    	}
-        fragID = VBDecode(readin);
-        readin.clear();
-
-    	ifile.seekg(currMVec->pos_start);
-    	while(ifile.tellg() != currMVec->end_pos){
-    		ifile.get(c);
-    		readin.push_back(c);
-    	}
-        pos = VBDecode(readin);
-        readin.clear();
-
-    	std::vector<unsigned int>::iterator itdoc = docID.begin();
-    	std::vector<unsigned int>::iterator itfrag = fragID.begin();
-    	std::vector<unsigned int>::iterator itpos = pos.begin();
-
-        unsigned int prevdoc =0;
-        unsigned int prevfrag = 0;
-        unsigned int prevpos = 0;
-
-        int posting_num = 0;
-
-    	while(itdoc != docID.end()){
-            if(posting_num == 64){
-                //keep track of block
-                prevfrag = 0;
-                prevpos = 0;
-                posting_num = 0;
-            }
-
-            Posting p(termID, (*itdoc + prevdoc), (prevfrag+*itfrag), (prevpos+*itpos));
-            //std::cout << termID << ' ' <<*itdoc << ' '<< *itfrag << ' ' << *itpos << std::endl;
-            prevdoc = *itdoc + prevdoc;
-            prevfrag = *itfrag + prevfrag;
-            prevpos = *itpos + prevpos;
-            result.push_back(p);
-            itdoc ++;
-            itfrag ++;
-            itpos ++;
-            posting_num ++;
-
-    	}
-    }else{
-        std::cerr << "File cannot be opened." << std::endl;
-    }
-    return result;
-}
-
-std::vector<nPosting> Index::decompress_np(std::string namebase, unsigned int termID){
-    //std::cout << "Decompressing np" << std::endl;
-    std::ifstream ifile;
-    std::string filename = std::string(NPDIR) + namebase;
-    ifile.open(filename, std::ios::binary);
-    std::vector<nPosting> result;
-
-    if(ifile.is_open()){
-        //std::cout << namebase << " Opened for Decompressing" << std::endl;
-    	char c;
-    	std::vector<char> readin;
-
-    	std::vector<unsigned int> docID;
-    	std::vector<unsigned int> freq;
-    	//std::vector<unsigned int> sign;
-
-		//TODO:
-        std::vector<mDatanp>& mvec = dict[termID].second;
-        std::vector<mDatanp>::iterator currMVec;
-
-        for( currMVec = mvec.begin(); currMVec != mvec.end(); currMVec ++){
-            //std::cout << currMVec->filename << std::endl;
-            //std::cout << currMVec->posting_start << ' ' << currMVec->frag_start << ' ' << currMVec->pos_start << std::endl;
-            if( currMVec->filename == namebase )
-                break;
+        count = 0;
+        while( count < BLOCK ){
+            fragID.push_back(*it);
+            count ++;
+            it ++;
         }
-
-    	ifile.seekg(currMVec->posting_start);
-    	while(ifile.tellg() != currMVec->freq_start){
-    		ifile.get(c);
-    		readin.push_back(c);
-    	}
-        docID = VBDecode(readin);
-        readin.clear();
-
-    	ifile.seekg(currMVec->freq_start);
-    	while(ifile.tellg() != currMVec->end_pos){
-    		ifile.get(c);
-    		readin.push_back(c);
-    	}
-        freq = VBDecode(readin);
-        readin.clear();
-
-    	std::vector<unsigned int>::iterator itdoc = docID.begin();
-    	std::vector<unsigned int>::iterator itfreq = freq.begin();
-
-        unsigned int prevdoc =0;
-        //std::cout << "In " << filename << ", there are "<< std::endl;
-    	while(itdoc != docID.end()){
-            nPosting p(termID, (*itdoc + prevdoc), *itfreq);
-            //std::cout << termID << ' ' << *itdoc + prevdoc << ' '<< *itfreq << ' ' << *itsign << std::endl;
-            prevdoc = *itdoc + prevdoc;
-            result.push_back(p);
-            itdoc ++;
-            itfreq ++;
-    	}
-    }else{
-        std::cerr << "File cannot be opened." << std::endl;
+        count = 0;
+        while( count < BLOCK ){
+            pos.push_back(*it);
+            count ++;
+            it ++;
+        }
     }
-    //the last one is not read in the loop
-    infile.get(c);
-    result.push_back(c);
-    return result;
+    std::vector<unsigned int>::iterator it1 = docID.begin();
+    std::vector<unsigned int>::iterator it2 = fragID.begin();
+    std::vector<unsigned int>::iterator it3 = pos.begin();
+    Posting p;
+    std::vector<Posting> postings;
+    while( it1 != docID.end() ){
+        p.termID = termID;
+        p.docID = *it1;
+        p.second = *it2;
+        p.third = *it3;
+        postings.push_back(p);
+        it1 ++;
+        it2 ++;
+        it3 ++;
+    }
+    positional_index.insert( std::pair<unsigned int, std::vector<Posting>>(termID, postings) );
+
+    return;
 }
 
 std::vector<char> Index::read_com(std::ifstream& infile, long end_pos){
@@ -377,56 +284,73 @@ void Index::merge(int indexnum, int positional){
 
 	//determine the name of the output file, if "Z" file exists, than compressed to "I" file.
     char flag = 'Z';
-	filez.open(pdir + "Z" + std::to_string(indexnum));
-	filei.open(pdir + "I" + std::to_string(indexnum));
+	filez.open(dir + "Z" + std::to_string(indexnum));
+	filei.open(dir + "I" + std::to_string(indexnum));
 
-	ofile.open(pdir + "Z" + std::to_string(indexnum + 1), std::ios::app | std::ios::binary);
+    std::string namebase1 = "Z" + std::to_string(indexnum);
+	std::string namebase2 = "I" + std::to_string(indexnum);
+    std::string namebaseo;
+
+	ofile.open(dir + "Z" + std::to_string(indexnum + 1), std::ios::app | std::ios::binary);
+    namebaseo = flag + std::to_string(indexnum + 1);
 	if(ofile.tellp() != 0){
 		ofile.close();
-		ofile.open(pdir + "I" + std::to_string(indexnum + 1), std::ios::ate | std::ios::binary);
+		ofile.open(dir + "I" + std::to_string(indexnum + 1), std::ios::ate | std::ios::binary);
         flag = 'I';
+        namebaseo = flag + std::to_string(indexnum + 1);
 	}
-
     std::cout << "Merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
 
-	std::string namebase1 = "Z" + std::to_string(indexnum);
-	std::string namebase2 = "I" + std::to_string(indexnum);
-
 	unsigned int termIDZ, termIDI;
+    if( filez.is_open() && filei.is_open() ){
+        while( !filez.eof() || !filei.eof() ){
+    		filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
+    		filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
 
-	while( !filez.eof() || !filei.eof() ){
-		filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
-		filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
+    		if( termIDZ < termIDI ) //TODO 2.1: copy from start to end
+    		else if( termIDI < termIDZ ) //TODO 2.2: copy from start to end
+    		else if( termIDI == termIDZ ){
+                /*
+    			int doc_methodi, second_methodi, third_methodi,
+    			doc_methodz, second_methodz, third_methodz;
 
-		if( termIDZ < termIDI ) //copy from start to end
-		else if( termIDI < termIDZ ) //copy from start to end
-		else if( termIDI == termIDZ ){
-			int doc_methodi, second_methodi, third_methodi,
-			doc_methodz, second_methodz, third_methodz;
-
-			filez.read(reinterpret_cast<char *>(&doc_methodz), sizeof(doc_methodz));
-			filez.read(reinterpret_cast<char *>(&second_methodz), sizeof(second_methodz));
-			filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
-			filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
-			if( positional ){
-				filez.read(reinterpret_cast<char *>(&third_methodz), sizeof(third_methodz));
-				filei.read(reinterpret_cast<char *>(&third_methodi), sizeof(doc_methodi));
-		}
-	}
-
-
+    			filez.read(reinterpret_cast<char *>(&doc_methodz), sizeof(doc_methodz));
+    			filez.read(reinterpret_cast<char *>(&second_methodz), sizeof(second_methodz));
+    			filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
+    			filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
+    			if( positional ){
+    				filez.read(reinterpret_cast<char *>(&third_methodz), sizeof(third_methodz));
+    				filei.read(reinterpret_cast<char *>(&third_methodi), sizeof(doc_methodi));
+                }
+                */
+                if( positional ){
+                    decompress_p_posting(termID, filez, namebase1);
+                    decompress_p_posting(termID, filei, namebase2);
+                    P_ITE ite = positional_index.begin();
+                    compress_posting(namebaseo, ofile, ite, 1);
+                }
+                else{
+                    decompress_np_posting(termID, filez, filei, namebase1, namebase2);
+                    NP_ITE ite = nonpositional_index.begin();
+                    compress_posting(namebaseo, ofile, ite, 0);
+                }
+    		}
+    	}
+    }
+    else std::cerr << "Error opening file." << endl;
 
 	filez.close();
 	filei.close();
 	ofile.close();
-    std::string filename1 = pdir + "Z" + std::to_string(indexnum);
-    std::string filename2 = pdir + "I" + std::to_string(indexnum);
+    std::string filename1 = dir + "Z" + std::to_string(indexnum);
+    std::string filename2 = dir + "I" + std::to_string(indexnum);
     //deleting two files
     if( remove( filename1.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
     if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
 }
 
-void Index::merge_np(int indexnum){
+//TODO 1: finish this function
+void Index::decompress_np_posting(unsigned int termID, ){
     /**
 	 * Merge non-positional index.
 	 */
@@ -518,11 +442,6 @@ void Index::merge_np(int indexnum){
 		}
 	}
 	*/
-
-    /**
-	 * TODO: decompress from the old index and then compress to the new one to update metadata is time-consuming
-     * need to find a more efficient way to update metadata while tranfering positngs
-	 */
 	/*
 	while (it1 != v1.end() ){
         std::vector<nPosting> vp = decompress_np(file1, it1->termID);
@@ -541,7 +460,6 @@ void Index::merge_np(int indexnum){
     std::string filename1 = pdir + "X" + std::to_string(indexnum);
     std::string filename2 = pdir + "L" + std::to_string(indexnum);
 
-	//TODO: update ExtendedLexicon
 	/*
 
     for( std::vector<f_meta>::iterator it = filemeta[file1].begin(); it != filemeta[file1].end(); it ++){

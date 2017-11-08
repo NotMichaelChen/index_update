@@ -32,5 +32,4 @@ std::vector<mDatanp>::iterator ExtendedLexicon::getNonPositionalBegin(unsigned i
 
 std::vector<mDatanp>::iterator ExtendedLexicon::getNonPositionalEnd(unsigned int term) {
     return exlexnp[term].end();
->>>>>>> e1bf2a4af59bd032b60f645a07dabce190fba3d9
 }

@@ -7,8 +7,8 @@ struct mData{
 	std::string filename;
 	long start_pos;
 	long posting_offset;
-	long size_offset;
 	long postingCount_offset;
+	long size_offset;
 	long end_offset;
 };
 
