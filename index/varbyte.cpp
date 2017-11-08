@@ -1,3 +1,5 @@
+#include <bitset>
+#include <cmath>
 #include "varbyte.hpp"
 
 #include <bitset>
@@ -31,7 +33,7 @@ std::vector<uint8_t> VBEncode(unsigned int num){
 
 std::vector<uint8_t> VBEncode(std::vector<unsigned int>& nums){
 	/**
-	 * Encode a vector of unsigned intergers.
+	 * Encode a std::vector of unsigned intergers.
 	 */
 	std::vector<uint8_t> biv;
 	std::vector<uint8_t> result;

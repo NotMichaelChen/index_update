@@ -15,14 +15,17 @@
 #define PDIR "./disk_index/positional/"//path to static positional index
 #define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 
-using namespace std;
+typedef std::map<std::string, std::vector<Posting>>::iterator P_ITE;
+typedef std::map<std::string, std::vector<nPosting>>::iterator NP_ITE;
 
-// Index::Index() {
-//     docstore = Structures::DocumentStore();
-//     transtable = Structures::TranslationTable();
-//     lex = Lexicon();
-//     exlex = ExtendedLexicon();
-// }
+
+//TODO: why commented out
+Index::Index() {
+    docstore = Structures::DocumentStore();
+    transtable = Structures::TranslationTable();
+    lex = Lexicon();
+    exlex = ExtendedLexicon();
+}
 
 void Index::write_p(int indexnum, char prefix){
     ofstream ofile;//positional inverted index
@@ -49,29 +52,10 @@ void Index::write_p(int indexnum, char prefix){
     }
 
     if (ofile.is_open()){
-        std::vector<unsigned int> v_docID;
-        std::vector<unsigned int> v_fragID;
-        std::vector<unsigned int> v_pos;
-        mDatap mmData;
+        P_ITE ite = positional_index.begin();
+        compress_posting<P_ITE>(namebase, ofile, ite, 1);
 
-        for(auto it = positional_index.begin(); it != positional_index.end(); it++) {
-            unsigned int currterm = it->first;
-            for(auto posting_iter = it->second.begin(); posting_iter != it->second.end(); posting_iter++) {
-                v_docID.push_back(posting_iter->docID);
-                v_fragID.push_back(posting_iter->fragID);
-                v_pos.push_back(posting_iter->pos);
-            }
-
-            mmData = compress_p(namebase, ofile, fm, v_docID, v_fragID, v_pos);
-            mmData.num_posting = it->second.size();
-
-            exlex.addPositional(currterm, mmData);
-
-            v_docID.clear();
-            v_fragID.clear();
-            v_pos.clear();
-        }
-        ofile.close();
+    	ofile.close();
     }else{
         cerr << "File cannot be opened." << endl;
     }
@@ -106,32 +90,12 @@ void Index::write_np(int indexnum, char prefix){
     }
 
     if (ofile.is_open()){
-        //cout << "Compressing and writing to " << namebase << endl;
+        NP_ITE ite = nonpositional_index.begin();
+        compress_posting<NP_ITE>(namebase, ofile, ite, 0);
 
-        std::vector<unsigned int> v_docID;
-        std::vector<unsigned int> v_freq;
-        std::vector<unsigned int> v_sign;
-        mDatanp mmDatanp;
-
-        for(auto it = nonpositional_index.begin(); it != nonpositional_index.end(); it++) {
-            unsigned int currID = it->first;
-            for(auto posting_iter = it->second.begin(); posting_iter != it->second.end(); posting_iter++) {
-                v_docID.push_back(posting_iter->docID);
-                v_freq.push_back(posting_iter->freq);
-                v_sign.push_back(posting_iter->sign);
-            }
-
-            mmDatanp = compress_np(namebase, ofile, fm, v_docID, v_freq, v_sign);
-            exlex.addNonPositional(currID, mmDatanp);
-
-            v_docID.clear();
-            v_freq.clear();
-            v_sign.clear();
-        }
-        ofile.close();
+    	ofile.close();
     }
-    else
-        cerr << "File cannot be opened." << endl;
+    else cerr << "File cannot be opened." << endl;
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {

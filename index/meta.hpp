@@ -3,33 +3,13 @@
 
 #include <string>
 
-struct mDatap{
-	//need number of blocks?
-	std::string term;
-	int num_posting;//number of postings
-	int comp_method;//compress method, 1: Variable Bytes Encoding
-	//following is how a postinglist is stored in multiple files
+struct mData{
 	std::string filename;
 	long start_pos;
-	long end_pos;
-	long meta_doc_start;
-	long meta_frag_start;
-	long meta_pos_start;
-	long posting_start;
-	long frag_start;
-	long pos_start;
-	//long ID_offset;
-};
-
-struct mDatanp{
-	std::string filename;
-	int comp_method;
-	long start_pos;
-	long end_pos;
-	long meta_doc_start;
-	long meta_freq_start;
-	long posting_start;
-	long freq_start;
+	long posting_offset;
+	long size_offset;
+	long postingCount_offset;
+	long end_offset;
 };
 
 #endif
