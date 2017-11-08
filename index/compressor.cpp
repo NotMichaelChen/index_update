@@ -8,19 +8,22 @@
 #include "index.hpp"
 #include "varbyte.hpp"
 
+#define PDIR "./disk_index/positional/"//path to static positional index
+#define NPDIR "./disk_index/non_positional/"//path to static non-positional index
+
 std::vector<std::string> Index::read_directory( std::string path ){
-	/**
-	 * List all the files in a directory.
-	 *
-	 * @param: the path of a directory
-	 * @return: the names of all the files in this directory.
-	 */
-	std::vector <std::string> result;
-	dirent* de;
-	DIR* dp;
-	errno = 0;
-	dp = opendir( path.empty() ? "." : path.c_str() );
-		if (dp){
+    /**
+     * List all the files in a directory.
+     *
+     * @param: the path of a directory
+     * @return: the names of all the files in this directory.
+     */
+    std::vector <std::string> result;
+    dirent* de;
+    DIR* dp;
+    errno = 0;
+    dp = opendir( path.empty() ? "." : path.c_str() );
+    if (dp){
     		while (true){
       			errno = 0;
       			de = readdir( dp );
@@ -167,13 +170,21 @@ void Index::decompress_block(std::string namebase, unsigned int termID){
         //std::cout << namebase << " Opened for Decompressing" << std::endl;
     	char c;
     	std::vector<char> readin;
+<<<<<<< HEAD
 
 
 
         std::vector<mDatap>& mvec = dict[termID].first;
+=======
+
+    	std::vector<unsigned int> docID;
+    	std::vector<unsigned int> fragID;
+    	std::vector<unsigned int> pos;
+
+>>>>>>> e1bf2a4af59bd032b60f645a07dabce190fba3d9
         std::vector<mDatap>::iterator currMVec;
 
-        for( currMVec = mvec.begin(); currMVec != mvec.end(); currMVec ++){
+        for( currMVec = exlex.getPositionalBegin(termID); currMVec != exlex.getPositionalEnd(termID); currMVec++){
             if( currMVec->filename == namebase )
                 break;
         }
@@ -240,9 +251,9 @@ void Index::decompress_block(std::string namebase, unsigned int termID){
 
 std::vector<nPosting> Index::decompress_np(std::string namebase, unsigned int termID){
     //std::cout << "Decompressing np" << std::endl;
-	std::ifstream ifile;
+    std::ifstream ifile;
     std::string filename = std::string(NPDIR) + namebase;
-	ifile.open(filename, std::ios::binary);
+    ifile.open(filename, std::ios::binary);
     std::vector<nPosting> result;
 
     if(ifile.is_open()){
@@ -297,6 +308,9 @@ std::vector<nPosting> Index::decompress_np(std::string namebase, unsigned int te
     }else{
         std::cerr << "File cannot be opened." << std::endl;
     }
+    //the last one is not read in the loop
+    infile.get(c);
+    result.push_back(c);
     return result;
 }
 

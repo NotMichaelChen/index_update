@@ -37,18 +37,18 @@ MatcherInfo indexUpdate(string& url, string& newpage, string& timestamp, Structu
 MatcherInfo makePosts(Structures::DocumentTuple& olddoc, string& newpage) {
     //-check if there was a previous version, if not create postings with fragid = 0
     unsigned int fragID = olddoc.maxfragID;
-    
+
     Matcher::StringEncoder se(olddoc.doc, newpage);
 
     //-else, run the graph based matching algorithm on the two versions
     vector<shared_ptr<Matcher::Block>> commonblocks = Matcher::getOptimalBlocks(se, MIN_BLOCK_SIZE, MAX_BLOCK_COUNT, 5);
-    
+
     //Get the translation and posting list
     vector<Matcher::Translation> translist = Matcher::getTranslations(se.getOldSize(), se.getNewSize(), commonblocks);
     auto postingslist = Matcher::getPostings(commonblocks, olddoc.docID, fragID, se);
 
     //-generate postings and translation statements, and return them. (Question: how do we know the previous largest fragid for this document, so we know what to use as the next fragid? Maybe store with did in the tuple store?)
     MatcherInfo posts(postingslist.first, postingslist.second, translist, se, fragID);
-    
+
     return posts;
 }

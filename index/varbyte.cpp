@@ -2,6 +2,11 @@
 #include <cmath>
 #include "varbyte.hpp"
 
+#include <bitset>
+#include <vector>
+#include <fstream>
+#include <cmath>
+
 std::vector<uint8_t> VBEncode(unsigned int num){
 	/**
 	 * Variable byte encoding.
@@ -39,17 +44,16 @@ std::vector<uint8_t> VBEncode(std::vector<unsigned int>& nums){
 	return result;
 }
 
-/*
-std::vector<unsigned int> VBDecode(std::ifstream& ifile, long start_pos, long end_pos){//ios::ate
+//compr_ind is the vector returned from read_com
+std::vector<unsigned int> VBDecode(std::ifstream& ifile, std::vector<char>& compr_ind, long start_pos, long end_pos){//ios::ate
 	ifile.seekg(start_pos);
 	char c;
 	unsigned int num;
 	int p;
 	std::vector<unsigned int> result;
     if(end_pos == 0) end_pos = ifile.end;
-	std::vector<char> vec = read_com(ifile, end_pos);
 
-	for(std::vector<char>::iterator it = vec.begin(); it != vec.end(); it++){
+	for(std::vector<char>::iterator it = compr_ind.begin(); it != compr_ind.end(); it++){
 		c = *it;
 		std::bitset<8> byte(c);
 		num = 0;
@@ -68,7 +72,7 @@ std::vector<unsigned int> VBDecode(std::ifstream& ifile, long start_pos, long en
 	}
 	return result;
 }
-*/
+
 std::vector<unsigned int> VBDecode(std::vector<char>& vec){
 	unsigned int num;
 	std::vector<unsigned int> result;
