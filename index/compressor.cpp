@@ -78,9 +78,16 @@ void Index::compress_posting(std::string namebase,
 	int doc_method = 1;
 	int second_method = 1;
 	int third_method = 1;
-	ite = nonpositional_index.begin();
+	if(positional){
+		ite = positional_index.begin();
+		T end = positional_index.end();
+	}
+	else{
+		ite = nonpositional_index.begin();
+		T end = nonpositional_index.end();
+	}
 
- 	while( ite != nonpositional_index.end() ){
+ 	while( ite != end ){
  		currID = ite->second->termID;
  		currTerm = ite->first;
 		//writing metadata to file
@@ -90,8 +97,8 @@ void Index::compress_posting(std::string namebase,
 		if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
 		meta.posting_offset = ofile.tellp();
 
- 		while( ite->second->termID == currID && ite != nonpositional_index.end() ){
-			while( postingCount % (BLOCK+1) != 0 && ite->second->termID == currID && ite != nonpositional_index.end() ){
+ 		while( ite->second->termID == currID && ite != end ){
+			while( postingCount % (BLOCK+1) != 0 && ite->second->termID == currID && ite != end ){
 				v_docID.push_back(ite->second->docID);
 	 			v_second.push_back(ite->second->second);
 	 			if(positional) v_third.push_back(ite->third);
@@ -170,18 +177,15 @@ void Index::decompress_block(std::string namebase, unsigned int termID){
         //std::cout << namebase << " Opened for Decompressing" << std::endl;
     	char c;
     	std::vector<char> readin;
-<<<<<<< HEAD
 
 
 
         std::vector<mDatap>& mvec = dict[termID].first;
-=======
 
     	std::vector<unsigned int> docID;
     	std::vector<unsigned int> fragID;
     	std::vector<unsigned int> pos;
 
->>>>>>> e1bf2a4af59bd032b60f645a07dabce190fba3d9
         std::vector<mDatap>::iterator currMVec;
 
         for( currMVec = exlex.getPositionalBegin(termID); currMVec != exlex.getPositionalEnd(termID); currMVec++){

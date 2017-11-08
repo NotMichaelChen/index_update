@@ -2,11 +2,7 @@
 #define EXTLEX_H
 
 #include <string>
-<<<<<<< HEAD
-#include <map>
-=======
 #include <unordered_map>
->>>>>>> e1bf2a4af59bd032b60f645a07dabce190fba3d9
 #include <vector>
 #include "meta.hpp"
 
