@@ -2,6 +2,8 @@
 #define EXTLEX_H
 
 #include <string>
+#include <map>
+#include <vector>
 #include "meta.hpp"
 
 class ExtendedLexicon {
