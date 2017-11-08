@@ -97,3 +97,28 @@ std::vector<unsigned int> VBDecode(std::vector<char>& vec){
 	}
 	return result;
 }
+
+std::vector<unsigned int> VBDecode(char* buffer, int length){
+	unsigned int num;
+	std::vector<unsigned int> result;
+	char c;
+	int p;
+	for(int i = 0; i < length; i ++ ){
+		c = buffer[i];
+		std::bitset<8> byte(c);
+		num = 0;
+		p = 0;
+		while(byte[7] == 1){
+			byte.flip(7);
+			num += byte.to_ulong()*pow(128, p);
+			p++;
+			i ++;
+			c = buffer[i];
+			byte = std::bitset<8>(c);
+		}
+		num += (byte.to_ulong())*pow(128, p);
+
+		result.push_back(num);
+	}
+	return result;
+}
