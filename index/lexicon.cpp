@@ -39,7 +39,6 @@ void Lexicon::dump() {
     ofstream dumpfile;
     dumpfile.open("lexdump");
 
-    dumpfile << lex.size() << "\n";
     for(auto iter = lex.begin(); iter != lex.end(); ++iter) {
         dumpfile << iter->first << " ";
         dumpfile << iter->second.termid << " ";
@@ -51,18 +50,13 @@ void Lexicon::dump() {
 
 bool Lexicon::restore() {
     ifstream dumpfile;
-    dumpfile.open("lexdump")
+    dumpfile.open("lexdump");
 
     if(!dumpfile)
         return false;
 
     string line;
     size_t convertlen;
-
-    getline(dumpfile, line);
-    lex.size = stoi(line, &convertlen);
-    if(convertlen == 0)
-        return false;
 
     stringstream linebuf;
 

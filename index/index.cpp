@@ -24,68 +24,68 @@ Index::Index() {
 }
 
 void Index::write_p(int indexnum, char prefix){
-	ofstream ofile;//positional inverted index
+    ofstream ofile;//positional inverted index
     string pdir(PDIR);
     string namebase;
     string filename;
     if(prefix == 'a'){
         filename = pdir + "Z" + to_string(indexnum);
-    	ofile.open(filename, ofstream::app | ofstream::binary);
+        ofile.open(filename, ofstream::app | ofstream::binary);
 
-    	if(ofile.tellp() != 0){
+        if(ofile.tellp() != 0){
             cout << filename << " already exists." << endl;
-    		ofile.close();
-    		filename = pdir + "I" + to_string(indexnum);
+            ofile.close();
+            filename = pdir + "I" + to_string(indexnum);
             ofile.open(filename, ios::ate | ios::binary);
             namebase = string("I") + to_string(indexnum);
-    	}else{
+        }else{
             namebase = string("Z") + to_string(indexnum);
         }
     }else{
         filename = pdir + prefix + to_string(indexnum);
-    	ofile.open(filename, ofstream::app | ofstream::binary);
+        ofile.open(filename, ofstream::app | ofstream::binary);
         namebase = prefix+ to_string(indexnum);
     }
 
     if (ofile.is_open()){
         std::vector<unsigned int> v_docID;
-    	std::vector<unsigned int> v_fragID;
-    	std::vector<unsigned int> v_pos;
-    	mData mmData;
-    	unsigned int num_of_p = 0;//number of posting of a certain term
+        std::vector<unsigned int> v_fragID;
+        std::vector<unsigned int> v_pos;
+        mData mmData;
+        unsigned int num_of_p = 0;//number of posting of a certain term
 
         auto it = positional_index.begin();
         string currterm = it->first;
-    	while( it != positional_index.end() ){
-    		while(it->first == currterm && it != positional_index.end()){
-    			v_docID.push_back(it->second->docID);
-    			v_fragID.push_back(it->second->fragID);
-    			v_pos.push_back(it->second->pos);
-    			it ++;
-    			num_of_p ++;
-    		}
+        while( it != positional_index.end() ){
+            while(it->first == currterm && it != positional_index.end()){
+                v_docID.push_back(it->second->docID);
+                v_fragID.push_back(it->second->fragID);
+                v_pos.push_back(it->second->pos);
+                it ++;
+                num_of_p ++;
+            }
 
-    		mmData = compress_p(namebase, ofile, fm, v_docID, v_fragID, v_pos);
-    		mmData.num_posting = num_of_p;
+            mmData = compress_p(namebase, ofile, fm, v_docID, v_fragID, v_pos);
+            mmData.num_posting = num_of_p;
 
             exlex.addPositional(currterm, mmData);
             currterm = it->first;
 
-    		num_of_p = 0;
-    		v_docID.clear();
-    		v_fragID.clear();
-    		v_pos.clear();
-    	}
-    	ofile.close();
+            num_of_p = 0;
+            v_docID.clear();
+            v_fragID.clear();
+            v_pos.clear();
+        }
+        ofile.close();
     }else{
         cerr << "File cannot be opened." << endl;
     }
 }
 
 void Index::write_np(int indexnum, char prefix){
-	/**
-	 * Open a file to write to and store the metadata of a term.
-	 */
+    /**
+     * Open a file to write to and store the metadata of a term.
+     */
     ofstream ofile;//non-positional inverted index
     string pdir(NPDIR);
     string namebase;
@@ -93,20 +93,20 @@ void Index::write_np(int indexnum, char prefix){
     if(prefix == 'a'){
         //default state, compressing from dynamic index, not from merging
         filename = pdir + "X" + to_string(indexnum);
-    	ofile.open(filename, ofstream::app | ofstream::binary);
+        ofile.open(filename, ofstream::app | ofstream::binary);
 
-    	if(ofile.tellp() != 0){
+        if(ofile.tellp() != 0){
             cout << filename << " already exists." << endl;
-    		ofile.close();
-    		filename = pdir + "L" + to_string(indexnum);
+            ofile.close();
+            filename = pdir + "L" + to_string(indexnum);
             ofile.open(filename, ios::ate | ios::binary);
             namebase = string("L") + to_string(indexnum);
-    	}else{
+        }else{
             namebase = string("X") + to_string(indexnum);
         }
     }else{
         filename = pdir + prefix + to_string(indexnum);
-    	ofile.open(filename, ofstream::app | ofstream::binary);
+        ofile.open(filename, ofstream::app | ofstream::binary);
         namebase = prefix+ to_string(indexnum);
     }
 
@@ -114,9 +114,9 @@ void Index::write_np(int indexnum, char prefix){
         //cout << "Compressing and writing to " << namebase << endl;
 
         std::vector<unsigned int> v_docID;
-    	std::vector<unsigned int> v_freq;
+        std::vector<unsigned int> v_freq;
         std::vector<unsigned int> v_sign;
-    	mDatanp mmDatanp;
+        mDatanp mmDatanp;
 
         unsigned int currID = 0;
 
@@ -125,21 +125,21 @@ void Index::write_np(int indexnum, char prefix){
             currID = it->first;
             while( it->first == currID ){
                 v_docID.push_back(it->second->docID);
-    			v_freq.push_back(it->second->freq);
+                v_freq.push_back(it->second->freq);
                 v_sign.push_back(it->second->sign);
-    			it ++;
+                it ++;
             }
 
-    		mmDatanp = compress_np(namebase, ofile, fm, v_docID, v_freq, v_sign);
+            mmDatanp = compress_np(namebase, ofile, fm, v_docID, v_freq, v_sign);
             exlex.addNonPositional(currID, mmDatanp);
             currID = it->first;
 
-    		v_docID.clear();
-    		v_freq.clear();
-    		v_sign.clear();
-    	}
+            v_docID.clear();
+            v_freq.clear();
+            v_sign.clear();
+        }
 
-    	ofile.close();
+        ofile.close();
     }
     else
         cerr << "File cannot be opened." << endl;
