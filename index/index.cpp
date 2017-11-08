@@ -15,12 +15,14 @@
 #define PDIR "./disk_index/positional/"//path to static positional index
 #define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 
-Index::Index() {
-    docstore = Structures::DocumentStore();
-    transtable = Structures::TranslationTable();
-    lex = Lexicon();
-    exlex = ExtendedLexicon();
-}
+using namespace std;
+
+// Index::Index() {
+//     docstore = Structures::DocumentStore();
+//     transtable = Structures::TranslationTable();
+//     lex = Lexicon();
+//     exlex = ExtendedLexicon();
+// }
 
 void Index::write_p(int indexnum, char prefix){
     ofstream ofile;//positional inverted index
@@ -50,27 +52,21 @@ void Index::write_p(int indexnum, char prefix){
         std::vector<unsigned int> v_docID;
         std::vector<unsigned int> v_fragID;
         std::vector<unsigned int> v_pos;
-        mData mmData;
-        unsigned int num_of_p = 0;//number of posting of a certain term
+        mDatap mmData;
 
-        auto it = positional_index.begin();
-        string currterm = it->first;
-        while( it != positional_index.end() ){
-            while(it->first == currterm && it != positional_index.end()){
-                v_docID.push_back(it->second->docID);
-                v_fragID.push_back(it->second->fragID);
-                v_pos.push_back(it->second->pos);
-                it ++;
-                num_of_p ++;
+        for(auto it = positional_index.begin(); it != positional_index.end(); it++) {
+            unsigned int currterm = it->first;
+            for(auto posting_iter = it->second.begin(); posting_iter != it->second.end(); posting_iter++) {
+                v_docID.push_back(posting_iter->docID);
+                v_fragID.push_back(posting_iter->fragID);
+                v_pos.push_back(posting_iter->pos);
             }
 
             mmData = compress_p(namebase, ofile, fm, v_docID, v_fragID, v_pos);
-            mmData.num_posting = num_of_p;
+            mmData.num_posting = it->second.size();
 
             exlex.addPositional(currterm, mmData);
-            currterm = it->first;
 
-            num_of_p = 0;
             v_docID.clear();
             v_fragID.clear();
             v_pos.clear();
@@ -117,27 +113,21 @@ void Index::write_np(int indexnum, char prefix){
         std::vector<unsigned int> v_sign;
         mDatanp mmDatanp;
 
-        unsigned int currID = 0;
-
-        auto it = nonpositional_index.begin();
-        while( it != nonpositional_index.end() ){
-            currID = it->first;
-            while( it->first == currID ){
-                v_docID.push_back(it->second->docID);
-                v_freq.push_back(it->second->freq);
-                v_sign.push_back(it->second->sign);
-                it ++;
+        for(auto it = nonpositional_index.begin(); it != nonpositional_index.end(); it++) {
+            unsigned int currID = it->first;
+            for(auto posting_iter = it->second.begin(); posting_iter != it->second.end(); posting_iter++) {
+                v_docID.push_back(posting_iter->docID);
+                v_freq.push_back(posting_iter->freq);
+                v_sign.push_back(posting_iter->sign);
             }
 
             mmDatanp = compress_np(namebase, ofile, fm, v_docID, v_freq, v_sign);
             exlex.addNonPositional(currID, mmDatanp);
-            currID = it->first;
 
             v_docID.clear();
             v_freq.clear();
             v_sign.clear();
         }
-
         ofile.close();
     }
     else
