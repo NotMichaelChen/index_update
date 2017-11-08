@@ -8,14 +8,20 @@
 
 class ExtendedLexicon {
 public:
-    void addPositional(std::string term, mDatap& entry);
-    void addNonPositional(std::string term, mDatanp& entry);
-    
-    mDatap getPositional(std::string term, int index);
-    mDatanp getNonPositional(std::string term, int index);
+    void addPositional(unsigned int term, mDatap& entry);
+    void addNonPositional(unsigned int term, mDatanp& entry);
+
+    mDatap getPositional(unsigned int term, int index);
+    mDatanp getNonPositional(unsigned int term, int index);
+
+    std::vector<mDatap>::iterator getPositionalBegin(unsigned int term);
+    std::vector<mDatap>::iterator getPositionalEnd(unsigned int term);
+    std::vector<mDatanp>::iterator getNonPositionalBegin(unsigned int term);
+    std::vector<mDatanp>::iterator getNonPositionalEnd(unsigned int term);
+
 private:
-    std::unordered_map<std::string, std::vector<mDatanp>> exlexnp;
-    std::unordered_map<std::string, std::vector<mDatap>> exlexp;
+    std::unordered_map<unsigned int, std::vector<mDatanp>> exlexnp;
+    std::unordered_map<unsigned int, std::vector<mDatap>> exlexp;
 };
 
 #endif

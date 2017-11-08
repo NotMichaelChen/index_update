@@ -10,7 +10,6 @@
 #include "doc_analyzer/analyzer.h"
 #include "Structures/documentstore.h"
 #include "Structures/translationtable.h"
-#include "compressor.hpp"
 
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
 #define PDIR "./disk_index/positional/"//path to static positional index
