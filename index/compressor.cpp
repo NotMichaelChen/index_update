@@ -1,6 +1,7 @@
 /* Methods related to compressing posting list */
 #include <iostream>
 #include <fstream>
+#include <utility>
 #include <dirent.h>
 
 #include "index.hpp"
@@ -71,8 +72,7 @@ void Index::compress_posting(std::string namebase,
 	int third_method = 1;
 
  	while( ite != end ){
- 		currID = ite->second.termID;
- 		currTerm = ite->first;
+ 		currID = ite->first;
 		//writing metadata to file
 		ofile.write(reinterpret_cast<const char *>(&currID), sizeof(currID));
 		ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
@@ -80,8 +80,8 @@ void Index::compress_posting(std::string namebase,
 		if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
 		meta.posting_offset = ofile.tellp();
 
- 		while( ite->second.termID == currID && ite != end ){
-			while( postingCount % (BLOCK+1) != 0 && ite->second->termID == currID && ite != end ){
+ 		while( ite->first == currID && ite != end ){
+			while( postingCount % (BLOCK+1) != 0 && ite->first == currID && ite != end ){
 				v_docID.push_back(ite->second->docID);
 	 			v_second.push_back(ite->second->second);
 	 			if(positional) v_third.push_back(ite->third);
@@ -194,18 +194,17 @@ void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std:
     std::vector<unsigned int>::iterator it2 = fragID.begin();
     std::vector<unsigned int>::iterator it3 = pos.begin();
     Posting p;
-    std::vector<Posting> postings;
     while( it1 != docID.end() ){
         p.termID = termID;
         p.docID = *it1;
         p.second = *it2;
         p.third = *it3;
-        postings.push_back(p);
+        positional_index[termID].push_back(p);
         it1 ++;
         it2 ++;
         it3 ++;
     }
-    positional_index.insert( std::pair<unsigned int, std::vector<Posting>>(termID, postings) );
+
     ifile.seekg(meta.end_offset);
 }
 
@@ -317,13 +316,13 @@ void Index::merge(int indexnum, int positional){
                     decompress_p_posting(termIDI, filei, namebase2);
                     P_ITE ite = positional_index.begin();
                     P_ITE end = positional_index.end();
-                    compress_posting(namebaseo, ofile, ite, end, 1);
+                    compress_posting<P_ITE>(namebaseo, ofile, ite, end, 1);
                 }
                 else{
                     decompress_np_posting(termIDI, filez, filei, namebase1, namebase2);
                     NP_ITE ite = nonpositional_index.begin();
                     NP_ITE end = nonpositional_index.end();
-                    compress_posting(namebaseo, ofile, ite, end, 0);
+                    compress_posting<NP_ITE>(namebaseo, ofile, ite, end, 0);
                 }
     		}
     	}
@@ -408,22 +407,21 @@ void Index::decompress_np_posting(unsigned int termID, std::ifstream& filez,
     iti = docIDi.begin();
     std::vector<unsigned int>::iterator itfz = freqz.begin();
     std::vector<unsigned int>::iterator itfi = freqi.begin();
-    Posting p;
-    std::vector<Posting> postings;
+    nPosting p;
     while( itz != docIDz.end() && iti != docIDi.end() ){
         if( *itz > *iti ){
             p.docID = *itz;
             p.second = *itfz;
             itz ++;
             itfz ++;
-            postings.push_back(p);
+            nonpositional_index[termID].push_back(p);
         }
         else if( *itz < *iti ){
             p.docID = *iti;
             p.second = *itfi;
             iti ++;
             itfi ++;
-            postings.push_back(p);
+            nonpositional_index[termID].push_back(p);
         }
         else{
             //if equal, use the frequency of I file
@@ -433,7 +431,7 @@ void Index::decompress_np_posting(unsigned int termID, std::ifstream& filez,
             itz ++;
             itfi ++;
             itfz ++;
-            postings.push_back(p);
+            nonpositional_index[termID].push_back(p);
         }
 
     }
@@ -442,17 +440,16 @@ void Index::decompress_np_posting(unsigned int termID, std::ifstream& filez,
         p.second = *itfz;
         itz ++;
         itfz ++;
-        postings.push_back(p);
+        nonpositional_index[termID].push_back(p);
     }
     else if( iti != docIDi.end() ){
         p.docID = *iti;
         p.second = *itfi;
         iti ++;
         itfi ++;
-        postings.push_back(p);
+        nonpositional_index[termID].push_back(p);
     }
 
-    positional_index.insert( std::pair<unsigned int, std::vector<Posting>>(termID, postings) );
     filez.seekg(metaz.end_offset);
     filei.seekg(metai.end_offset);
 }

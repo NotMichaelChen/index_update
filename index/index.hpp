@@ -15,8 +15,8 @@
 #define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 #define BLOCK 128
 
-typedef std::map<std::string, std::vector<Posting>>::iterator P_ITE;
-typedef std::map<std::string, std::vector<nPosting>>::iterator NP_ITE;
+typedef std::map<unsigned int, std::vector<Posting>>::iterator P_ITE;
+typedef std::map<unsigned int, std::vector<nPosting>>::iterator NP_ITE;
 
 //This index does not use compression
 class Index {
@@ -27,8 +27,8 @@ public:
     void write_np(int indexnum = 0, char prefix = 'a');
     void write_p(int indexnum, char prefix);
 private:
-    std::map<std::string, std::vector<Posting>> positional_index;
-    std::map<std::string, std::vector<nPosting>> nonpositional_index;
+    std::map<unsigned int, std::vector<Posting>> positional_index;
+    std::map<unsigned int, std::vector<nPosting>> nonpositional_index;
     Lexicon lex;
     ExtendedLexicon exlex;
     Structures::DocumentStore docstore;
