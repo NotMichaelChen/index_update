@@ -12,12 +12,6 @@
 #include "Structures/translationtable.h"
 
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
-#define PDIR "./disk_index/positional/"//path to static positional index
-#define NPDIR "./disk_index/non_positional/"//path to static non-positional index
-
-typedef std::map<std::string, std::vector<Posting>>::iterator P_ITE;
-typedef std::map<std::string, std::vector<nPosting>>::iterator NP_ITE;
-
 
 //TODO: why commented out
 Index::Index() {
@@ -53,7 +47,8 @@ void Index::write_p(int indexnum, char prefix){
 
     if (ofile.is_open()){
         P_ITE ite = positional_index.begin();
-        compress_posting<P_ITE>(namebase, ofile, ite, 1);
+        P_ITE end = positional_index.end();
+        compress_posting<P_ITE>(namebase, ofile, ite, end, 1);
 
     	ofile.close();
     }else{
@@ -71,17 +66,17 @@ void Index::write_np(int indexnum, char prefix){
     string filename;
     if(prefix == 'a'){
         //default state, compressing from dynamic index, not from merging
-        filename = pdir + "X" + to_string(indexnum);
+        filename = pdir + "Z" + to_string(indexnum);
         ofile.open(filename, ofstream::app | ofstream::binary);
 
         if(ofile.tellp() != 0){
             cout << filename << " already exists." << endl;
             ofile.close();
-            filename = pdir + "L" + to_string(indexnum);
+            filename = pdir + "I" + to_string(indexnum);
             ofile.open(filename, ios::ate | ios::binary);
-            namebase = string("L") + to_string(indexnum);
+            namebase = string("I") + to_string(indexnum);
         }else{
-            namebase = string("X") + to_string(indexnum);
+            namebase = string("Z") + to_string(indexnum);
         }
     }else{
         filename = pdir + prefix + to_string(indexnum);
@@ -91,7 +86,8 @@ void Index::write_np(int indexnum, char prefix){
 
     if (ofile.is_open()){
         NP_ITE ite = nonpositional_index.begin();
-        compress_posting<NP_ITE>(namebase, ofile, ite, 0);
+        NP_ITE end = nonpositional_index.end();
+        compress_posting<NP_ITE>(namebase, ofile, ite, end, 0);
 
     	ofile.close();
     }

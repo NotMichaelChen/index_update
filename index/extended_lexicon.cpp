@@ -2,34 +2,38 @@
 #include <unordered_map>
 #include <vector>
 
-void ExtendedLexicon::addNonPositional( unsigned int term, mDatanp& entry ){
+void ExtendedLexicon::addNonPositional( unsigned int term, mData& entry ){
     exlexnp[term].push_back(entry);
 }
 
-void ExtendedLexicon::addPositional( unsigned int term, mDatap& entry ){
+void ExtendedLexicon::addPositional( unsigned int term, mData& entry ){
     exlexp[term].push_back(entry);
 }
 
-mDatap ExtendedLexicon::getPositional(unsigned int term, int index) {
-    return exlexp[term][index];
+mData ExtendedLexicon::getPositional(unsigned int term, std::string filename) {
+    for( std::vector<mData>::iterator it = exlexp[term].begin(); it != exlexp[term].end(); it ++){
+        if( it->filename == filename ) return *it;
+    }
 }
 
-mDatanp ExtendedLexicon::getNonPositional(unsigned int term, int index) {
-    return exlexnp[term][index];
+mData ExtendedLexicon::getNonPositional(unsigned int term, std::string filename) {
+    for( std::vector<mData>::iterator it = exlexnp[term].begin(); it != exlexnp[term].end(); it ++){
+        if( it->filename == filename ) return *it;
+    }
 }
 
-std::vector<mDatap>::iterator ExtendedLexicon::getPositionalBegin(unsigned int term) {
+std::vector<mData>::iterator ExtendedLexicon::getPositionalBegin(unsigned int term) {
     return exlexp[term].begin();
 }
 
-std::vector<mDatap>::iterator ExtendedLexicon::getPositionalEnd(unsigned int term) {
+std::vector<mData>::iterator ExtendedLexicon::getPositionalEnd(unsigned int term) {
     return exlexp[term].end();
 }
 
-std::vector<mDatanp>::iterator ExtendedLexicon::getNonPositionalBegin(unsigned int term) {
+std::vector<mData>::iterator ExtendedLexicon::getNonPositionalBegin(unsigned int term) {
     return exlexnp[term].begin();
 }
 
-std::vector<mDatanp>::iterator ExtendedLexicon::getNonPositionalEnd(unsigned int term) {
+std::vector<mData>::iterator ExtendedLexicon::getNonPositionalEnd(unsigned int term) {
     return exlexnp[term].end();
 }

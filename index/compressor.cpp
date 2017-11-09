@@ -1,6 +1,4 @@
 /* Methods related to compressing posting list */
-#include <vector>
-#include <string>
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
@@ -49,7 +47,7 @@ void Index::write(std::vector<T> num, std::ofstream& ofile){
 
 template <typename T>
 void Index::compress_posting(std::string namebase,
-	std::ofstream& ofile, T ite, int positional){
+	std::ofstream& ofile, T ite, T end, int positional){
 	mData meta;
 	meta.filename = namebase;
     meta.start_pos = ofile.tellp();
@@ -71,17 +69,9 @@ void Index::compress_posting(std::string namebase,
 	int doc_method = 1;
 	int second_method = 1;
 	int third_method = 1;
-	if(positional){
-		ite = positional_index.begin();
-		T end = positional_index.end();
-	}
-	else{
-		ite = nonpositional_index.begin();
-		T end = nonpositional_index.end();
-	}
 
  	while( ite != end ){
- 		currID = ite->second->termID;
+ 		currID = ite->second.termID;
  		currTerm = ite->first;
 		//writing metadata to file
 		ofile.write(reinterpret_cast<const char *>(&currID), sizeof(currID));
@@ -90,7 +80,7 @@ void Index::compress_posting(std::string namebase,
 		if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
 		meta.posting_offset = ofile.tellp();
 
- 		while( ite->second->termID == currID && ite != end ){
+ 		while( ite->second.termID == currID && ite != end ){
 			while( postingCount % (BLOCK+1) != 0 && ite->second->termID == currID && ite != end ){
 				v_docID.push_back(ite->second->docID);
 	 			v_second.push_back(ite->second->second);
@@ -105,8 +95,8 @@ void Index::compress_posting(std::string namebase,
 			//compress block of 128
 			docID_biv = compress_field(v_docID, doc_method, 1);
 			if(positional){
-				second_biv = compress_field(v_second, second_method, 1); //compress fragmentID in positional posting
-				third_biv = compress_field(v_third, third_method, 1); //compress position in positional posting
+				second_biv = compress_field(v_second, second_method, 0); //compress fragmentID in positional posting
+				third_biv = compress_field(v_third, third_method, 0); //compress position in positional posting
 			}else{
 				second_biv = compress_field(v_second, second_method, 0); //compress frequency in nonpositional posting
 			}
@@ -130,8 +120,8 @@ void Index::compress_posting(std::string namebase,
 		postingCount = 0;
 
 		meta.end_offset = ofile.tellp();
-		if(positional) exlex.addPositional(currTerm, meta);
- 		else exlex.addNonPositional(currTerm, meta);
+		if(positional) exlex.addPositional(currID, meta);
+ 		else exlex.addNonPositional(currID, meta);
  	}
 }
 
@@ -157,13 +147,13 @@ std::vector<uint8_t> Index::compress_field(std::vector<unsigned int>& field, int
 void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase){
     /* Decompress positional postings and store them in map structure */
     std::string filename = std::string(PDIR) + namebase;
-    mData meta = getPositional(termID, namebase);
+    mData meta = exlex.getPositional(termID, namebase);
 
     int method1, method2, method3;
 
-    filez.read(reinterpret_cast<char *>(&method1), sizeof(method1));
-    filez.read(reinterpret_cast<char *>(&method2), sizeof(method2));
-    filez.read(reinterpret_cast<char *>(&method3), sizeof(method3));
+    ifile.read(reinterpret_cast<char *>(&method1), sizeof(method1));
+    ifile.read(reinterpret_cast<char *>(&method2), sizeof(method2));
+    ifile.read(reinterpret_cast<char *>(&method3), sizeof(method3));
 
     ifile.seekg(meta.posting_offset);
     std::vector<unsigned int> docID, fragID, pos;
@@ -175,8 +165,9 @@ void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std:
     std::vector<unsigned int> decompressed = VBDecode(buffer, length);
     delete[] buffer;
     std::vector<unsigned int>::iterator it = decompressed.begin();
-    unsigned int prevID; //TODO 3: assume only doc ID is delta encoded, which needs modification of previous code
-
+    unsigned int prevID;
+    //TODO: here assume only doc ID is delta encoded; the other two can also be delta encoded,
+    //but need change code to identify doc and fragment boundary in file
     while( it != decompressed.end() ){
         count = 0;
         prevID = 0;
@@ -243,12 +234,12 @@ void Index::merge_test(){
     std::string npdir = std::string(NPDIR);
 	std::vector<std::string> files = read_directory(dir);
     std::string fp = std::string("I") + std::to_string(indexnum);
-    std::string fnp = std::string("L") + std::to_string(indexnum);
+    std::string fnp = std::string("I") + std::to_string(indexnum);
 
 	while(check_contain(files, fp)){
 		//if In exists already, merge In with Zn
         files.clear();
-		merge_p(indexnum);
+		merge(indexnum, 1);//merge positional
 		indexnum ++;
         fp = std::string("I") + std::to_string(indexnum);
         files.clear();
@@ -259,9 +250,9 @@ void Index::merge_test(){
     while(check_contain(npfiles, fnp)){
 		//if Ln exists already, merge In with Xn
         npfiles.clear();
-		merge_np(indexnum);
+		merge(indexnum, 0);//merge non_positional
 		indexnum ++;
-        fnp = std::string("L") + std::to_string(indexnum);
+        fnp = std::string("I") + std::to_string(indexnum);
         npfiles.clear();
         npfiles = read_directory(npdir);
 	}
@@ -272,8 +263,9 @@ void Index::merge(int indexnum, int positional){
 	std::ifstream filez;
 	std::ifstream filei;
 	std::ofstream ofile;
-	if(positional) std::string dir(PDIR);
-	else std::string dir(NPDIR);
+    std::string dir;
+	if(positional) dir.assign(PDIR);
+	else dir.assign(NPDIR);
 
 	//determine the name of the output file, if "Z" file exists, than compressed to "I" file.
     char flag = 'Z';
@@ -302,37 +294,41 @@ void Index::merge(int indexnum, int positional){
     		filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
 
     		if( termIDZ < termIDI ){
-                metaz = getPositional(termID, namebase1);
+                if( positional ) metaz = exlex.getPositional(termIDZ, namebase1);
+                else metaz = exlex.getNonPositional(termIDZ, namebase1);
                 int length = metaz.end_offset - metaz.start_pos;
                 char* buffer = new char [length];
-                ifilez.read(buffer, length);
+                filez.read(buffer, length);
                 ofile.write(buffer, length);
                 delete[] buffer;
             }
     		else if( termIDI < termIDZ ){
-                metai = getPositional(termID, namebase2);
+                if( positional ) metai = exlex.getPositional(termIDI, namebase2);
+                else metai = exlex.getNonPositional(termIDZ, namebase2);
                 int length = metai.end_offset - metai.start_pos;
                 char* buffer = new char [length];
-                ifilei.read(buffer, length);
+                filei.read(buffer, length);
                 ofile.write(buffer, length);
                 delete[] buffer;
             }
     		else if( termIDI == termIDZ ){
                 if( positional ){
-                    decompress_p_posting(termID, filez, namebase1);
-                    decompress_p_posting(termID, filei, namebase2);
+                    decompress_p_posting(termIDZ, filez, namebase1);
+                    decompress_p_posting(termIDI, filei, namebase2);
                     P_ITE ite = positional_index.begin();
-                    compress_posting(namebaseo, ofile, ite, 1);
+                    P_ITE end = positional_index.end();
+                    compress_posting(namebaseo, ofile, ite, end, 1);
                 }
                 else{
-                    decompress_np_posting(termID, filez, filei, namebase1, namebase2);
+                    decompress_np_posting(termIDI, filez, filei, namebase1, namebase2);
                     NP_ITE ite = nonpositional_index.begin();
-                    compress_posting(namebaseo, ofile, ite, 0);
+                    NP_ITE end = nonpositional_index.end();
+                    compress_posting(namebaseo, ofile, ite, end, 0);
                 }
     		}
     	}
     }
-    else std::cerr << "Error opening file." << endl;
+    else std::cerr << "Error opening file." << std::endl;
 
 	filez.close();
 	filei.close();
@@ -344,8 +340,8 @@ void Index::merge(int indexnum, int positional){
     if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
 }
 
-void Index::decompress_np_posting(unsigned int termID, std::ifsteam& filez,
-    std::ifstream filei, std::string namebase1, std::string namebase2){
+void Index::decompress_np_posting(unsigned int termID, std::ifstream& filez,
+    std::ifstream& filei, std::string namebase1, std::string namebase2){
     int doc_methodi, second_methodi, doc_methodz, second_methodz;
 
     filez.read(reinterpret_cast<char *>(&doc_methodz), sizeof(doc_methodz));
@@ -353,11 +349,11 @@ void Index::decompress_np_posting(unsigned int termID, std::ifsteam& filez,
     filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
     filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
 
-    mData metaz = getNonPositional(termID, namebase1);
-    mData metai = getNonPositional(termID, namebase2);
+    mData metaz = exlex.getNonPositional(termID, namebase1);
+    mData metai = exlex.getNonPositional(termID, namebase2);
 
-    ifilez.seekg(metaz.posting_offset);
-    ifilei.seekg(metai.posting_offset);
+    filez.seekg(metaz.posting_offset);
+    filei.seekg(metai.posting_offset);
     std::vector<unsigned int> docIDi, docIDz, freqi, freqz;
     int count;
     //read all the alternating blocks from compressed index and decompress
@@ -365,10 +361,10 @@ void Index::decompress_np_posting(unsigned int termID, std::ifsteam& filez,
     int lengthi = metai.postingCount_offset - metai.posting_offset;
     char* bufferz = new char [lengthz];
     char* bufferi = new char [lengthi];
-    ifilez.read(bufferz, lengthz);
-    ifilez.read(bufferi, lengthi);
+    filez.read(bufferz, lengthz);
+    filei.read(bufferi, lengthi);
     std::vector<unsigned int> decomz = VBDecode(bufferz, lengthz);
-    std::vector<unsigned int> decomz = VBDecode(bufferi, lengthi);
+    std::vector<unsigned int> decomi = VBDecode(bufferi, lengthi);
     delete[] bufferi;
     delete[] bufferz;
     std::vector<unsigned int>::iterator itz = decomz.begin();
@@ -417,45 +413,46 @@ void Index::decompress_np_posting(unsigned int termID, std::ifsteam& filez,
     while( itz != docIDz.end() && iti != docIDi.end() ){
         if( *itz > *iti ){
             p.docID = *itz;
-            p.second = *freqz;
+            p.second = *itfz;
             itz ++;
-            freqz ++;
+            itfz ++;
             postings.push_back(p);
         }
         else if( *itz < *iti ){
             p.docID = *iti;
-            p.second = *freqi;
+            p.second = *itfi;
             iti ++;
-            freqi ++;
+            itfi ++;
             postings.push_back(p);
         }
         else{
             //if equal, use the frequency of I file
             p.docID = *iti;
-            p.second = *freqi;
+            p.second = *itfi;
             iti ++;
             itz ++;
-            freqi ++;
-            freqz ++;
+            itfi ++;
+            itfz ++;
             postings.push_back(p);
         }
 
     }
     if( itz != docIDz.end() ){
         p.docID = *itz;
-        p.second = *freqz;
+        p.second = *itfz;
         itz ++;
-        freqz ++;
+        itfz ++;
         postings.push_back(p);
     }
     else if( iti != docIDi.end() ){
         p.docID = *iti;
-        p.second = *freqi;
+        p.second = *itfi;
         iti ++;
-        freqi ++;
+        itfi ++;
         postings.push_back(p);
     }
 
     positional_index.insert( std::pair<unsigned int, std::vector<Posting>>(termID, postings) );
-    ifile.seekg(meta.end_offset);
+    filez.seekg(metaz.end_offset);
+    filei.seekg(metai.end_offset);
 }

@@ -15,6 +15,9 @@
 #define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 #define BLOCK 128
 
+typedef std::map<std::string, std::vector<Posting>>::iterator P_ITE;
+typedef std::map<std::string, std::vector<nPosting>>::iterator NP_ITE;
+
 //This index does not use compression
 class Index {
 public:
@@ -39,7 +42,7 @@ private:
     void write(std::vector<T> num, std::ofstream& ofile);
 
     template <typename T>
-    void compress_posting(std::string namebase, std::ofstream& ofile, T ite, int positional);
+    void compress_posting(std::string namebase, std::ofstream& ofile, T ite, T end, int positional);
 
     std::vector<uint8_t> compress_field(std::vector<unsigned int>& field, int method, int delta);
 
@@ -51,7 +54,8 @@ private:
 
     void merge(int indexnum, int positional);
 
-    void decompress_np_posting();
+    void decompress_np_posting(unsigned int termID, std::ifstream& filez,
+        std::ifstream& filei, std::string namebase1, std::string namebase2);
 };
 
 #endif

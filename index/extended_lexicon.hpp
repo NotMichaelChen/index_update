@@ -12,13 +12,13 @@ public:
     void addPositional(unsigned int term, mData& entry);
     void addNonPositional(unsigned int term, mData& entry);
 
-    mDatap getPositional(unsigned int term, std::string index); //TODO: change the method
-    mDatanp getNonPositional(unsigned int term, int index);
+    mData getPositional(unsigned int term, std::string filename);
+    mData getNonPositional(unsigned int term, std::string filename);
 
-    std::vector<mDatap>::iterator getPositionalBegin(unsigned int term);
-    std::vector<mDatap>::iterator getPositionalEnd(unsigned int term);
-    std::vector<mDatanp>::iterator getNonPositionalBegin(unsigned int term);
-    std::vector<mDatanp>::iterator getNonPositionalEnd(unsigned int term);
+    std::vector<mData>::iterator getPositionalBegin(unsigned int term);
+    std::vector<mData>::iterator getPositionalEnd(unsigned int term);
+    std::vector<mData>::iterator getNonPositionalBegin(unsigned int term);
+    std::vector<mData>::iterator getNonPositionalEnd(unsigned int term);
 
 private:
     std::unordered_map<unsigned int, std::vector<mData>> exlexnp;
