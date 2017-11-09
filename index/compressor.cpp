@@ -12,12 +12,7 @@
 #define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 
 std::vector<std::string> Index::read_directory( std::string path ){
-    /**
-     * List all the files in a directory.
-     *
-     * @param: the path of a directory
-     * @return: the names of all the files in this directory.
-     */
+    /* List all the files in a directory. */
     std::vector <std::string> result;
     dirent* de;
     DIR* dp;
@@ -46,9 +41,7 @@ bool Index::check_contain(std::vector<std::string> v, std::string f){
 
 template <typename T>
 void Index::write(std::vector<T> num, std::ofstream& ofile){
-	/**
-	 * Write the compressed posting to file byte by byte.
-	 */
+	/* Write the compressed posting to file byte by byte. */
 	for(typename std::vector<T>::iterator it = num.begin(); it != num.end(); it++){
 		ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
 	}
@@ -222,7 +215,6 @@ void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std:
     }
     positional_index.insert( std::pair<unsigned int, std::vector<Posting>>(termID, postings) );
     ifile.seekg(meta.end_offset);
-    return;
 }
 
 std::vector<char> Index::read_com(std::ifstream& infile, long end_pos){
@@ -336,19 +328,116 @@ void Index::merge(int indexnum, int positional){
     if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
 }
 
-//TODO 1: finish this function
 void Index::decompress_np_posting(unsigned int termID, std::ifsteam& filez,
     std::ifstream filei, std::string namebase1, std::string namebase2){
-    /**
-	 * Merge non-positional index.
-	 */
-    int doc_methodi, second_methodi, third_methodi,
-    doc_methodz, second_methodz, third_methodz;
+    int doc_methodi, second_methodi, doc_methodz, second_methodz;
 
     filez.read(reinterpret_cast<char *>(&doc_methodz), sizeof(doc_methodz));
     filez.read(reinterpret_cast<char *>(&second_methodz), sizeof(second_methodz));
     filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
     filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
 
+    mData metaz = getNonPositional(termID, namebase1);
+    mData metai = getNonPositional(termID, namebase2);
 
+    ifilez.seekg(metaz.posting_offset);
+    ifilei.seekg(metai.posting_offset);
+    std::vector<unsigned int> docIDi, docIDz, freqi, freqz;
+    int count;
+    //read all the alternating blocks from compressed index and decompress
+    int lengthz = metaz.postingCount_offset - metaz.posting_offset;
+    int lengthi = metai.postingCount_offset - metai.posting_offset;
+    char* bufferz = new char [lengthz];
+    char* bufferi = new char [lengthi];
+    ifilez.read(bufferz, lengthz);
+    ifilez.read(bufferi, lengthi);
+    std::vector<unsigned int> decomz = VBDecode(bufferz, lengthz);
+    std::vector<unsigned int> decomz = VBDecode(bufferi, lengthi);
+    std::vector<unsigned int>::iterator itz = decomz.begin();
+    std::vector<unsigned int>::iterator iti = decomi.begin();
+    unsigned int prevIDz, prevIDi;
+
+    while( itz != decomz.end() ){
+        count = 0;
+        prevIDz = 0;
+        while( count < BLOCK ){
+            prevIDz = prevIDz + *itz;
+            docIDz.push_back( prevIDz );
+            count ++;
+            itz ++;
+        }
+        count = 0;
+        while( count < BLOCK ){
+            freqz.push_back(*itz);
+            count ++;
+            itz ++;
+        }
+    }
+    while( iti != decomi.end() ){
+        count = 0;
+        prevIDi = 0;
+        while( count < BLOCK ){
+            prevIDi = prevIDi + *iti;
+            docIDi.push_back( prevIDi );
+            count ++;
+            iti ++;
+        }
+        count = 0;
+        while( count < BLOCK ){
+            freqi.push_back(*iti);
+            count ++;
+            iti ++;
+        }
+    }
+
+    itz = docIDz.begin();
+    iti = docIDi.begin();
+    std::vector<unsigned int>::iterator itfz = freqz.begin();
+    std::vector<unsigned int>::iterator itfi = freqi.begin();
+    Posting p;
+    std::vector<Posting> postings;
+    while( itz != docIDz.end() && iti != docIDi.end() ){
+        if( *itz > *iti ){
+            p.docID = *itz;
+            p.second = *freqz;
+            itz ++;
+            freqz ++;
+            postings.push_back(p);
+        }
+        else if( *itz < *iti ){
+            p.docID = *iti;
+            p.second = *freqi;
+            iti ++;
+            freqi ++;
+            postings.push_back(p);
+        }
+        else{
+            //if equal, use the frequency of I file
+            p.docID = *iti;
+            p.second = *freqi;
+            iti ++;
+            itz ++;
+            freqi ++;
+            freqz ++;
+            postings.push_back(p);
+        }
+
+    }
+    if( itz != docIDz.end() ){
+        p.docID = *itz;
+        p.second = *freqz;
+        itz ++;
+        freqz ++;
+        postings.push_back(p);
+    }
+    else if( iti != docIDi.end() ){
+        p.docID = *iti;
+        p.second = *freqi;
+        iti ++;
+        freqi ++;
+        postings.push_back(p);
+    }
+
+    positional_index.insert( std::pair<unsigned int, std::vector<Posting>>(termID, postings) );
+    ifile.seekg(meta.end_offset);
 }
