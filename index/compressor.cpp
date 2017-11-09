@@ -173,6 +173,7 @@ void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std:
     char* buffer = new char [length];
     ifile.read(buffer, length);
     std::vector<unsigned int> decompressed = VBDecode(buffer, length);
+    delete[] buffer;
     std::vector<unsigned int>::iterator it = decompressed.begin();
     unsigned int prevID; //TODO 3: assume only doc ID is delta encoded, which needs modification of previous code
 
@@ -293,14 +294,29 @@ void Index::merge(int indexnum, int positional){
 	}
     std::cout << "Merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
 
+    mData metai, metaz;
 	unsigned int termIDZ, termIDI;
     if( filez.is_open() && filei.is_open() ){
         while( !filez.eof() || !filei.eof() ){
     		filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
     		filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
 
-    		if( termIDZ < termIDI ) //TODO 2.1: copy from start to end
-    		else if( termIDI < termIDZ ) //TODO 2.2: copy from start to end
+    		if( termIDZ < termIDI ){
+                metaz = getPositional(termID, namebase1);
+                int length = metaz.end_offset - metaz.start_pos;
+                char* buffer = new char [length];
+                ifilez.read(buffer, length);
+                ofile.write(buffer, length);
+                delete[] buffer;
+            }
+    		else if( termIDI < termIDZ ){
+                metai = getPositional(termID, namebase2);
+                int length = metai.end_offset - metai.start_pos;
+                char* buffer = new char [length];
+                ifilei.read(buffer, length);
+                ofile.write(buffer, length);
+                delete[] buffer;
+            }
     		else if( termIDI == termIDZ ){
                 if( positional ){
                     decompress_p_posting(termID, filez, namebase1);
@@ -353,6 +369,8 @@ void Index::decompress_np_posting(unsigned int termID, std::ifsteam& filez,
     ifilez.read(bufferi, lengthi);
     std::vector<unsigned int> decomz = VBDecode(bufferz, lengthz);
     std::vector<unsigned int> decomz = VBDecode(bufferi, lengthi);
+    delete[] bufferi;
+    delete[] bufferz;
     std::vector<unsigned int>::iterator itz = decomz.begin();
     std::vector<unsigned int>::iterator iti = decomi.begin();
     unsigned int prevIDz, prevIDi;
