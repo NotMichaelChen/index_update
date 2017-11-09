@@ -221,7 +221,7 @@ void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std:
         it3 ++;
     }
     positional_index.insert( std::pair<unsigned int, std::vector<Posting>>(termID, postings) );
-
+    ifile.seekg(meta.end_offset);
     return;
 }
 
@@ -310,19 +310,6 @@ void Index::merge(int indexnum, int positional){
     		if( termIDZ < termIDI ) //TODO 2.1: copy from start to end
     		else if( termIDI < termIDZ ) //TODO 2.2: copy from start to end
     		else if( termIDI == termIDZ ){
-                /*
-    			int doc_methodi, second_methodi, third_methodi,
-    			doc_methodz, second_methodz, third_methodz;
-
-    			filez.read(reinterpret_cast<char *>(&doc_methodz), sizeof(doc_methodz));
-    			filez.read(reinterpret_cast<char *>(&second_methodz), sizeof(second_methodz));
-    			filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
-    			filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
-    			if( positional ){
-    				filez.read(reinterpret_cast<char *>(&third_methodz), sizeof(third_methodz));
-    				filei.read(reinterpret_cast<char *>(&third_methodi), sizeof(doc_methodi));
-                }
-                */
                 if( positional ){
                     decompress_p_posting(termID, filez, namebase1);
                     decompress_p_posting(termID, filei, namebase2);
@@ -350,131 +337,18 @@ void Index::merge(int indexnum, int positional){
 }
 
 //TODO 1: finish this function
-void Index::decompress_np_posting(unsigned int termID, ){
+void Index::decompress_np_posting(unsigned int termID, std::ifsteam& filez,
+    std::ifstream filei, std::string namebase1, std::string namebase2){
     /**
 	 * Merge non-positional index.
 	 */
-	std::ifstream filez;
-	std::ifstream filei;
-	std::ofstream ofile;
-    std::string pdir(NPDIR);
-    char flag = 'X';//determine the name of the output file
-	filez.open(pdir + "X" + std::to_string(indexnum));
-	filei.open(pdir + "L" + std::to_string(indexnum));
+    int doc_methodi, second_methodi, third_methodi,
+    doc_methodz, second_methodz, third_methodz;
 
-	ofile.open(pdir + "X" + std::to_string(indexnum + 1), std::ios::app | std::ios::binary);
-	if(ofile.tellp() != 0){
-        std::cout << "cannot merge to " << flag << indexnum + 1 << std::endl;
-		ofile.close();
-		ofile.open(pdir + "L" + std::to_string(indexnum + 1), std::ios::ate | std::ios::binary);
-        flag = 'L';
-	}
+    filez.read(reinterpret_cast<char *>(&doc_methodz), sizeof(doc_methodz));
+    filez.read(reinterpret_cast<char *>(&second_methodz), sizeof(second_methodz));
+    filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
+    filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
 
-    std::cout << "Merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
 
-	std::string file1 = "X" + std::to_string(indexnum);
-	std::string file2 = "L" + std::to_string(indexnum);
-	//std::vector<f_meta>& v1 = filemeta[file1];
-	//std::vector<f_meta>& v2 = filemeta[file2];
-	//std::vector<f_meta>::iterator it1 = v1.begin();
-	//std::vector<f_meta>::iterator it2 = v2.begin();
-
-	/**
-	 * Go through the meta data of each file, do
-	 * if there is a termID appearing in both, decode the part and merge
-	 * else copy and paste the corresponding part of postinglist
-	 * update the corresponding fileinfo of that termID
-	 * assume that the posting of one term can be stored in memory
-	 */
-
-	 /*
-	while( it1 != v1.end() && it2 != v2.end() ){
-        //std::cout << it1->termID << ' ' << it2->termID << std::endl;
-		if( it1->termID == it2->termID ){
-			//decode and merge
-			//update meta data corresponding to the term
-			std::vector<nPosting> vp1 = decompress_np(file1, it1->termID);
-            std::vector<nPosting> vp2 = decompress_np(file2, it2->termID);
-			std::vector<nPosting> vpout; //store the sorted result
-
-			//use NextGQ to write the sorted std::vector of Posting to disk
-			std::vector<nPosting>::iterator vpit1 = vp1.begin();
-			std::vector<nPosting>::iterator vpit2 = vp2.begin();
-			while( vpit1 != vp1.end() && vpit2 != vp2.end() ){
-				//NextGQ
-				if( *vpit1 < *vpit2 ){
-					vpout.push_back(*vpit1);
-					vpit1 ++;
-				}
-				else if( *vpit1 > *vpit2 ){
-					vpout.push_back(*vpit2);
-					vpit2 ++;
-				}
-				else if ( *vpit1 == *vpit2 ){
-                    vpout.push_back(*vpit1);
-                    vpout.push_back(*vpit2);
-					vpit1 ++;
-                    vpit2 ++;
-					break;
-				}
-			}
-            while( vpit1 != vp1.end()){
-                vpout.push_back(*vpit1);
-                vpit1 ++;
-            }
-            while( vpit2 != vp2.end()){
-                vpout.push_back(*vpit2);
-                vpit2 ++;
-            }
-			compress_np(vpout, indexnum + 1, flag);
-			it1 ++;
-			it2 ++;
-		}
-		else if( it1->termID < it2->termID ){
-			std::vector<nPosting> vp = decompress_np(file1, it1->termID);
-            compress_np(vp, indexnum + 1, flag);
-			it1 ++;
-		}
-		else if( it1->termID > it2->termID ){
-            std::vector<nPosting> vp = decompress_np(file2, it2->termID);
-            compress_np(vp, indexnum + 1, flag);
-			it2 ++;
-		}
-	}
-	*/
-	/*
-	while (it1 != v1.end() ){
-        std::vector<nPosting> vp = decompress_np(file1, it1->termID);
-        compress_np(vp, indexnum + 1, flag);
-        it1 ++;
-	}
-	while (it2 != v2.end() ){
-        std::vector<nPosting> vp = decompress_np(file2, it2->termID);
-        compress_np(vp, indexnum + 1, flag);
-        it2 ++;
-	}
-	*/
-	filez.close();
-	filei.close();
-	ofile.close();
-    std::string filename1 = pdir + "X" + std::to_string(indexnum);
-    std::string filename2 = pdir + "L" + std::to_string(indexnum);
-
-	/*
-
-    for( std::vector<f_meta>::iterator it = filemeta[file1].begin(); it != filemeta[file1].end(); it ++){
-        update_t_meta(it->termID, file1);
-    }
-
-    for( std::vector<f_meta>::iterator it = filemeta[file2].begin(); it != filemeta[file2].end(); it ++){
-        update_t_meta(it->termID, file2);
-    }
-	*/
-
-    //deleting two files
-    if( remove( filename1.c_str() ) != 0 )
-        std::cout << "Error deleting file" << std::endl;
-
-    if( remove( filename2.c_str() ) != 0 )
-        std::cout << "Error deleting file" << std::endl;
 }
