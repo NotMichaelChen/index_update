@@ -13,13 +13,7 @@
 
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
 
-//TODO: why commented out
-Index::Index() {
-    docstore = Structures::DocumentStore();
-    transtable = Structures::TranslationTable();
-    lex = Lexicon();
-    exlex = ExtendedLexicon();
-}
+Index::Index() : docstore(), transtable(), lex(), exlex() {}
 
 void Index::write_p(int indexnum, char prefix){
     std::ofstream ofile;//positional inverted index

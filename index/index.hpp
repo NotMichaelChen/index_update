@@ -31,10 +31,10 @@ public:
 private:
     std::map<unsigned int, std::vector<Posting>> positional_index;
     std::map<unsigned int, std::vector<nPosting>> nonpositional_index;
-    Lexicon lex;
-    ExtendedLexicon exlex;
     Structures::DocumentStore docstore;
     Structures::TranslationTable transtable;
+    Lexicon lex;
+    ExtendedLexicon exlex;
 
     std::vector<std::string> read_directory( std::string path );
 

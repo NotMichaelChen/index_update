@@ -1,4 +1,5 @@
 exe/
+.vscode/
 
 # Prerequisites
 *.d
