@@ -56,7 +56,6 @@ bool Lexicon::restore() {
         return false;
 
     string line;
-    size_t convertlen;
 
     stringstream linebuf;
 
