@@ -46,9 +46,9 @@ void Index::write(std::vector<T> num, std::ofstream& ofile){
 	}
 }
 
-template <typename T>
+template <typename T1, typename T2>
 void Index::compress_posting(std::string namebase,
-	std::ofstream& ofile, T ite, T end, int positional){
+	std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional){
 	mData meta;
 	meta.filename = namebase;
     meta.start_pos = ofile.tellp();
@@ -80,18 +80,21 @@ void Index::compress_posting(std::string namebase,
 		if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
 		meta.posting_offset = ofile.tellp();
 
- 		while( ite->first == currID && ite != end ){
-			while( postingCount % (BLOCK+1) != 0 && ite->first == currID && ite != end ){
-				v_docID.push_back(ite->second->docID);
-	 			v_second.push_back(ite->second->second);
-	 			if(positional) v_third.push_back(ite->third);
-	 			ite ++;
+        vit = ite->second.begin();
+        vend = ite->second.end();
+
+ 		while( vit != vend ){
+			while( postingCount % (BLOCK+1) != 0 && vit != vend ){
+				v_docID.push_back(vit->docID);
+	 			v_second.push_back(vit->second);
+	 			if(positional) v_third.push_back(vit->third);
+	 			vit ++;
 				postingCount ++;
 			}
 			//add last value of docID
-			ite --;
-			last_docID.push_back(ite->second->docID);
-			ite ++;
+			vit --;
+			last_docID.push_back(vit->docID);
+			vit ++;
 			//compress block of 128
 			docID_biv = compress_field(v_docID, doc_method, 1);
 			if(positional){
@@ -100,9 +103,15 @@ void Index::compress_posting(std::string namebase,
 			}else{
 				second_biv = compress_field(v_second, second_method, 0); //compress frequency in nonpositional posting
 			}
-			//blocks of docID, followed by blocks of frequency
+			//blocks of docID, followed by blocks of frequency/fragmentID and position
 			write<uint8_t>(docID_biv, ofile);
-			write<uint8_t>(second_biv, ofile);
+            //if last block, need to store the ending postition of first two fields
+            if( vit ==  vend ){
+                meta.docID_end = ofile.tellp();
+                write<uint8_t>(second_biv, ofile);
+                meta.second_end = ofile.tellp();
+            }
+            else write<uint8_t>(second_biv, ofile);
 			if(positional) write<uint8_t>(third_biv, ofile);
 
 			v_docID.clear();
@@ -117,11 +126,12 @@ void Index::compress_posting(std::string namebase,
 		write<unsigned int>(last_docID, ofile);
 		meta.size_offset = ofile.tellp();
 		write<unsigned int>(size_of_block, ofile);
-		postingCount = 0;
+		postingCount = 1;
 
 		meta.end_offset = ofile.tellp();
 		if(positional) exlex.addPositional(currID, meta);
  		else exlex.addNonPositional(currID, meta);
+        ite ++;
  	}
 }
 
@@ -134,10 +144,17 @@ std::vector<uint8_t> Index::compress_field(std::vector<unsigned int>& field, int
 			std::vector<unsigned int>::iterator it = field.begin();
 			unsigned int prev = 0;
 			while(it != field.end()){
-				delta.push_back(*it - prev);
-				prev = *it;
-				it ++;
+                if( *it != 0 ){
+                    delta.push_back(*it - prev);
+    				prev = *it;
+    				it ++;
+                }
+				else{
+                    delta.push_back(0);
+                    it ++;
+                }
 			}
+            field_biv = VBEncode(delta);
 		}
 		else field_biv = VBEncode(field);
 	}
@@ -316,13 +333,17 @@ void Index::merge(int indexnum, int positional){
                     decompress_p_posting(termIDI, filei, namebase2);
                     P_ITE ite = positional_index.begin();
                     P_ITE end = positional_index.end();
-                    compress_posting<P_ITE>(namebaseo, ofile, ite, end, 1);
+                    P_V vit = ite->second.begin();
+                    P_V vend = ite->second.end();
+                    compress_posting<P_ITE, P_V>(namebaseo, ofile, ite, end, vit, vend, 1);
                 }
                 else{
                     decompress_np_posting(termIDI, filez, filei, namebase1, namebase2);
                     NP_ITE ite = nonpositional_index.begin();
                     NP_ITE end = nonpositional_index.end();
-                    compress_posting<NP_ITE>(namebaseo, ofile, ite, end, 0);
+                    NP_V vit = ite->second.begin();
+                    NP_V vend = ite->second.end();
+                    compress_posting<NP_ITE, NP_V>(namebaseo, ofile, ite, end, vit, vend, 0);
                 }
     		}
     	}

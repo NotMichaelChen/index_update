@@ -1,5 +1,6 @@
 #ifndef EXTERNALPOSTINGS_H
 #define EXTERNALPOSTINGS_H
+#include <string>
 
 //These structs define the format of the posting returned by the matcher to the index
 //The index uses a different form of postings, and must convert these postings
@@ -11,7 +12,7 @@ struct ExternNPposting {
         docID = d;
         freq = fr;
     }
-    
+
     std::string term;
     unsigned int docID;
     int freq;
@@ -24,7 +25,7 @@ struct ExternPposting {
         fragID = f;
         pos = p;
     }
-    
+
     std::string term;
     unsigned int docID;
     unsigned int fragID;

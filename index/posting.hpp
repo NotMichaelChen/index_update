@@ -32,6 +32,7 @@ struct nPosting {
 	unsigned int termID;
 	unsigned int docID;
 	unsigned int second;
+	unsigned int third;//created only to circumscribe compiling issue
 };
 
 #endif

@@ -17,6 +17,8 @@
 
 typedef std::map<unsigned int, std::vector<Posting>>::iterator P_ITE;
 typedef std::map<unsigned int, std::vector<nPosting>>::iterator NP_ITE;
+typedef std::vector<Posting>::iterator P_V;
+typedef std::vector<nPosting>::iterator NP_V;
 
 //This index does not use compression
 class Index {
@@ -25,7 +27,7 @@ public:
     void insert_document(std::string& url, std::string& newpage);
 
     void write_np(int indexnum = 0, char prefix = 'a');
-    void write_p(int indexnum, char prefix);
+    void write_p(int indexnum = 0, char prefix = 'a');
 private:
     std::map<unsigned int, std::vector<Posting>> positional_index;
     std::map<unsigned int, std::vector<nPosting>> nonpositional_index;
@@ -41,8 +43,8 @@ private:
     template <typename T>
     void write(std::vector<T> num, std::ofstream& ofile);
 
-    template <typename T>
-    void compress_posting(std::string namebase, std::ofstream& ofile, T ite, T end, int positional);
+    template <typename T1, typename T2>
+    void compress_posting(std::string namebase, std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional);
 
     std::vector<uint8_t> compress_field(std::vector<unsigned int>& field, int method, int delta);
 

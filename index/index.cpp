@@ -22,37 +22,39 @@ Index::Index() {
 }
 
 void Index::write_p(int indexnum, char prefix){
-    ofstream ofile;//positional inverted index
-    string pdir(PDIR);
-    string namebase;
-    string filename;
+    std::ofstream ofile;//positional inverted index
+    std::string pdir(PDIR);
+    std::string namebase;
+    std::string filename;
     if(prefix == 'a'){
-        filename = pdir + "Z" + to_string(indexnum);
-        ofile.open(filename, ofstream::app | ofstream::binary);
+        filename = pdir + "Z" + std::to_string(indexnum);
+        ofile.open(filename, std::ofstream::app | std::ofstream::binary);
 
         if(ofile.tellp() != 0){
-            cout << filename << " already exists." << endl;
+            std::cout << filename << " already exists." << std::endl;
             ofile.close();
-            filename = pdir + "I" + to_string(indexnum);
-            ofile.open(filename, ios::ate | ios::binary);
-            namebase = string("I") + to_string(indexnum);
+            filename = pdir + "I" + std::to_string(indexnum);
+            ofile.open(filename, std::ios::ate | std::ios::binary);
+            namebase = std::string("I") + std::to_string(indexnum);
         }else{
-            namebase = string("Z") + to_string(indexnum);
+            namebase = std::string("Z") + std::to_string(indexnum);
         }
     }else{
-        filename = pdir + prefix + to_string(indexnum);
-        ofile.open(filename, ofstream::app | ofstream::binary);
-        namebase = prefix+ to_string(indexnum);
+        filename = pdir + prefix + std::to_string(indexnum);
+        ofile.open(filename, std::ofstream::app | std::ofstream::binary);
+        namebase = prefix+ std::to_string(indexnum);
     }
 
     if (ofile.is_open()){
         P_ITE ite = positional_index.begin();
         P_ITE end = positional_index.end();
-        compress_posting<P_ITE>(namebase, ofile, ite, end, 1);
+        P_V vit = ite->second.begin();
+        P_V vend = ite->second.end();
+        compress_posting<P_ITE, P_V>(namebase, ofile, ite, end, vit, vend, 1);
 
     	ofile.close();
     }else{
-        cerr << "File cannot be opened." << endl;
+        std::cerr << "File cannot be opened." << std::endl;
     }
 }
 
@@ -60,38 +62,40 @@ void Index::write_np(int indexnum, char prefix){
     /**
      * Open a file to write to and store the metadata of a term.
      */
-    ofstream ofile;//non-positional inverted index
-    string pdir(NPDIR);
-    string namebase;
-    string filename;
+    std::ofstream ofile;//non-positional inverted index
+    std::string pdir(NPDIR);
+    std::string namebase;
+    std::string filename;
     if(prefix == 'a'){
         //default state, compressing from dynamic index, not from merging
-        filename = pdir + "Z" + to_string(indexnum);
-        ofile.open(filename, ofstream::app | ofstream::binary);
+        filename = pdir + "Z" + std::to_string(indexnum);
+        ofile.open(filename, std::ofstream::app | std::ofstream::binary);
 
         if(ofile.tellp() != 0){
-            cout << filename << " already exists." << endl;
+            std::cout << filename << " already exists." << std::endl;
             ofile.close();
-            filename = pdir + "I" + to_string(indexnum);
-            ofile.open(filename, ios::ate | ios::binary);
-            namebase = string("I") + to_string(indexnum);
+            filename = pdir + "I" + std::to_string(indexnum);
+            ofile.open(filename, std::ios::ate | std::ios::binary);
+            namebase = std::string("I") + std::to_string(indexnum);
         }else{
-            namebase = string("Z") + to_string(indexnum);
+            namebase = std::string("Z") + std::to_string(indexnum);
         }
     }else{
-        filename = pdir + prefix + to_string(indexnum);
-        ofile.open(filename, ofstream::app | ofstream::binary);
-        namebase = prefix+ to_string(indexnum);
+        filename = pdir + prefix + std::to_string(indexnum);
+        ofile.open(filename, std::ofstream::app | std::ofstream::binary);
+        namebase = prefix+ std::to_string(indexnum);
     }
 
     if (ofile.is_open()){
         NP_ITE ite = nonpositional_index.begin();
         NP_ITE end = nonpositional_index.end();
-        compress_posting<NP_ITE>(namebase, ofile, ite, end, 0);
+        NP_V vit = ite->second.begin();
+        NP_V vend = ite->second.end();
+        compress_posting<NP_ITE, NP_V>(namebase, ofile, ite, end, vit, vend, 0);
 
     	ofile.close();
     }
-    else cerr << "File cannot be opened." << endl;
+    else std::cerr << "File cannot be opened." << std::endl;
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {
@@ -130,7 +134,6 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         Posting posting(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
         positional_index[entry.termid].push_back(posting);
         if(positional_index.size() > POSTING_LIMIT) {
-            //TODO: do something here
             write_p();
             positional_index.clear();
             merge_test();
