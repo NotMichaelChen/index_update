@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <cpp_redis/cpp_redis>
+
 #include "dirent.h"
 #include "index.hpp"
 
@@ -17,11 +19,18 @@ vector<string> openInDir(string path = ".") {
     while (pdir = readdir(dir)) {
         files.push_back(pdir->d_name);
     }
-    
+
     return files;
 }
 
 int main(int argc, char **argv) {
+    //Reset the redis database before testing
+    cpp_redis::client client;
+    client.connect("127.0.0.1", 6379);
+    client.flushall();
+    client.sync_commit();
+    client.disconnect();
+
     Index index;
     vector<string> filelist = openInDir("./dataset-format");
 
@@ -37,9 +46,10 @@ int main(int argc, char **argv) {
             }
         }
 
-        ifstream inputfile(i);
+        ifstream inputfile("./dataset-format/" + i);
         //https://www.reddit.com/r/learnprogramming/comments/3qotqr/how_can_i_read_an_entire_text_file_into_a_string/cwh8m4d/
         string filecontents{ istreambuf_iterator<char>(inputfile), istreambuf_iterator<char>() };
+
 
         cout << "Inserting " << filename << endl;
         index.insert_document(filename, filecontents);
