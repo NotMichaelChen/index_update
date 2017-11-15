@@ -103,6 +103,8 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
     MatcherInfo results = indexUpdate(url, newpage, timestamp, docstore, transtable);
 
+    //std::cerr << "Got P:" << results.Ppostings.size() << " NP:" << results.NPpostings.size() << " Postings" << std::endl;
+
     //Insert NP postings
     for(auto np_iter = results.NPpostings.begin(); np_iter != results.NPpostings.end(); np_iter++) {
         Lex_data entry = lex.getEntry(np_iter->term);

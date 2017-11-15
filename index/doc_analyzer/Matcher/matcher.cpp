@@ -77,7 +77,7 @@ namespace Matcher {
             //Edited sections in new file are considered "inserted"
             string decodedword = se.decodeNum(*(se.getNewIter()+index));
             //Word not yet indexed in nonpositional map
-            if(nppostingsmap.find(decodedword) != nppostingsmap.end()) {
+            if(nppostingsmap.find(decodedword) == nppostingsmap.end()) {
                 ExternNPposting newposting(decodedword, doc_id, se.getNewCount(decodedword));
                 nppostingsmap.insert(make_pair(decodedword, newposting));
             }
