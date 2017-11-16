@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <iostream>
 #include <cstdlib>
+#include <sys/stat.h>
 
 #include "doc_analyzer/analyzer.h"
 #include "Structures/documentstore.h"
@@ -13,7 +14,19 @@
 
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
 
-Index::Index() : docstore(), transtable(), lex(), exlex() {}
+Index::Index() : docstore(), transtable(), lex(), exlex() {
+    //https://stackoverflow.com/a/4980833
+    struct stat st;
+    if(!(stat(INDEXDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
+        mkdir(INDEXDIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+    if(!(stat(PDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
+        mkdir(PDIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+    if(!(stat(NPDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
+        mkdir(NPDIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+}
 
 void Index::write_p(int indexnum, char prefix){
     std::ofstream ofile;//positional inverted index

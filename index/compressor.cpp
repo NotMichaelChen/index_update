@@ -120,6 +120,8 @@ void Index::compress_posting(std::string namebase,
 			docID_biv.clear();
 			second_biv.clear();
 			third_biv.clear();
+            if(vit != vend)
+                vit++;
  		}
 		meta.postingCount_offset = ofile.tellp();
 		ofile.write(reinterpret_cast<const char *>(&postingCount), sizeof(postingCount));

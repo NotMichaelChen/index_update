@@ -11,6 +11,7 @@
 #include "Structures/documentstore.h"
 #include "Structures/translationtable.h"
 
+#define INDEXDIR "./disk_index/"//path to static index folders
 #define PDIR "./disk_index/positional/"//path to static positional index
 #define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 #define BLOCK 128
