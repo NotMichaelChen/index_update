@@ -3,6 +3,7 @@
 #include <fstream>
 #include <utility>
 #include <dirent.h>
+#include <algorithm>
 
 #include "index.hpp"
 #include "varbyte.hpp"
@@ -18,93 +19,85 @@ std::vector<std::string> Index::read_directory( std::string path ){
     errno = 0;
     dp = opendir( path.empty() ? "." : path.c_str() );
     if (dp){
-    		while (true){
-      			errno = 0;
-      			de = readdir( dp );
-      			if (de == NULL) break;
+            while (true){
+                errno = 0;
+                de = readdir( dp );
+                if (de == NULL) break;
                 std::string d_n(de->d_name);
-      			result.push_back( d_n );
-      		}
-    		closedir( dp );
-	    }
-	return result;
-}
-
-bool Index::check_contain(std::vector<std::string> v, std::string f){
-	//check if a vector contains an element
-    for( std::vector<std::string>::iterator it = v.begin(); it != v.end(); it ++){
-        if( *it == f) return true;
-    }
-    return false;
+                result.push_back( d_n );
+            }
+            closedir( dp );
+        }
+    return result;
 }
 
 template <typename T>
 void Index::write(std::vector<T> num, std::ofstream& ofile){
-	/* Write the compressed posting to file byte by byte. */
-	for(typename std::vector<T>::iterator it = num.begin(); it != num.end(); it++){
-		ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
-	}
+    /* Write the compressed posting to file byte by byte. */
+    for(typename std::vector<T>::iterator it = num.begin(); it != num.end(); it++){
+        ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
+    }
 }
 
 template <typename T1, typename T2>
 void Index::compress_posting(std::string namebase,
-	std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional){
-	mData meta;
-	meta.filename = namebase;
+    std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional){
+    mData meta;
+    meta.filename = namebase;
     meta.start_pos = ofile.tellp();
 
-	unsigned int currID = 0;
-	int postingCount = 1;
-	std::string currTerm;
-	//declare vectors to store 128 values TODO: use arrays instead of vectors
-	std::vector<unsigned int> v_docID;
-	std::vector<unsigned int> v_second;
-	std::vector<unsigned int> v_third;
-	//declare vectors that will be written to file
-	std::vector<unsigned int> last_docID;
-	std::vector<unsigned int> size_of_block;
-	std::vector<uint8_t> docID_biv;
-	std::vector<uint8_t> second_biv;
-	std::vector<uint8_t> third_biv;
-	//initialize compression method, 1: varbyte
-	int doc_method = 1;
-	int second_method = 1;
-	int third_method = 1;
+    unsigned int currID = 0;
+    int postingCount = 1;
+    std::string currTerm;
+    //declare vectors to store 128 values TODO: use arrays instead of vectors
+    std::vector<unsigned int> v_docID;
+    std::vector<unsigned int> v_second;
+    std::vector<unsigned int> v_third;
+    //declare vectors that will be written to file
+    std::vector<unsigned int> last_docID;
+    std::vector<unsigned int> size_of_block;
+    std::vector<uint8_t> docID_biv;
+    std::vector<uint8_t> second_biv;
+    std::vector<uint8_t> third_biv;
+    //initialize compression method, 1: varbyte
+    int doc_method = 1;
+    int second_method = 1;
+    int third_method = 1;
 
- 	while( ite != end ){
- 		currID = ite->first;
-		//writing metadata to file
-		ofile.write(reinterpret_cast<const char *>(&currID), sizeof(currID));
-		ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
-		ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
-		if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
-		meta.posting_offset = ofile.tellp();
+    while( ite != end ){
+        currID = ite->first;
+        //writing metadata to file
+        ofile.write(reinterpret_cast<const char *>(&currID), sizeof(currID));
+        ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
+        ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
+        if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
+        meta.posting_offset = ofile.tellp();
 
         vit = ite->second.begin();
         vend = ite->second.end();
 
- 		while( vit != vend ){
-			while( postingCount % (BLOCK+1) != 0 && vit != vend ){
-				v_docID.push_back(vit->docID);
-	 			v_second.push_back(vit->second);
-	 			if(positional) v_third.push_back(vit->third);
-	 			vit ++;
-				postingCount ++;
-			}
-			//add last value of docID
-			vit --;
-			last_docID.push_back(vit->docID);
-			vit ++;
-			//compress block of 128
-			docID_biv = compress_field(v_docID, doc_method, 1);
-			if(positional){
-				second_biv = compress_field(v_second, second_method, 0); //compress fragmentID in positional posting
-				third_biv = compress_field(v_third, third_method, 0); //compress position in positional posting
-			}else{
-				second_biv = compress_field(v_second, second_method, 0); //compress frequency in nonpositional posting
-			}
-			//blocks of docID, followed by blocks of frequency/fragmentID and position
-			write<uint8_t>(docID_biv, ofile);
+        while( vit != vend ){
+            while( postingCount % (BLOCK+1) != 0 && vit != vend ){
+                v_docID.push_back(vit->docID);
+                v_second.push_back(vit->second);
+                if(positional) v_third.push_back(vit->third);
+                vit ++;
+                postingCount ++;
+            }
+            //add last value of docID
+            vit --;
+            last_docID.push_back(vit->docID);
+            vit ++;
+            //compress block of 128
+            docID_biv = compress_field(v_docID, doc_method, 1);
+            if(positional){
+                second_biv = compress_field(v_second, second_method, 0); //compress fragmentID in positional posting
+                third_biv = compress_field(v_third, third_method, 0); //compress position in positional posting
+            }else{
+                second_biv = compress_field(v_second, second_method, 0); //compress frequency in nonpositional posting
+            }
+            //blocks of docID, followed by blocks of frequency/fragmentID and position
+            write<uint8_t>(docID_biv, ofile);
             //if last block, need to store the ending postition of first two fields
             if( vit ==  vend ){
                 meta.docID_end = ofile.tellp();
@@ -112,55 +105,55 @@ void Index::compress_posting(std::string namebase,
                 meta.second_end = ofile.tellp();
             }
             else write<uint8_t>(second_biv, ofile);
-			if(positional) write<uint8_t>(third_biv, ofile);
+            if(positional) write<uint8_t>(third_biv, ofile);
 
-			v_docID.clear();
-			v_second.clear();
-			v_third.clear();
-			docID_biv.clear();
-			second_biv.clear();
-			third_biv.clear();
+            v_docID.clear();
+            v_second.clear();
+            v_third.clear();
+            docID_biv.clear();
+            second_biv.clear();
+            third_biv.clear();
             if(vit != vend)
                 vit++;
- 		}
-		meta.postingCount_offset = ofile.tellp();
-		ofile.write(reinterpret_cast<const char *>(&postingCount), sizeof(postingCount));
-		write<unsigned int>(last_docID, ofile);
-		meta.size_offset = ofile.tellp();
-		write<unsigned int>(size_of_block, ofile);
-		postingCount = 1;
+        }
+        meta.postingCount_offset = ofile.tellp();
+        ofile.write(reinterpret_cast<const char *>(&postingCount), sizeof(postingCount));
+        write<unsigned int>(last_docID, ofile);
+        meta.size_offset = ofile.tellp();
+        write<unsigned int>(size_of_block, ofile);
+        postingCount = 1;
 
-		meta.end_offset = ofile.tellp();
-		if(positional) exlex.addPositional(currID, meta);
- 		else exlex.addNonPositional(currID, meta);
+        meta.end_offset = ofile.tellp();
+        if(positional) exlex.addPositional(currID, meta);
+        else exlex.addNonPositional(currID, meta);
         ite ++;
- 	}
+    }
 }
 
 std::vector<uint8_t> Index::compress_field(std::vector<unsigned int>& field, int method, int delta){
     /* the first entry of every block is NOT the delta of the last entry from the previous one */
-	std::vector<uint8_t> field_biv;
-	if(method){
-		if(delta){
-			std::vector<unsigned int> delta;
-			std::vector<unsigned int>::iterator it = field.begin();
-			unsigned int prev = 0;
-			while(it != field.end()){
+    std::vector<uint8_t> field_biv;
+    if(method){
+        if(delta){
+            std::vector<unsigned int> delta;
+            std::vector<unsigned int>::iterator it = field.begin();
+            unsigned int prev = 0;
+            while(it != field.end()){
                 if( *it != 0 ){
                     delta.push_back(*it - prev);
-    				prev = *it;
-    				it ++;
+                    prev = *it;
+                    it ++;
                 }
-				else{
+                else{
                     delta.push_back(0);
                     it ++;
                 }
-			}
+            }
             field_biv = VBEncode(delta);
-		}
-		else field_biv = VBEncode(field);
-	}
-	return field_biv;
+        }
+        else field_biv = VBEncode(field);
+    }
+    return field_biv;
 }
 
 void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase){
@@ -228,90 +221,90 @@ void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std:
 }
 
 std::vector<char> Index::read_com(std::ifstream& infile, long end_pos){
-	//read compressed forward index
-	char c;
-	std::vector<char> result;
-	while(infile.tellg() != end_pos){
+    //read compressed forward index
+    char c;
+    std::vector<char> result;
+    while(infile.tellg() != end_pos){
         infile.get(c);
-		result.push_back(c);
-	}
+        result.push_back(c);
+    }
     //the last one is not read in the loop
     infile.get(c);
     result.push_back(c);
-	return result;
+    return result;
 }
 
 void Index::merge_test(){
     /**
-	 * Test if there are two files of same index number on disk.
-	 * If there is, merge them and then call merge_test again until
-	 * all index numbers has only one file each.
-	 */
-	int indexnum = 0;
-	std::string dir = std::string(PDIR);
+     * Test if there are two files of same index number on disk.
+     * If there is, merge them and then call merge_test again until
+     * all index numbers has only one file each.
+     */
+    int indexnum = 0;
+    std::string dir = std::string(PDIR);
     std::string npdir = std::string(NPDIR);
-	std::vector<std::string> files = read_directory(dir);
+    std::vector<std::string> files = read_directory(dir);
     std::string fp = std::string("I") + std::to_string(indexnum);
     std::string fnp = std::string("I") + std::to_string(indexnum);
 
-	while(check_contain(files, fp)){
-		//if In exists already, merge In with Zn
+    while(std::find(files.begin(), files.end(), fp) != files.end()){
+        //if In exists already, merge In with Zn
         files.clear();
-		merge(indexnum, 1);//merge positional
-		indexnum ++;
+        merge(indexnum, 1);//merge positional
+        indexnum ++;
         fp = std::string("I") + std::to_string(indexnum);
         files.clear();
         files = read_directory(dir);
-	}
+    }
     indexnum = 0;
     std::vector<std::string> npfiles = read_directory(npdir);
-    while(check_contain(npfiles, fnp)){
-		//if Ln exists already, merge In with Xn
+    while(std::find(npfiles.begin(), npfiles.end(), fnp) != npfiles.end()){
+        //if Ln exists already, merge In with Xn
         npfiles.clear();
-		merge(indexnum, 0);//merge non_positional
-		indexnum ++;
+        merge(indexnum, 0);//merge non_positional
+        indexnum ++;
         fnp = std::string("I") + std::to_string(indexnum);
         npfiles.clear();
         npfiles = read_directory(npdir);
-	}
+    }
 }
 
 void Index::merge(int indexnum, int positional){
 
-	std::ifstream filez;
-	std::ifstream filei;
-	std::ofstream ofile;
+    std::ifstream filez;
+    std::ifstream filei;
+    std::ofstream ofile;
     std::string dir;
-	if(positional) dir.assign(PDIR);
-	else dir.assign(NPDIR);
+    if(positional) dir.assign(PDIR);
+    else dir.assign(NPDIR);
 
-	//determine the name of the output file, if "Z" file exists, than compressed to "I" file.
+    //determine the name of the output file, if "Z" file exists, than compressed to "I" file.
     char flag = 'Z';
-	filez.open(dir + "Z" + std::to_string(indexnum));
-	filei.open(dir + "I" + std::to_string(indexnum));
+    filez.open(dir + "Z" + std::to_string(indexnum));
+    filei.open(dir + "I" + std::to_string(indexnum));
 
     std::string namebase1 = "Z" + std::to_string(indexnum);
-	std::string namebase2 = "I" + std::to_string(indexnum);
+    std::string namebase2 = "I" + std::to_string(indexnum);
     std::string namebaseo;
 
-	ofile.open(dir + "Z" + std::to_string(indexnum + 1), std::ios::app | std::ios::binary);
+    ofile.open(dir + "Z" + std::to_string(indexnum + 1), std::ios::app | std::ios::binary);
     namebaseo = flag + std::to_string(indexnum + 1);
-	if(ofile.tellp() != 0){
-		ofile.close();
-		ofile.open(dir + "I" + std::to_string(indexnum + 1), std::ios::ate | std::ios::binary);
+    if(ofile.tellp() != 0){
+        ofile.close();
+        ofile.open(dir + "I" + std::to_string(indexnum + 1), std::ios::ate | std::ios::binary);
         flag = 'I';
         namebaseo = flag + std::to_string(indexnum + 1);
-	}
+    }
     std::cout << "Merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
 
     mData metai, metaz;
-	unsigned int termIDZ, termIDI;
+    unsigned int termIDZ, termIDI;
     if( filez.is_open() && filei.is_open() ){
         while( !filez.eof() || !filei.eof() ){
-    		filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
-    		filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
+            filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
+            filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
 
-    		if( termIDZ < termIDI ){
+            if( termIDZ < termIDI ){
                 if( positional ) metaz = exlex.getPositional(termIDZ, namebase1);
                 else metaz = exlex.getNonPositional(termIDZ, namebase1);
                 int length = metaz.end_offset - metaz.start_pos;
@@ -320,7 +313,7 @@ void Index::merge(int indexnum, int positional){
                 ofile.write(buffer, length);
                 delete[] buffer;
             }
-    		else if( termIDI < termIDZ ){
+            else if( termIDI < termIDZ ){
                 if( positional ) metai = exlex.getPositional(termIDI, namebase2);
                 else metai = exlex.getNonPositional(termIDZ, namebase2);
                 int length = metai.end_offset - metai.start_pos;
@@ -329,7 +322,7 @@ void Index::merge(int indexnum, int positional){
                 ofile.write(buffer, length);
                 delete[] buffer;
             }
-    		else if( termIDI == termIDZ ){
+            else if( termIDI == termIDZ ){
                 if( positional ){
                     decompress_p_posting(termIDZ, filez, namebase1);
                     decompress_p_posting(termIDI, filei, namebase2);
@@ -347,14 +340,14 @@ void Index::merge(int indexnum, int positional){
                     NP_V vend = ite->second.end();
                     compress_posting<NP_ITE, NP_V>(namebaseo, ofile, ite, end, vit, vend, 0);
                 }
-    		}
-    	}
+            }
+        }
     }
     else std::cerr << "Error opening file." << std::endl;
 
-	filez.close();
-	filei.close();
-	ofile.close();
+    filez.close();
+    filei.close();
+    ofile.close();
     std::string filename1 = dir + "Z" + std::to_string(indexnum);
     std::string filename2 = dir + "I" + std::to_string(indexnum);
     //deleting two files
