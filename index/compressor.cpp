@@ -316,6 +316,12 @@ void Index::merge(int indexnum, int positional){
     }
     std::cout << "Merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
 
+    /* To merge, first read the first integer from file, which is the termID.
+        Compare the termID, copy and paste the postings of smaller termID to the output file.
+        This is basically a next-greater-or-equal-to process.
+        If both file contains same termID, need to decompress and merge posting.
+        Decompress method push all the posting to the dynamic index.
+    */
     mData metai, metaz;
     unsigned int termIDZ, termIDI;
     if( filez.is_open() && filei.is_open() ){
