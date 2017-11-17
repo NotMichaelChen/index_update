@@ -23,8 +23,8 @@ clean:
 
 .PHONY: debug
 debug: CFLAGS+=$(DEBUG)
-debug: doc_analyzer
+debug: index
 
 .PHONY: debug-o
 debug-o: CFLAGS+=$(OPTIMIZE)
-debug-o: doc_analyzer
+debug-o: index

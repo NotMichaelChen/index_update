@@ -113,8 +113,8 @@ void Index::compress_posting(std::string namebase,
             docID_biv.clear();
             second_biv.clear();
             third_biv.clear();
-            //if(vit != vend)
-            //    vit++;
+            if(vit != vend)
+               vit++;
         }
         meta.postingCount_offset = ofile.tellp();
         ofile.write(reinterpret_cast<const char *>(&postingCount), sizeof(postingCount));
@@ -243,13 +243,9 @@ std::vector<char> Index::read_com(std::ifstream& infile, long end_pos){
     //read compressed forward index
     char c;
     std::vector<char> result;
-    while(infile.tellg() != end_pos){
-        infile.get(c);
+    while(infile.get(c)){
         result.push_back(c);
     }
-    //the last one is not read in the loop
-    infile.get(c);
-    result.push_back(c);
     return result;
 }
 
@@ -294,8 +290,8 @@ void Index::merge(int indexnum, int positional){
     std::ifstream filei;
     std::ofstream ofile;
     std::string dir;
-    if(positional) dir.assign(PDIR);
-    else dir.assign(NPDIR);
+    if(positional) dir = PDIR;
+    else dir = NPDIR;
 
     //determine the name of the output file, if "Z" file exists, than compressed to "I" file.
     char flag = 'Z';
@@ -325,10 +321,8 @@ void Index::merge(int indexnum, int positional){
     mData metai, metaz;
     unsigned int termIDZ, termIDI;
     if( filez.is_open() && filei.is_open() ){
-        while( !filez.eof() || !filei.eof() ){
-            filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
-            filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
-
+        // while(  !filez.eof() && !filei.eof() ){
+        while( filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ)) && filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI))) {
             if( termIDZ < termIDI ){
                 if( positional ) metaz = exlex.getPositional(termIDZ, namebase1);
                 else metaz = exlex.getNonPositional(termIDZ, namebase1);

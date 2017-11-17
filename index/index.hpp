@@ -27,8 +27,8 @@ public:
     Index();
     void insert_document(std::string& url, std::string& newpage);
 
-    void write_np(int indexnum = 0, char prefix = 'a');
-    void write_p(int indexnum = 0, char prefix = 'a');
+    void write_p();
+    void write_np();
 private:
     std::map<unsigned int, std::vector<Posting>> positional_index;
     std::map<unsigned int, std::vector<nPosting>> nonpositional_index;

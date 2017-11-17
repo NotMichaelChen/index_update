@@ -28,81 +28,51 @@ Index::Index() : docstore(), transtable(), lex(), exlex() {
     }
 }
 
-void Index::write_p(int indexnum, char prefix){
-    std::ofstream ofile;//positional inverted index
-    std::string pdir(PDIR);
-    std::string namebase;
-    std::string filename;
-    if(prefix == 'a'){
-        filename = pdir + "Z" + std::to_string(indexnum);
-        ofile.open(filename, std::ofstream::app | std::ofstream::binary);
-
-        if(ofile.tellp() != 0){
-            std::cout << filename << " already exists." << std::endl;
-            ofile.close();
-            filename = pdir + "I" + std::to_string(indexnum);
-            ofile.open(filename, std::ios::ate | std::ios::binary);
-            namebase = std::string("I") + std::to_string(indexnum);
-        }else{
-            namebase = std::string("Z") + std::to_string(indexnum);
-        }
-    }else{
-        filename = pdir + prefix + std::to_string(indexnum);
-        ofile.open(filename, std::ofstream::app | std::ofstream::binary);
-        namebase = prefix+ std::to_string(indexnum);
-    }
+//Writes the positional index to disk, which means it is saved either in file Z0 or I0.
+void Index::write_p() {
+    std::string filename = PDIR;
+    //Z0 exists
+    if(std::ifstream(filename))
+        filename += "I0";
+    else
+        filename += "Z0";
+    
+    std::ofstream ofile(filename);
 
     if (ofile.is_open()){
         P_ITE ite = positional_index.begin();
         P_ITE end = positional_index.end();
         P_V vit = ite->second.begin();
         P_V vend = ite->second.end();
-        compress_posting<P_ITE, P_V>(namebase, ofile, ite, end, vit, vend, 1);
+        compress_posting<P_ITE, P_V>(filename, ofile, ite, end, vit, vend, 1);
 
-    	ofile.close();
+        ofile.close();
     }else{
         std::cerr << "File cannot be opened." << std::endl;
     }
 }
 
-void Index::write_np(int indexnum, char prefix){
-    /**
-     * Open a file to write to and store the metadata of a term.
-     */
-    std::ofstream ofile;//non-positional inverted index
-    std::string pdir(NPDIR);
-    std::string namebase;
-    std::string filename;
-    if(prefix == 'a'){
-        //default state, compressing from dynamic index, not from merging
-        filename = pdir + "Z" + std::to_string(indexnum);
-        ofile.open(filename, std::ofstream::app | std::ofstream::binary);
-
-        if(ofile.tellp() != 0){
-            std::cout << filename << " already exists." << std::endl;
-            ofile.close();
-            filename = pdir + "I" + std::to_string(indexnum);
-            ofile.open(filename, std::ios::ate | std::ios::binary);
-            namebase = std::string("I") + std::to_string(indexnum);
-        }else{
-            namebase = std::string("Z") + std::to_string(indexnum);
-        }
-    }else{
-        filename = pdir + prefix + std::to_string(indexnum);
-        ofile.open(filename, std::ofstream::app | std::ofstream::binary);
-        namebase = prefix+ std::to_string(indexnum);
-    }
+void Index::write_np() {
+    std::string filename = NPDIR;
+    //Z0 exists
+    if(std::ifstream(filename))
+        filename += "I0";
+    else
+        filename += "Z0";
+    
+    std::ofstream ofile(filename);
 
     if (ofile.is_open()){
         NP_ITE ite = nonpositional_index.begin();
         NP_ITE end = nonpositional_index.end();
         NP_V vit = ite->second.begin();
         NP_V vend = ite->second.end();
-        compress_posting<NP_ITE, NP_V>(namebase, ofile, ite, end, vit, vend, 0);
+        compress_posting<NP_ITE, NP_V>(filename, ofile, ite, end, vit, vend, 0);
 
-    	ofile.close();
+        ofile.close();
+    }else{
+        std::cerr << "File cannot be opened." << std::endl;
     }
-    else std::cerr << "File cannot be opened." << std::endl;
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {
