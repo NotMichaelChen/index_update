@@ -32,7 +32,7 @@ Index::Index() : docstore(), transtable(), lex(), exlex() {
 void Index::write_p() {
     std::string filename = PDIR;
     //Z0 exists
-    if(std::ifstream(filename))
+    if(std::ifstream(filename + "Z0"))
         filename += "I0";
     else
         filename += "Z0";
@@ -55,7 +55,7 @@ void Index::write_p() {
 void Index::write_np() {
     std::string filename = NPDIR;
     //Z0 exists
-    if(std::ifstream(filename))
+    if(std::ifstream(filename + "Z0"))
         filename += "I0";
     else
         filename += "Z0";
