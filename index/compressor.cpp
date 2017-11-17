@@ -113,8 +113,8 @@ void Index::compress_posting(std::string namebase,
             docID_biv.clear();
             second_biv.clear();
             third_biv.clear();
-            if(vit != vend)
-                vit++;
+            //if(vit != vend)
+            //    vit++;
         }
         meta.postingCount_offset = ofile.tellp();
         ofile.write(reinterpret_cast<const char *>(&postingCount), sizeof(postingCount));
@@ -157,7 +157,9 @@ std::vector<uint8_t> Index::compress_field(std::vector<unsigned int>& field, int
 }
 
 void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase){
-    /* Decompress positional postings and store them in map structure */
+    /* Decompress positional postings and store them in map structure
+        Since the last block may not necessarily contain 128 elements; need to find how many elements
+        in the last block before adding them to respective vector. */
     std::string filename = std::string(PDIR) + namebase;
     mData meta = exlex.getPositional(termID, namebase);
 
@@ -171,37 +173,54 @@ void Index::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std:
     std::vector<unsigned int> docID, fragID, pos;
     int count;
     //read all the alternating blocks from compressed index and decompress
-    int length = meta.postingCount_offset - meta.posting_offset;
+    int length = meta.docID_end - meta.posting_offset; //full blocks plus last docID block
     char* buffer = new char [length];
     ifile.read(buffer, length);
     std::vector<unsigned int> decompressed = VBDecode(buffer, length);
     delete[] buffer;
+    int last_block = decompressed.size() % 128;//find the how many elements in the last block
     std::vector<unsigned int>::iterator it = decompressed.begin();
     unsigned int prevID;
     //TODO: here assume only doc ID is delta encoded; the other two can also be delta encoded,
-    //but need change code to identify doc and fragment boundary in file
     while( it != decompressed.end() ){
         count = 0;
         prevID = 0;
-        while( count < BLOCK ){
+        while( count < BLOCK && it != decompressed.end()){
             docID.push_back( prevID + *it );
             prevID = *it;
             count ++;
             it ++;
         }
         count = 0;
-        while( count < BLOCK ){
+        while( count < BLOCK && it != decompressed.end()){
             fragID.push_back(*it);
             count ++;
             it ++;
         }
         count = 0;
-        while( count < BLOCK ){
+        while( count < BLOCK && it != decompressed.end()){
             pos.push_back(*it);
             count ++;
             it ++;
         }
     }
+    //add elements from last two blocks
+    decompressed.clear();
+    length = meta.postingCount_offset - meta.docID_end;
+    buffer = new char [length];
+    ifile.read(buffer, length);
+    decompressed = VBDecode(buffer, length);
+    delete[] buffer;
+    it = decompressed.begin();
+    count = 0;
+    fragID.insert(fragID.end(), it, it + last_block);
+    pos.insert(pos.end(), it + last_block, decompressed.end());
+
+    int docsize = docID.size();
+    int fragsize = fragID.size();
+    int possize = pos.size();
+    if( docsize != fragsize || fragsize != possize ) std::cerr << "Error: number of postings doesn't match." << std::endl;
+
     std::vector<unsigned int>::iterator it1 = docID.begin();
     std::vector<unsigned int>::iterator it2 = fragID.begin();
     std::vector<unsigned int>::iterator it3 = pos.begin();
@@ -372,8 +391,8 @@ void Index::decompress_np_posting(unsigned int termID, std::ifstream& filez,
     std::vector<unsigned int> docIDi, docIDz, freqi, freqz;
     int count;
     //read all the alternating blocks from compressed index and decompress
-    int lengthz = metaz.postingCount_offset - metaz.posting_offset;
-    int lengthi = metai.postingCount_offset - metai.posting_offset;
+    int lengthz = metaz.docID_end - metaz.posting_offset;
+    int lengthi = metai.docID_end - metai.posting_offset;
     char* bufferz = new char [lengthz];
     char* bufferi = new char [lengthi];
     filez.read(bufferz, lengthz);
@@ -382,6 +401,8 @@ void Index::decompress_np_posting(unsigned int termID, std::ifstream& filez,
     std::vector<unsigned int> decomi = VBDecode(bufferi, lengthi);
     delete[] bufferi;
     delete[] bufferz;
+    int last_block_z = decomz.size() % 128;
+    int last_block_i = decomi.size() % 128;
     std::vector<unsigned int>::iterator itz = decomz.begin();
     std::vector<unsigned int>::iterator iti = decomi.begin();
     unsigned int prevIDz, prevIDi;
@@ -389,14 +410,14 @@ void Index::decompress_np_posting(unsigned int termID, std::ifstream& filez,
     while( itz != decomz.end() ){
         count = 0;
         prevIDz = 0;
-        while( count < BLOCK ){
+        while( count < BLOCK && itz != decomz.end() ){
             prevIDz = prevIDz + *itz;
             docIDz.push_back( prevIDz );
             count ++;
             itz ++;
         }
         count = 0;
-        while( count < BLOCK ){
+        while( count < BLOCK && itz != decomz.end() ){
             freqz.push_back(*itz);
             count ++;
             itz ++;
@@ -405,19 +426,34 @@ void Index::decompress_np_posting(unsigned int termID, std::ifstream& filez,
     while( iti != decomi.end() ){
         count = 0;
         prevIDi = 0;
-        while( count < BLOCK ){
+        while( count < BLOCK && iti != decomi.end() ){
             prevIDi = prevIDi + *iti;
             docIDi.push_back( prevIDi );
             count ++;
             iti ++;
         }
         count = 0;
-        while( count < BLOCK ){
+        while( count < BLOCK && iti != decomi.end() ){
             freqi.push_back(*iti);
             count ++;
             iti ++;
         }
     }
+    //add the last block
+    decomi.clear();
+    decomz.clear();
+    lengthz = metaz.postingCount_offset - metaz.docID_end;
+    lengthi = metai.postingCount_offset - metai.docID_end;
+    bufferz = new char [lengthz];
+    bufferi = new char [lengthi];
+    filez.read(bufferz, lengthz);
+    filei.read(bufferi, lengthi);
+    decomz = VBDecode(bufferz, lengthz);
+    decomi = VBDecode(bufferi, lengthi);
+    freqi.insert(freqi.end(), decomi.begin(), decomi.end());
+    freqz.insert(freqz.end(), decomz.begin(), decomz.end());
+    delete[] bufferi;
+    delete[] bufferz;
 
     itz = docIDz.begin();
     iti = docIDi.begin();
