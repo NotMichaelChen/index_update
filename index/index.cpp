@@ -101,7 +101,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
             //when dynamic index cannot fit into memory, write to disk
             write_np();
             nonpositional_index.clear();
-            merge_test();
+            merge_test(false);
 
         }
     }
@@ -115,7 +115,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         if(positional_index.size() > POSTING_LIMIT) {
             write_p();
             positional_index.clear();
-            merge_test();
+            merge_test(true);
         }
     }
 }

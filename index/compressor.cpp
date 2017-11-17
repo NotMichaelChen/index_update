@@ -249,38 +249,32 @@ std::vector<char> Index::read_com(std::ifstream& infile, long end_pos){
     return result;
 }
 
-void Index::merge_test(){
-    /**
-     * Test if there are two files of same index number on disk.
-     * If there is, merge them and then call merge_test again until
-     * all index numbers has only one file each.
-     */
-    int indexnum = 0;
-    std::string dir = std::string(PDIR);
-    std::string npdir = std::string(NPDIR);
-    std::vector<std::string> files = read_directory(dir);
-    std::string fp = std::string("I") + std::to_string(indexnum);
-    std::string fnp = std::string("I") + std::to_string(indexnum);
+/**
+ * Test if there are two files of same index number on disk.
+ * If there is, merge them and then call merge_test again until
+ * all index numbers has only one file each.
+ */
+void Index::merge_test(bool isPositional) {
+    //Assign directory the correct string based on the parameter
+    std::string directory = isPositional ? PDIR : NPDIR;
 
-    while(std::find(files.begin(), files.end(), fp) != files.end()){
-        //if In exists already, merge In with Zn
-        files.clear();
-        merge(indexnum, 1);//merge positional
-        indexnum ++;
-        fp = std::string("I") + std::to_string(indexnum);
-        files.clear();
-        files = read_directory(dir);
-    }
-    indexnum = 0;
-    std::vector<std::string> npfiles = read_directory(npdir);
-    while(std::find(npfiles.begin(), npfiles.end(), fnp) != npfiles.end()){
-        //if Ln exists already, merge In with Xn
-        npfiles.clear();
-        merge(indexnum, 0);//merge non_positional
-        indexnum ++;
-        fnp = std::string("I") + std::to_string(indexnum);
-        npfiles.clear();
-        npfiles = read_directory(npdir);
+    std::vector<std::string> files = read_directory(directory);
+    auto dir_iter = files.begin();
+
+    while(dir_iter != files.end()) {
+        //If any index file starts with an 'I', then we need to merge it
+        if(dir_iter->size() > 1 && (*dir_iter)[0] == 'I') {
+            //Get the number of the index
+            int indexnum = std::stoi(dir_iter->substr(1));
+            merge(indexnum, isPositional);
+
+            files.clear();
+            files = read_directory(directory);
+            dir_iter = files.begin();
+        }
+        else {
+            dir_iter++;
+        }
     }
 }
 

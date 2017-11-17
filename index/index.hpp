@@ -53,7 +53,7 @@ private:
 
     std::vector<char> read_com(std::ifstream& infile, long end_pos);
 
-    void merge_test();
+    void merge_test(bool isPositional);
 
     void merge(int indexnum, int positional);
 
