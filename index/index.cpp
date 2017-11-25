@@ -36,7 +36,7 @@ void Index::write_p() {
         filename += "I0";
     else
         filename += "Z0";
-    
+
     std::ofstream ofile(filename);
 
     if (ofile.is_open()){
@@ -59,7 +59,7 @@ void Index::write_np() {
         filename += "I0";
     else
         filename += "Z0";
-    
+
     std::ofstream ofile(filename);
 
     if (ofile.is_open()){
@@ -86,7 +86,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
     MatcherInfo results = indexUpdate(url, newpage, timestamp, docstore, transtable);
 
-    //std::cerr << "Got P:" << results.Ppostings.size() << " NP:" << results.NPpostings.size() << " Postings" << std::endl;
+    std::cerr << "Got P:" << results.Ppostings.size() << " NP:" << results.NPpostings.size() << " Postings" << std::endl;
 
     //Insert NP postings
     for(auto np_iter = results.NPpostings.begin(); np_iter != results.NPpostings.end(); np_iter++) {

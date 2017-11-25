@@ -10,7 +10,6 @@ using namespace std;
 
 //http://forum.codecall.net/topic/60157-read-all-files-in-a-folder/
 vector<string> openInDir(string path = ".") {
-    cout << "reading files." << endl;
     DIR*    dir;
     dirent* pdir;
     vector<string> files;
@@ -26,6 +25,7 @@ vector<string> openInDir(string path = ".") {
       	}
     	closedir( dir );
     }
+    else cout << "Directory not opened." << endl;
 
     return files;
 }
@@ -39,9 +39,7 @@ int main(int argc, char **argv) {
     client.disconnect();
 
     Index index;
-    vector<string> filelist = openInDir("./dataset-format");
-
-    cout << "Files read finished." << endl;
+    vector<string> filelist = openInDir("./exe/dataset-format/");
 
     for(string& i : filelist) {
 
