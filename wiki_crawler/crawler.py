@@ -2,7 +2,11 @@ import urllib2, json
 import datetime
 import os
 
-pagecount = input("Enter number of pages to get: ")
+#Grabs n pages from wikipedia that have at least 4 versions of a page: present, 6 months old, 1 year old, 2 years old
+#Each page is then put into a folder of that article's name, and each version of the document is written into the folder
+#with the timestamp as the filename
+
+pagecount = input("Enter minimum number of pages to get: ")
 
 if not os.path.exists("dataset"):
     os.makedirs("dataset")
@@ -12,6 +16,7 @@ pagesobtained = 0
 opener = urllib2.build_opener()
 opener.addheaders = [('User-Agent', 'DataScrapperForWebResearch/1.0 (mzc223@nyu.edu)')]
 while pagesobtained < pagecount:
+	#Gets 10 pages to check
     response = opener.open("https://en.wikipedia.org/w/api.php?action=query&list=random&format=json&rnnamespace=0&rnlimit=10&maxlag=5")
     data = json.loads(response.read())
 

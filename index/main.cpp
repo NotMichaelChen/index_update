@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
         if(i == "." || i == "..")
             continue;
         string filename;
-        //Split on |, everything before is filename
+        //Split on ~, everything before is filename
         for(auto iter = i.begin(); iter != i.end(); iter++) {
             if(*iter == '~') {
                 filename = string(i.begin(), iter);

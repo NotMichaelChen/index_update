@@ -1,6 +1,11 @@
 import re
 import os
 
+#Parses each article downloaded from the crawler script
+#Each article is stripped of non-alphanumeric characters and saved into the dataset-format directory
+#Each article is also renamed to be "articlename~timestamp", to allow the index to know what files are
+#simply updates of previous files.
+
 if not os.path.exists("dataset-format"):
     os.makedirs("dataset-format")
 
