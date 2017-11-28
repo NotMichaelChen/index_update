@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
     client.disconnect();
 
     Index index;
-    vector<string> filelist = openInDir("./exe/dataset-format/");
+    vector<string> filelist = openInDir("./dataset-format/");
 
     for(string& i : filelist) {
 
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
         string filename;
         //Split on |, everything before is filename
         for(auto iter = i.begin(); iter != i.end(); iter++) {
-            if(*iter == '|') {
+            if(*iter == '~') {
                 filename = string(i.begin(), iter);
                 break;
             }
