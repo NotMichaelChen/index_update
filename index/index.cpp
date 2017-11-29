@@ -13,8 +13,9 @@
 #include "Structures/translationtable.h"
 
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
+#define BLOCKSIZE 128
 
-Index::Index() : docstore(), transtable(), lex(), exlex() {
+Index::Index() : docstore(), transtable(), lex(), exlex(), staticwriter("disk_index", BLOCKSIZE) {
     //https://stackoverflow.com/a/4980833
     struct stat st;
     if(!(stat(INDEXDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
@@ -25,53 +26,6 @@ Index::Index() : docstore(), transtable(), lex(), exlex() {
     }
     if(!(stat(NPDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
         mkdir(NPDIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    }
-}
-
-//Writes the positional index to disk, which means it is saved either in file Z0 or I0.
-void Index::write_p() {
-    std::string filename = PDIR;
-    //Z0 exists
-    if(std::ifstream(filename + "Z0"))
-        filename += "I0";
-    else
-        filename += "Z0";
-
-    std::ofstream ofile(filename);
-
-    if (ofile.is_open()){
-        P_ITE ite = positional_index.begin();
-        P_ITE end = positional_index.end();
-        P_V vit = ite->second.begin();
-        P_V vend = ite->second.end();
-        compress_posting<P_ITE, P_V>(filename, ofile, ite, end, vit, vend, 1);
-
-        ofile.close();
-    }else{
-        std::cerr << "File cannot be opened." << std::endl;
-    }
-}
-
-void Index::write_np() {
-    std::string filename = NPDIR;
-    //Z0 exists
-    if(std::ifstream(filename + "Z0"))
-        filename += "I0";
-    else
-        filename += "Z0";
-
-    std::ofstream ofile(filename);
-
-    if (ofile.is_open()){
-        NP_ITE ite = nonpositional_index.begin();
-        NP_ITE end = nonpositional_index.end();
-        NP_V vit = ite->second.begin();
-        NP_V vend = ite->second.end();
-        compress_posting<NP_ITE, NP_V>(filename, ofile, ite, end, vit, vend, 0);
-
-        ofile.close();
-    }else{
-        std::cerr << "File cannot be opened." << std::endl;
     }
 }
 
@@ -99,9 +53,8 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         nonpositional_index[entry.termid].push_back(posting);
         if(nonpositional_index.size() > POSTING_LIMIT) {
             //when dynamic index cannot fit into memory, write to disk
-            write_np();
+            staticwriter.write_np_disk(nonpositional_index.begin(), nonpositional_index.end());
             nonpositional_index.clear();
-            merge_test(false);
 
         }
     }
@@ -113,9 +66,8 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         Posting posting(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
         positional_index[entry.termid].push_back(posting);
         if(positional_index.size() > POSTING_LIMIT) {
-            write_p();
+            staticwriter.write_p_disk(positional_index.begin(), positional_index.end());
             positional_index.clear();
-            merge_test(true);
         }
     }
 }
