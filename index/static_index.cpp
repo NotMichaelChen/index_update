@@ -87,7 +87,7 @@ void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter inde
 }
 
 template <typename T>
-void StaticIndex::write(std::vector<T> num, std::ofstream& ofile){
+void StaticIndex::write_block(std::vector<T> num, std::ofstream& ofile){
     /* Write the compressed posting to file byte by byte. */
     for(typename std::vector<T>::iterator it = num.begin(); it != num.end(); it++){
         ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
@@ -183,15 +183,15 @@ void StaticIndex::write_compressed_index(std::string namebase,
                 second_biv = compress_block(v_second, second_method, 0); //compress frequency in nonpositional posting
             }
             //blocks of docID, followed by blocks of frequency/fragmentID and position
-            write<uint8_t>(docID_biv, ofile);
+            write_block<uint8_t>(docID_biv, ofile);
             //if last block, need to store the ending postition of first two fields
             if( vit ==  vend ){
                 meta.docID_end = ofile.tellp();
-                write<uint8_t>(second_biv, ofile);
+                write_block<uint8_t>(second_biv, ofile);
                 meta.second_end = ofile.tellp();
             }
-            else write<uint8_t>(second_biv, ofile);
-            if(positional) write<uint8_t>(third_biv, ofile);
+            else write_block<uint8_t>(second_biv, ofile);
+            if(positional) write_block<uint8_t>(third_biv, ofile);
 
             v_docID.clear();
             v_second.clear();
@@ -204,9 +204,9 @@ void StaticIndex::write_compressed_index(std::string namebase,
         }
         meta.postingCount_offset = ofile.tellp();
         ofile.write(reinterpret_cast<const char *>(&postingCount), sizeof(postingCount));
-        write<unsigned int>(last_docID, ofile);
+        write_block<unsigned int>(last_docID, ofile);
         meta.size_offset = ofile.tellp();
-        write<unsigned int>(size_of_block, ofile);
+        write_block<unsigned int>(size_of_block, ofile);
         postingCount = 1;
 
         meta.end_offset = ofile.tellp();
@@ -526,19 +526,19 @@ void StaticIndex::merge(int indexnum, int positional){
                 if( positional ){
                     decompress_p_posting(termIDZ, filez, namebase1);
                     decompress_p_posting(termIDI, filei, namebase2);
-                    P_ITE ite = positional_index.begin();
-                    P_ITE end = positional_index.end();
-                    P_V vit = ite->second.begin();
-                    P_V vend = ite->second.end();
-                    write_compressed_index<P_ITE, P_V>(namebaseo, ofile, ite, end, vit, vend, 1);
+                    Pos_Map_Iter ite = positional_index.begin();
+                    Pos_Map_Iter end = positional_index.end();
+                    auto vit = ite->second.begin();
+                    auto vend = ite->second.end();
+                    write_compressed_index<Pos_Map_Iter, std::vector<Posting>::iterator>(namebaseo, ofile, ite, end, vit, vend, 1);
                 }
                 else{
                     decompress_np_posting(termIDI, filez, filei, namebase1, namebase2);
-                    NP_ITE ite = nonpositional_index.begin();
-                    NP_ITE end = nonpositional_index.end();
-                    NP_V vit = ite->second.begin();
-                    NP_V vend = ite->second.end();
-                    write_compressed_index<NP_ITE, NP_V>(namebaseo, ofile, ite, end, vit, vend, 0);
+                    NonPos_Map_Iter ite = nonpositional_index.begin();
+                    NonPos_Map_Iter end = nonpositional_index.end();
+                    auto vit = ite->second.begin();
+                    auto vend = ite->second.end();
+                    write_compressed_index<NonPos_Map_Iter, std::vector<nPosting>::iterator>(namebaseo, ofile, ite, end, vit, vend, 0);
                 }
             }
         }

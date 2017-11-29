@@ -7,7 +7,11 @@
 
 #include "posting.hpp"
 
-//Responsible for writing and managing the static indexes on disk
+/**
+ * Responsible for writing and managing the static indexes on disk
+ * Z-indexes are the main indexes whereas I-indexes are indexes of a similar order to the Z-indexes
+ * which must then be merged with the Z-index to produce a higher-order index
+ */
 class StaticIndex {
 
 public:
@@ -25,23 +29,37 @@ private:
     std::string nonposdir;
     int blocksize;
 
-    template <typename T>
-    void write(std::vector<T> num, std::ofstream& ofile);
 
+    //Writes a given block (vector) of compressed posting data into the file
+    template <typename T>
+    void write_block(std::vector<T> num, std::ofstream& ofile);
+
+    //Compresses a vector of posting data using the given compression method
     std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, int method, int delta);
 
+    //TODO: Fix extended lexicon and pass it into the necessary methods
+
+    //Writes an index (stored as a map of wordIDs to posting lists) to disk
     template <typename T1, typename T2>
     void write_compressed_index(std::string namebase, std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional);
 
+    //TODO: The decompress methods should return a new map
+
+    //Decompresses the given positional static index
     void decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase);
 
+    //Decompresses the given nonpositional static index
     void decompress_np_posting(unsigned int termID, std::ifstream& filez,
         std::ifstream& filei, std::string namebase1, std::string namebase2);
 
+    //Checks whether there are any indexes that need to be merged (which is indicated by I-indexes)
+    //and merges them until there are no more indexes to merge (no more I-indexes)
     void merge_test(bool isPositional);
 
-    void merge(int indexnum, int positional);
 
+    //Merges the indexes of the given order. Both the Z-index and I-index must already exist before
+    //this method is called.
+    void merge(int indexnum, int positional);
 };
 
 #endif
