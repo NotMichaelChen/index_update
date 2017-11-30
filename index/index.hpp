@@ -35,7 +35,6 @@ private:
     Structures::DocumentStore docstore;
     Structures::TranslationTable transtable;
     Lexicon lex;
-    ExtendedLexicon exlex;
     StaticIndex staticwriter;
 };
 

@@ -15,7 +15,7 @@
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
 #define BLOCKSIZE 128
 
-Index::Index() : docstore(), transtable(), lex(), exlex(), staticwriter("disk_index", BLOCKSIZE) {
+Index::Index() : docstore(), transtable(), lex(), staticwriter("disk_index", BLOCKSIZE) {
     //https://stackoverflow.com/a/4980833
     struct stat st;
     if(!(stat(INDEXDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {

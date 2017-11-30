@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "posting.hpp"
+#include "extended_lexicon.hpp"
 
 /**
  * Responsible for writing and managing the static indexes on disk
@@ -29,6 +30,7 @@ private:
     std::string nonposdir;
     int blocksize;
 
+    ExtendedLexicon exlex;
 
     //Writes a given block (vector) of compressed posting data into the file
     template <typename T>

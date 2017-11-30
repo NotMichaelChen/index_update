@@ -33,7 +33,7 @@ std::vector<std::string> read_directory( std::string path ){
     return result;
 }
 
-StaticIndex::StaticIndex(std::string dir, int blocksize) : indexdir(dir), blocksize(blocksize) {
+StaticIndex::StaticIndex(std::string dir, int blocksize) : indexdir(dir), blocksize(blocksize), exlex() {
     posdir = "./" + dir + "/positional/";
     nonposdir = "./" + dir + "/non_positional";
 }
