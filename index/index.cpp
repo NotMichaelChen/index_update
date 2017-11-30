@@ -58,7 +58,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
         }
     }
-
+    
     //Insert P postings
     for(auto p_iter = results.Ppostings.begin(); p_iter != results.Ppostings.end(); p_iter++) {
         Lex_data entry = lex.getEntry(p_iter->term);

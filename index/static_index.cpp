@@ -9,9 +9,6 @@
 #include "meta.hpp"
 #include "varbyte.hpp"
 
-using Pos_Map_Iter = std::map<unsigned int, std::vector<Posting>>::iterator;
-using NonPos_Map_Iter = std::map<unsigned int, std::vector<nPosting>>::iterator;
-
 //List all the files in a directory
 //Defined locally only for the static_index methods
 std::vector<std::string> read_directory( std::string path ){
@@ -35,7 +32,7 @@ std::vector<std::string> read_directory( std::string path ){
 
 StaticIndex::StaticIndex(std::string dir, int blocksize) : indexdir(dir), blocksize(blocksize), exlex() {
     posdir = "./" + dir + "/positional/";
-    nonposdir = "./" + dir + "/non_positional";
+    nonposdir = "./" + dir + "/non_positional/";
 }
 
 //Writes the positional index to disk, which means it is saved either in file Z0 or I0.
@@ -216,7 +213,7 @@ void StaticIndex::write_compressed_index(std::string namebase,
     }
 }
 
-void StaticIndex::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase){
+StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase){
     /* Decompress positional postings and store them in map structure
         Since the last block may not necessarily contain 128 elements; need to find how many elements
         in the last block before adding them to respective vector. */
@@ -285,6 +282,7 @@ void StaticIndex::decompress_p_posting(unsigned int termID, std::ifstream& ifile
     std::vector<unsigned int>::iterator it2 = fragID.begin();
     std::vector<unsigned int>::iterator it3 = pos.begin();
     Posting p;
+    Pos_Index positional_index;
     while( it1 != docID.end() ){
         p.termID = termID;
         p.docID = *it1;
@@ -297,9 +295,11 @@ void StaticIndex::decompress_p_posting(unsigned int termID, std::ifstream& ifile
     }
 
     ifile.seekg(meta.end_offset);
+
+    return positional_index;
 }
 
-void StaticIndex::decompress_np_posting(unsigned int termID, std::ifstream& filez,
+StaticIndex::NonPos_Index StaticIndex::decompress_np_posting(unsigned int termID, std::ifstream& filez,
     std::ifstream& filei, std::string namebase1, std::string namebase2){
     int doc_methodi, second_methodi, doc_methodz, second_methodz;
 
@@ -385,6 +385,7 @@ void StaticIndex::decompress_np_posting(unsigned int termID, std::ifstream& file
     std::vector<unsigned int>::iterator itfz = freqz.begin();
     std::vector<unsigned int>::iterator itfi = freqi.begin();
     nPosting p;
+    NonPos_Index nonpositional_index;
     while( itz != docIDz.end() && iti != docIDi.end() ){
         if( *itz > *iti ){
             p.docID = *itz;
@@ -429,12 +430,13 @@ void StaticIndex::decompress_np_posting(unsigned int termID, std::ifstream& file
 
     filez.seekg(metaz.end_offset);
     filei.seekg(metai.end_offset);
+    return nonpositional_index;
 }
 
 /**
  * Test if there are two files of same index number on disk.
  * If there is, merge them and then call merge_test again until
- * all index numbers has only one file each.
+ * all index numbers have only one file each.
  * Assumes that only one index is ever written to disk
  */
 void StaticIndex::merge_test(bool isPositional) {
@@ -524,8 +526,10 @@ void StaticIndex::merge(int indexnum, int positional){
             }
             else if( termIDI == termIDZ ){
                 if( positional ){
-                    decompress_p_posting(termIDZ, filez, namebase1);
-                    decompress_p_posting(termIDI, filei, namebase2);
+                    auto indexZ = decompress_p_posting(termIDZ, filez, namebase1);
+                    auto indexI = decompress_p_posting(termIDI, filei, namebase2);
+                    auto positional_index = merge_positional_index(indexZ, indexI);
+
                     Pos_Map_Iter ite = positional_index.begin();
                     Pos_Map_Iter end = positional_index.end();
                     auto vit = ite->second.begin();
@@ -533,7 +537,7 @@ void StaticIndex::merge(int indexnum, int positional){
                     write_compressed_index<Pos_Map_Iter, std::vector<Posting>::iterator>(namebaseo, ofile, ite, end, vit, vend, 1);
                 }
                 else{
-                    decompress_np_posting(termIDI, filez, filei, namebase1, namebase2);
+                    auto nonpositional_index = decompress_np_posting(termIDI, filez, filei, namebase1, namebase2);
                     NonPos_Map_Iter ite = nonpositional_index.begin();
                     NonPos_Map_Iter end = nonpositional_index.end();
                     auto vit = ite->second.begin();
@@ -553,4 +557,57 @@ void StaticIndex::merge(int indexnum, int positional){
     //deleting two files
     if( remove( filename1.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
     if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
+}
+
+StaticIndex::Pos_Index StaticIndex::merge_positional_index(StaticIndex::Pos_Index& indexZ, StaticIndex::Pos_Index& indexI) {
+    Pos_Index mergedindex;
+    auto Ziter = indexZ.begin();
+    auto Iiter = indexI.begin();
+
+    while(Ziter != indexZ.end() && Iiter != indexI.end()) {
+        if(Ziter->first > Iiter->first) {
+            mergedindex[Iiter->first] = Iiter->second;
+            ++Iiter;
+        }
+        else if(Ziter->first < Iiter->first) {
+            mergedindex[Ziter->first] = Ziter->second;
+            ++Ziter;
+        }
+        //Ziter == Iiter
+        else {
+            std::vector<Posting> newlist;
+
+            auto Zveciter = Ziter->second.begin();
+            auto Iveciter = Iiter->second.begin();
+            while(Zveciter != Ziter->second.end() && Iveciter != Iiter->second.end()) {
+                if(Zveciter->docID > Iveciter->docID) {
+                    newlist.push_back(*Iveciter);
+                    ++Iveciter;
+                }
+                else if(Zveciter->docID < Iveciter->docID) {
+                    newlist.push_back(*Zveciter);
+                    ++Zveciter;
+                }
+                //TODO: Determine how postings should be cleaned here
+                else {
+                    newlist.push_back(*Zveciter);
+                    newlist.push_back(*Iveciter);
+                    ++Zveciter;
+                    ++Iveciter;
+                }
+            }
+
+            //Either the Z-vector is empty, or the I-vector is empty. In either case we empty out the non-empty vector
+            while(Zveciter != Ziter->second.end()) {
+                newlist.push_back(*Zveciter);
+            }
+            while(Iveciter != Iiter->second.end()) {
+                newlist.push_back(*Iveciter);
+            }
+
+            mergedindex.emplace(Ziter->first, std::move(newlist));
+        }
+    }
+
+    return mergedindex;
 }

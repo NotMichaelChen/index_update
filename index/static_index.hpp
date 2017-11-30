@@ -25,6 +25,12 @@ public:
         std::map<unsigned int, std::vector<nPosting>>::iterator indexend);
 
 private:
+    using Pos_Map_Iter = std::map<unsigned int, std::vector<Posting>>::iterator;
+    using NonPos_Map_Iter = std::map<unsigned int, std::vector<nPosting>>::iterator;
+
+    using Pos_Index = std::map<unsigned int, std::vector<Posting>>;
+    using NonPos_Index = std::map<unsigned int, std::vector<nPosting>>;
+
     std::string indexdir;
     std::string posdir;
     std::string nonposdir;
@@ -45,23 +51,24 @@ private:
     template <typename T1, typename T2>
     void write_compressed_index(std::string namebase, std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional);
 
-    //TODO: The decompress methods should return a new map
-
     //Decompresses the given positional static index
-    void decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase);
+    Pos_Index decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase);
 
     //Decompresses the given nonpositional static index
-    void decompress_np_posting(unsigned int termID, std::ifstream& filez,
+    NonPos_Index decompress_np_posting(unsigned int termID, std::ifstream& filez,
         std::ifstream& filei, std::string namebase1, std::string namebase2);
 
     //Checks whether there are any indexes that need to be merged (which is indicated by I-indexes)
     //and merges them until there are no more indexes to merge (no more I-indexes)
     void merge_test(bool isPositional);
 
-
     //Merges the indexes of the given order. Both the Z-index and I-index must already exist before
     //this method is called.
     void merge(int indexnum, int positional);
+
+    //Merges two positional indexes
+    //Used in the "merge" method
+    Pos_Index merge_positional_index(Pos_Index& indexZ, Pos_Index& indexI);
 };
 
 #endif
