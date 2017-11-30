@@ -27,6 +27,9 @@ Index::Index() : docstore(), transtable(), lex(), staticwriter("disk_index", BLO
     if(!(stat(NPDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
         mkdir(NPDIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
+
+    positional_size = 0;
+    nonpositional_size = 0;
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {
@@ -51,11 +54,12 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
         nPosting posting(entry.termid, np_iter->docID, np_iter->freq);
         nonpositional_index[entry.termid].push_back(posting);
-        if(nonpositional_index.size() > POSTING_LIMIT) {
+        ++nonpositional_size;
+        if(nonpositional_size > POSTING_LIMIT) {
             //when dynamic index cannot fit into memory, write to disk
             staticwriter.write_np_disk(nonpositional_index.begin(), nonpositional_index.end());
             nonpositional_index.clear();
-
+            nonpositional_size = 0;
         }
     }
     
@@ -65,9 +69,11 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
         Posting posting(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
         positional_index[entry.termid].push_back(posting);
-        if(positional_index.size() > POSTING_LIMIT) {
+        ++positional_size;
+        if(positional_size > POSTING_LIMIT) {
             staticwriter.write_p_disk(positional_index.begin(), positional_index.end());
             positional_index.clear();
+            positional_size = 0;
         }
     }
 }
