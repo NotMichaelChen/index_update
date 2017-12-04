@@ -503,9 +503,11 @@ void StaticIndex::merge(int indexnum, int positional){
     */
     mData metai, metaz;
     unsigned int termIDZ, termIDI;
+    filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
+    filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
     if( filez.is_open() && filei.is_open() ){
-        // while(  !filez.eof() && !filei.eof() ){
-        while( filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ)) && filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI))) {
+        while(  !filez.eof() && !filei.eof() ){
+            std::cout << "TermIDZ " << termIDZ << " TermIDI "<< termIDI << std::endl;
             if( termIDZ < termIDI ){
                 if( positional ) metaz = exlex.getPositional(termIDZ, namebase1);
                 else metaz = exlex.getNonPositional(termIDZ, namebase1);
@@ -514,6 +516,7 @@ void StaticIndex::merge(int indexnum, int positional){
                 filez.read(buffer, length);
                 ofile.write(buffer, length);
                 delete[] buffer;
+                filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
             }
             else if( termIDI < termIDZ ){
                 if( positional ) metai = exlex.getPositional(termIDI, namebase2);
@@ -523,6 +526,7 @@ void StaticIndex::merge(int indexnum, int positional){
                 filei.read(buffer, length);
                 ofile.write(buffer, length);
                 delete[] buffer;
+                filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
             }
             else if( termIDI == termIDZ ){
                 if( positional ){
@@ -544,6 +548,8 @@ void StaticIndex::merge(int indexnum, int positional){
                     auto vend = ite->second.end();
                     write_compressed_index<NonPos_Map_Iter, std::vector<nPosting>::iterator>(namebaseo, ofile, ite, end, vit, vend, 0);
                 }
+                filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
+                filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
             }
         }
     }
