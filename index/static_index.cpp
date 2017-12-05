@@ -490,14 +490,14 @@ void StaticIndex::merge(int indexnum, int positional){
     std::string namebase2 = "I" + std::to_string(indexnum);
     std::string namebaseo;
 
-    ofile.open(dir + "Z" + std::to_string(indexnum + 1), std::ios::app | std::ios::binary);
-    namebaseo = flag + std::to_string(indexnum + 1);
-    if(ofile.tellp() != 0){
-        ofile.close();
-        ofile.open(dir + "I" + std::to_string(indexnum + 1), std::ios::ate | std::ios::binary);
+    std::ifstream filetest(dir + "Z" + std::to_string(indexnum+1));
+    if(filetest.good())
         flag = 'I';
-        namebaseo = flag + std::to_string(indexnum + 1);
-    }
+    filetest.close();
+
+    namebaseo = flag + std::to_string(indexnum + 1);
+    ofile.open(dir + namebaseo);
+
     if(positional)
         std::cout << "Positional is ";
     else
