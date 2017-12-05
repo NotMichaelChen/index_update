@@ -45,8 +45,6 @@ private:
     //Compresses a vector of posting data using the given compression method
     std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, int method, int delta);
 
-    //TODO: Fix extended lexicon and pass it into the necessary methods
-
     //Writes an index (stored as a map of wordIDs to posting lists) to disk
     template <typename T1, typename T2>
     void write_compressed_index(std::string namebase, std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional);

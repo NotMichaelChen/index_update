@@ -83,6 +83,7 @@ void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter inde
     merge_test(false);
 }
 
+// Writes a vector of numbers byte by byte to the given file stream
 template <typename T>
 void StaticIndex::write_block(std::vector<T> num, std::ofstream& ofile){
     /* Write the compressed posting to file byte by byte. */
@@ -127,7 +128,7 @@ void StaticIndex::write_compressed_index(std::string namebase,
     meta.start_pos = ofile.tellp();
 
     unsigned int currID = 0;
-    int postingCount = 1;
+    int postingCount = 0;
     std::string currTerm;
     //declare vectors to store 128 values TODO: use arrays instead of vectors
     std::vector<unsigned int> v_docID;
@@ -160,7 +161,8 @@ void StaticIndex::write_compressed_index(std::string namebase,
         vend = ite->second.end();
 
         while( vit != vend ){
-            while( postingCount % (blocksize+1) != 0 && vit != vend ){
+            //Either grabs blocksize postings or exits early if no more postings
+            for(int i = 0; i < blocksize && vit != vend; i++) {
                 v_docID.push_back(vit->docID);
                 v_second.push_back(vit->second);
                 if(positional) v_third.push_back(vit->third);
@@ -196,15 +198,13 @@ void StaticIndex::write_compressed_index(std::string namebase,
             docID_biv.clear();
             second_biv.clear();
             third_biv.clear();
-            if(vit != vend)
-               vit++;
         }
         meta.postingCount_offset = ofile.tellp();
         ofile.write(reinterpret_cast<const char *>(&postingCount), sizeof(postingCount));
         write_block<unsigned int>(last_docID, ofile);
         meta.size_offset = ofile.tellp();
         write_block<unsigned int>(size_of_block, ofile);
-        postingCount = 1;
+        postingCount = 0;
 
         meta.end_offset = ofile.tellp();
         if(positional) exlex.addPositional(currID, meta);
@@ -300,16 +300,21 @@ StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, st
 }
 
 StaticIndex::NonPos_Index StaticIndex::decompress_np_posting(unsigned int termID, std::ifstream& filez,
-    std::ifstream& filei, std::string namebase1, std::string namebase2){
+    std::ifstream& filei, std::string namebase1, std::string namebase2) {
     int doc_methodi, second_methodi, doc_methodz, second_methodz;
 
+    //assume termID already read
     filez.read(reinterpret_cast<char *>(&doc_methodz), sizeof(doc_methodz));
     filez.read(reinterpret_cast<char *>(&second_methodz), sizeof(second_methodz));
     filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
     filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
 
     mData metaz = exlex.getNonPositional(termID, namebase1);
+    if(metaz.filename.empty())
+        throw std::invalid_argument("Error, extended lexicon does not have " + std::to_string(termID) + " in file " + namebase1);
     mData metai = exlex.getNonPositional(termID, namebase2);
+    if(metai.filename.empty())
+        throw std::invalid_argument("Error, extended lexicon does not have " + std::to_string(termID) + " in file " + namebase2);
 
     filez.seekg(metaz.posting_offset);
     filei.seekg(metai.posting_offset);
@@ -493,6 +498,10 @@ void StaticIndex::merge(int indexnum, int positional){
         flag = 'I';
         namebaseo = flag + std::to_string(indexnum + 1);
     }
+    if(positional)
+        std::cout << "Positional is ";
+    else
+        std::cout << "Non-Positional is ";
     std::cout << "Merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
 
     /* To merge, first read the first integer from file, which is the termID.
@@ -507,7 +516,7 @@ void StaticIndex::merge(int indexnum, int positional){
     filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
     if( filez.is_open() && filei.is_open() ){
         while(  !filez.eof() && !filei.eof() ){
-            std::cout << "TermIDZ " << termIDZ << " TermIDI "<< termIDI << std::endl;
+            //std::cout << "TermIDZ " << termIDZ << " TermIDI "<< termIDI << std::endl;
             if( termIDZ < termIDI ){
                 if( positional ) metaz = exlex.getPositional(termIDZ, namebase1);
                 else metaz = exlex.getNonPositional(termIDZ, namebase1);

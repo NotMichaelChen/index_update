@@ -19,6 +19,11 @@ using namespace std;
 MatcherInfo indexUpdate(string& url, string& newpage, string& timestamp, Structures::DocumentStore& docstore, Structures::TranslationTable& transtable) {
     //-fetch the previous version, and the did of the document, from a tuple store or database (TBD)
     Structures::DocumentTuple olddoc = docstore.getDocument(url);
+    //Document does not exist yet
+    if(olddoc.timestamp.empty()) {
+        //Set equal to next docID. This will be officially assigned in the doc store once the document is inserted
+        olddoc.docID = docstore.getNextDocID();
+    }
     
     //-call makePosts(URL, did, currentpage, previouspage), which generates and returns the new postings that you are creating by your matching algorithm (that is, non-positional and position postings) and the additional translation statements to be appended.
     MatcherInfo info = makePosts(olddoc, newpage);
