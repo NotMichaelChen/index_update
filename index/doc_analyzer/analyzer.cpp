@@ -1,14 +1,6 @@
 #include "analyzer.h"
 
-#include <vector>
-#include <utility>
-
 #include "Matcher/matcher.h"
-#include "Matcher/stringencoder.h"
-#include "Matcher/translate.h"
-#include "externalpostings.h"
-#include "../Structures/documentstore.h"
-#include "../Structures/translationtable.h"
 
 #define MIN_BLOCK_SIZE 10
 #define MAX_BLOCK_COUNT 20

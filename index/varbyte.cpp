@@ -1,11 +1,7 @@
-#include <bitset>
-#include <cmath>
 #include "varbyte.hpp"
 
 #include <bitset>
-#include <vector>
-#include <fstream>
-#include <cmath>
+#include <math.h>
 
 std::vector<uint8_t> VBEncode(unsigned int num){
 	/**

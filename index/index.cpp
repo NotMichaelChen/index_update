@@ -1,16 +1,9 @@
 #include "index.hpp"
 
-#include <string>
-#include <ctime>
-#include <sstream>
 #include <iomanip>
-#include <iostream>
-#include <cstdlib>
 #include <sys/stat.h>
 
 #include "doc_analyzer/analyzer.h"
-#include "Structures/documentstore.h"
-#include "Structures/translationtable.h"
 
 #define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
 #define BLOCKSIZE 128

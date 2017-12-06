@@ -1,6 +1,7 @@
 #include "documentstore.h"
 
-#include <cpp_redis/cpp_redis>
+#include <sys/socket.h>
+#include <sys/time.h>
 
 #ifdef _WIN32
 #include <Winsock2.h>

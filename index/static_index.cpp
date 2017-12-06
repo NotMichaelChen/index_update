@@ -1,12 +1,8 @@
 #include "static_index.hpp"
 
 #include <iostream>
-#include <string>
-#include <vector>
 #include <dirent.h>
-#include <fstream>
 
-#include "meta.hpp"
 #include "varbyte.hpp"
 
 //List all the files in a directory

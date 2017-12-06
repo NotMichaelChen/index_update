@@ -1,9 +1,7 @@
-#include <iostream>
+#include "dirent.h"
+
 #include <fstream>
 
-#include <cpp_redis/cpp_redis>
-
-#include "dirent.h"
 #include "index.hpp"
 
 using namespace std;

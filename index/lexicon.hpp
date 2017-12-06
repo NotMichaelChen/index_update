@@ -6,6 +6,7 @@
 #ifndef LEXICON_HPP
 #define LEXICON_HPP
 
+#include <map>
 #include <string>
 #include <vector>
 #include <sstream>

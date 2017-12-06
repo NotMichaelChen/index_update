@@ -1,10 +1,6 @@
 #include "translate.h"
 
-#include <vector>
-#include <iostream>
 #include <algorithm>
-
-#include "block.h"
 
 using namespace std;
 

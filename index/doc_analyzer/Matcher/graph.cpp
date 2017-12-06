@@ -1,14 +1,6 @@
 #include "graph.h"
 
-#include <map>
-#include <vector>
-#include <set>
 #include <algorithm>
-
-#include <iostream>
-
-#include "block.h"
-#include "distancetable.h"
 
 using namespace std;
 

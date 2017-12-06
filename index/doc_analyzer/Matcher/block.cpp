@@ -1,12 +1,8 @@
 #include "block.h"
 
-#include <vector>
+#include <iostream>
 #include <algorithm>
 #include <map>
-#include <iostream>
-#include <memory>
-
-#include "stringencoder.h"
 
 using namespace std;
 

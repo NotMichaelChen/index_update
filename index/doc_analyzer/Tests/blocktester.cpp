@@ -1,12 +1,6 @@
 #include "blocktester.h"
 
-#include <iostream>
 #include <assert.h>
-#include <vector>
-#include <memory>
-
-#include "../Matcher/stringencoder.h"
-#include "../Matcher/stringencoder.h"
 
 using namespace std;
 

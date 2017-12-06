@@ -1,14 +1,8 @@
 #include "matcher.h"
 
-#include <vector>
 #include <algorithm>
-#include <memory>
 
-#include "stringencoder.h"
-#include "block.h"
-#include "graph.h"
 #include "distancetable.h"
-#include "../externalpostings.h"
 
 using namespace std;
 

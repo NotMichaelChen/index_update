@@ -4,8 +4,6 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <map>
 
 namespace Matcher {
     //Encodes two versions of a file into lists of integers.

@@ -1,10 +1,6 @@
-#include <string>
-#include <vector>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <sstream>
 #include "lexicon.hpp"
+
+#include <fstream>
 
 using namespace std;
 

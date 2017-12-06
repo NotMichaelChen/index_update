@@ -1,15 +1,13 @@
 #include "translationtable.h"
 
-#include <vector>
-#include <unordered_map>
 #include <sstream>
-#include <cpp_redis/cpp_redis>
+
+#include <sys/socket.h>
+#include <sys/time.h>
 
 #ifdef _WIN32
 #include <Winsock2.h>
 #endif /* _WIN32 */
-
-#include "../doc_analyzer/Matcher/translate.h"
 
 using namespace std;
 

@@ -1,6 +1,4 @@
 #include "extended_lexicon.hpp"
-#include <unordered_map>
-#include <vector>
 
 void ExtendedLexicon::addNonPositional( unsigned int term, mData& entry ){
     exlexnp[term].push_back(entry);
