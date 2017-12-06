@@ -14,14 +14,14 @@ mData ExtendedLexicon::getPositional(unsigned int term, std::string filename) {
     for( std::vector<mData>::iterator it = exlexp[term].begin(); it != exlexp[term].end(); it ++){
         if( it->filename == filename ) return *it;
     }
-    return mData{""};
+    throw std::invalid_argument("(P) Error, extended lexicon does not have term " + std::to_string(term) + " in file " + filename);
 }
 
 mData ExtendedLexicon::getNonPositional(unsigned int term, std::string filename) {
     for( std::vector<mData>::iterator it = exlexnp[term].begin(); it != exlexnp[term].end(); it ++){
         if( it->filename == filename ) return *it;
     }
-    return mData{""};
+    throw std::invalid_argument("(NP) Error, extended lexicon does not have term " + std::to_string(term) + " in file " + filename);
 }
 
 std::vector<mData>::iterator ExtendedLexicon::getPositionalBegin(unsigned int term) {

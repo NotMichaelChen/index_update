@@ -37,12 +37,15 @@ StaticIndex::StaticIndex(std::string dir, int blocksize) : indexdir(dir), blocks
 
 //Writes the positional index to disk, which means it is saved either in file Z0 or I0.
 void StaticIndex::write_p_disk(Pos_Map_Iter indexbegin, Pos_Map_Iter indexend) {
-    std::string filename = posdir;
+    std::string filepathname = posdir;
+    std::string filename;
     //Z0 exists
-    if(std::ifstream(filename + "Z0"))
-        filename += "I0";
+    if(std::ifstream(filepathname + "Z0"))
+        filename = "I0";
     else
-        filename += "Z0";
+        filename = "Z0";
+
+    filepathname += filename;
 
     std::ofstream ofile(filename);
 
@@ -61,14 +64,17 @@ void StaticIndex::write_p_disk(Pos_Map_Iter indexbegin, Pos_Map_Iter indexend) {
 
 //Writes the non-positional index to disk, which is saved in either file Z0 or I0
 void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter indexend) {
-    std::string filename = nonposdir;
+    std::string filepathname = nonposdir;
+    std::string filename;
     //Z0 exists
-    if(std::ifstream(filename + "Z0"))
-        filename += "I0";
+    if(std::ifstream(filepathname + "Z0"))
+        filename = "I0";
     else
-        filename += "Z0";
+        filename = "Z0";
+    
+    filepathname += filename;
 
-    std::ofstream ofile(filename);
+    std::ofstream ofile(filepathname);
 
     if (ofile.is_open()){
         auto vit = indexbegin->second.begin();
@@ -118,6 +124,9 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
     return field_biv;
 }
 
+//Writes an inverted index to disk using compressed postings
+//namebase: The filename of the file being written to
+//          DOES NOT INCLUDE THE PATH
 //ite, end = map iterator
 //vit, vend = vector iterator (posting list for each term)
 template <typename T1, typename T2>
@@ -310,11 +319,7 @@ StaticIndex::NonPos_Index StaticIndex::decompress_np_posting(unsigned int termID
     filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
 
     mData metaz = exlex.getNonPositional(termID, namebase1);
-    if(metaz.filename.empty())
-        throw std::invalid_argument("Error, extended lexicon does not have " + std::to_string(termID) + " in file " + namebase1);
     mData metai = exlex.getNonPositional(termID, namebase2);
-    if(metai.filename.empty())
-        throw std::invalid_argument("Error, extended lexicon does not have " + std::to_string(termID) + " in file " + namebase2);
 
     filez.seekg(metaz.posting_offset);
     filei.seekg(metai.posting_offset);
