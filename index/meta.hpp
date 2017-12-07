@@ -3,15 +3,24 @@
 
 #include <string>
 
+//Used in the extended lexicon and associated with a termID
 struct mData{
-	std::string filename;
-	long start_pos;
-	long posting_offset;
-	long docID_end;
-	long second_end;
-	long postingCount_offset;
-	long size_offset;
-	long end_offset;
+    //For which file the metadata is for
+    std::string filename;
+    //Starting position of the inverted list
+    long start_pos;
+    //Where the blocks of compressed postings start
+    long posting_offset;
+    //Ending position of docIDs
+    long docID_end;
+    //Ending position of second field
+    long second_end;
+    //Where the posting count variable (and lastdocID array) is
+    long postingCount_offset;
+    //Where the array of block sizes begins
+    long size_offset;
+    //Where the inverted list ends
+    long end_offset;
 };
 
 #endif

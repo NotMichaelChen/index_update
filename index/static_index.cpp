@@ -124,7 +124,6 @@ void StaticIndex::write_compressed_index(std::string namebase,
     std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional){
     mData meta;
     meta.filename = namebase;
-    meta.start_pos = ofile.tellp();
 
     unsigned int currID = 0;
     int postingCount = 0;
@@ -148,6 +147,7 @@ void StaticIndex::write_compressed_index(std::string namebase,
     int third_method = 1;
 
     while( ite != end ){
+        meta.start_pos = ofile.tellp();
         currID = ite->first;
         //writing metadata to file
         ofile.write(reinterpret_cast<const char *>(&currID), sizeof(currID));
@@ -511,11 +511,12 @@ void StaticIndex::merge(int indexnum, int positional){
     filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
     if( filez.is_open() && filei.is_open() ){
         while(  !filez.eof() && !filei.eof() ){
-            //std::cout << "TermIDZ " << termIDZ << " TermIDI "<< termIDI << std::endl;
+            std::cout << "TermIDZ " << termIDZ << " TermIDI "<< termIDI << std::endl;
             if( termIDZ < termIDI ){
                 if( positional ) metaz = exlex.getPositional(termIDZ, dir+namebase1);
                 else metaz = exlex.getNonPositional(termIDZ, dir+namebase1);
-                int length = metaz.end_offset - metaz.start_pos;
+                //Subtract four since we already read the termID
+                int length = metaz.end_offset - metaz.start_pos - sizeof(unsigned int);
                 char* buffer = new char [length];
                 filez.read(buffer, length);
                 ofile.write(buffer, length);
@@ -524,8 +525,9 @@ void StaticIndex::merge(int indexnum, int positional){
             }
             else if( termIDI < termIDZ ){
                 if( positional ) metai = exlex.getPositional(termIDI, dir+namebase2);
-                else metai = exlex.getNonPositional(termIDZ, dir+namebase2);
-                int length = metai.end_offset - metai.start_pos;
+                else metai = exlex.getNonPositional(termIDI, dir+namebase2);
+                //Subtract four since we already read the termID
+                int length = metai.end_offset - metai.start_pos - sizeof(unsigned int);
                 char* buffer = new char [length];
                 filei.read(buffer, length);
                 ofile.write(buffer, length);
