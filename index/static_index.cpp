@@ -33,15 +33,12 @@ StaticIndex::StaticIndex(std::string dir, int blocksize) : indexdir(dir), blocks
 
 //Writes the positional index to disk, which means it is saved either in file Z0 or I0.
 void StaticIndex::write_p_disk(Pos_Map_Iter indexbegin, Pos_Map_Iter indexend) {
-    std::string filepathname = posdir;
-    std::string filename;
+    std::string filename = posdir;
     //Z0 exists
-    if(std::ifstream(filepathname + "Z0"))
-        filename = "I0";
+    if(std::ifstream(filename + "Z0"))
+        filename += "I0";
     else
-        filename = "Z0";
-
-    filepathname += filename;
+        filename += "Z0";
 
     std::ofstream ofile(filename);
 
@@ -60,17 +57,14 @@ void StaticIndex::write_p_disk(Pos_Map_Iter indexbegin, Pos_Map_Iter indexend) {
 
 //Writes the non-positional index to disk, which is saved in either file Z0 or I0
 void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter indexend) {
-    std::string filepathname = nonposdir;
-    std::string filename;
+    std::string filename = nonposdir;
     //Z0 exists
-    if(std::ifstream(filepathname + "Z0"))
-        filename = "I0";
+    if(std::ifstream(filename + "Z0"))
+        filename += "I0";
     else
-        filename = "Z0";
-    
-    filepathname += filename;
+        filename += "Z0";
 
-    std::ofstream ofile(filepathname);
+    std::ofstream ofile(filename);
 
     if (ofile.is_open()){
         auto vit = indexbegin->second.begin();
@@ -122,7 +116,7 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
 
 //Writes an inverted index to disk using compressed postings
 //namebase: The filename of the file being written to
-//          DOES NOT INCLUDE THE PATH
+//          INCLUDES THE PATH
 //ite, end = map iterator
 //vit, vend = vector iterator (posting list for each term)
 template <typename T1, typename T2>
@@ -223,7 +217,7 @@ StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, st
         Since the last block may not necessarily contain 128 elements; need to find how many elements
         in the last block before adding them to respective vector. */
     std::string filename = std::string(posdir) + namebase;
-    mData meta = exlex.getPositional(termID, namebase);
+    mData meta = exlex.getPositional(termID, filename);
 
     int method1, method2, method3;
 
@@ -314,8 +308,8 @@ StaticIndex::NonPos_Index StaticIndex::decompress_np_posting(unsigned int termID
     filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
     filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
 
-    mData metaz = exlex.getNonPositional(termID, namebase1);
-    mData metai = exlex.getNonPositional(termID, namebase2);
+    mData metaz = exlex.getNonPositional(termID, nonposdir+namebase1);
+    mData metai = exlex.getNonPositional(termID, nonposdir+namebase2);
 
     filez.seekg(metaz.posting_offset);
     filei.seekg(metai.posting_offset);
@@ -519,8 +513,8 @@ void StaticIndex::merge(int indexnum, int positional){
         while(  !filez.eof() && !filei.eof() ){
             //std::cout << "TermIDZ " << termIDZ << " TermIDI "<< termIDI << std::endl;
             if( termIDZ < termIDI ){
-                if( positional ) metaz = exlex.getPositional(termIDZ, namebase1);
-                else metaz = exlex.getNonPositional(termIDZ, namebase1);
+                if( positional ) metaz = exlex.getPositional(termIDZ, dir+namebase1);
+                else metaz = exlex.getNonPositional(termIDZ, dir+namebase1);
                 int length = metaz.end_offset - metaz.start_pos;
                 char* buffer = new char [length];
                 filez.read(buffer, length);
@@ -529,8 +523,8 @@ void StaticIndex::merge(int indexnum, int positional){
                 filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
             }
             else if( termIDI < termIDZ ){
-                if( positional ) metai = exlex.getPositional(termIDI, namebase2);
-                else metai = exlex.getNonPositional(termIDZ, namebase2);
+                if( positional ) metai = exlex.getPositional(termIDI, dir+namebase2);
+                else metai = exlex.getNonPositional(termIDZ, dir+namebase2);
                 int length = metai.end_offset - metai.start_pos;
                 char* buffer = new char [length];
                 filei.read(buffer, length);
@@ -548,7 +542,7 @@ void StaticIndex::merge(int indexnum, int positional){
                     Pos_Map_Iter end = positional_index.end();
                     auto vit = ite->second.begin();
                     auto vend = ite->second.end();
-                    write_compressed_index<Pos_Map_Iter, std::vector<Posting>::iterator>(namebaseo, ofile, ite, end, vit, vend, 1);
+                    write_compressed_index<Pos_Map_Iter, std::vector<Posting>::iterator>(dir + namebaseo, ofile, ite, end, vit, vend, 1);
                 }
                 else{
                     auto nonpositional_index = decompress_np_posting(termIDI, filez, filei, namebase1, namebase2);
@@ -556,7 +550,7 @@ void StaticIndex::merge(int indexnum, int positional){
                     NonPos_Map_Iter end = nonpositional_index.end();
                     auto vit = ite->second.begin();
                     auto vend = ite->second.end();
-                    write_compressed_index<NonPos_Map_Iter, std::vector<nPosting>::iterator>(namebaseo, ofile, ite, end, vit, vend, 0);
+                    write_compressed_index<NonPos_Map_Iter, std::vector<nPosting>::iterator>(dir + namebaseo, ofile, ite, end, vit, vend, 0);
                 }
                 filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
                 filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
