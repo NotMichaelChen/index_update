@@ -234,7 +234,7 @@ StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, st
     ifile.read(buffer, length);
     std::vector<unsigned int> decompressed = VBDecode(buffer, length);
     delete[] buffer;
-    int last_block = decompressed.size() % 128;//find the how many elements in the last block
+    int last_block = decompressed.size() % blocksize;//find the how many elements in the last block
     std::vector<unsigned int>::iterator it = decompressed.begin();
     unsigned int prevID;
     //TODO: here assume only doc ID is delta encoded; the other two can also be delta encoded,
@@ -612,12 +612,17 @@ StaticIndex::Pos_Index StaticIndex::merge_positional_index(StaticIndex::Pos_Inde
             //Either the Z-vector is empty, or the I-vector is empty. In either case we empty out the non-empty vector
             while(Zveciter != Ziter->second.end()) {
                 newlist.push_back(*Zveciter);
+                ++Zveciter;
             }
             while(Iveciter != Iiter->second.end()) {
                 newlist.push_back(*Iveciter);
+                ++Iveciter;
             }
 
             mergedindex.emplace(Ziter->first, std::move(newlist));
+
+            ++Iiter;
+            ++Ziter;
         }
     }
 
