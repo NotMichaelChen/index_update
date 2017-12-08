@@ -1,3 +1,4 @@
+#include <iostream>
 #include "extended_lexicon.hpp"
 
 void ExtendedLexicon::addNonPositional( unsigned int term, mData& entry ){
@@ -6,6 +7,16 @@ void ExtendedLexicon::addNonPositional( unsigned int term, mData& entry ){
 
 void ExtendedLexicon::addPositional( unsigned int term, mData& entry ){
     exlexp[term].push_back(entry);
+}
+
+void ExtendedLexicon::displayNonPositional(){
+    for( std::unordered_map<unsigned int, std::vector<mData>>::iterator it = exlexnp.begin(); it != exlexnp.end(); it ++){
+        std::cout << it->first << std::endl;
+        for( std::vector<mData>::iterator vit = it->second.begin(); vit != it->second.end(); vit ++){
+            std::cout << vit->filename << " ";
+        }
+        std::cout << std::endl;
+    }
 }
 
 mData ExtendedLexicon::getPositional(unsigned int term, std::string filename) {

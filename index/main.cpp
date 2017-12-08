@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
         string filename;
         //Split on ~, everything before is filename
         for(auto iter = i.begin(); iter != i.end(); iter++) {
-            if(*iter == '~') {
+            if(*iter == '|') {
                 filename = string(i.begin(), iter);
                 break;
             }
@@ -56,8 +56,9 @@ int main(int argc, char **argv) {
         //https://www.reddit.com/r/learnprogramming/comments/3qotqr/how_can_i_read_an_entire_text_file_into_a_string/cwh8m4d/
         string filecontents{ istreambuf_iterator<char>(inputfile), istreambuf_iterator<char>() };
 
-        cout << "Inserting " << filename << endl;
+        cout << "Inserting file: " << filename << endl;
         index.insert_document(filename, filecontents);
+        cin.get();
     }
 
     return 0;

@@ -22,6 +22,7 @@ public:
 
     Lex_data getEntry(std::string& term);
     void updateFreq(std::string& term, int new_freq);
+    void display();
 
     //Dumps contents of lexicon into file called "lexdump"
     void dump();

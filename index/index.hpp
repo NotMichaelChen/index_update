@@ -27,6 +27,8 @@ class Index {
 public:
     Index();
     void insert_document(std::string& url, std::string& newpage);
+    void display_non_positional();
+    void display_positional();
 
 private:
     std::map<unsigned int, std::vector<Posting>> positional_index;

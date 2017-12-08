@@ -1,5 +1,5 @@
 #include "lexicon.hpp"
-
+#include <iostream>
 #include <fstream>
 
 using namespace std;
@@ -11,6 +11,12 @@ Lex_data Lexicon::getEntry(string& term) {
         initEntry(term);
     }
     return lex[term];
+}
+
+void Lexicon::display(){
+    for(std::map<std::string, Lex_data>::iterator it = lex.begin(); it != lex.end(); it ++){
+        std::cout << it->first << ' '<< it->second.termid << ' ' << it->second.f_t << std::endl;
+    }
 }
 
 void Lexicon::updateFreq(string& term, int new_freq) {

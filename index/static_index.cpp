@@ -149,6 +149,7 @@ void StaticIndex::write_compressed_index(std::string namebase,
     while( ite != end ){
         meta.start_pos = ofile.tellp();
         currID = ite->first;
+        //std::cout << "Write compressed: " << currID << std::endl;
         //writing metadata to file
         ofile.write(reinterpret_cast<const char *>(&currID), sizeof(currID));
         ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
@@ -497,7 +498,7 @@ void StaticIndex::merge(int indexnum, int positional){
         std::cout << "Positional is ";
     else
         std::cout << "Non-Positional is ";
-    std::cout << "Merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
+    std::cout << "merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
 
     /* To merge, first read the first integer from file, which is the termID.
         Compare the termID, copy and paste the postings of smaller termID to the output file.

@@ -25,6 +25,28 @@ Index::Index() : docstore(), transtable(), lex(), staticwriter("disk_index", BLO
     nonpositional_size = 0;
 }
 
+void Index::display_non_positional(){
+    std::cout << "***************** Displaying non positional **************** " << std::endl;
+    for( std::map<unsigned int, std::vector<nPosting>>::iterator it = nonpositional_index.begin(); it != nonpositional_index.end(); it ++){
+        std::cout << it->first << std::endl;
+        for( std::vector<nPosting>::iterator vit = it->second.begin(); vit != it->second.end(); vit ++){
+            std::cout << vit->docID << ' ' << vit->second << std::endl;
+        }
+    }
+    std:: cout << "********************************" << std::endl;
+}
+
+void Index::display_positional(){
+    std::cout << "***************** Displaying positional **************** " << std::endl;
+    for( std::map<unsigned int, std::vector<Posting>>::iterator it = positional_index.begin(); it != positional_index.end(); it ++){
+        std::cout << it->first << std::endl;
+        for( std::vector<Posting>::iterator vit = it->second.begin(); vit != it->second.end(); vit ++){
+            std::cout << vit->docID << ' ' << vit->second << ' '<< vit->third << std::endl;
+        }
+    }
+    std:: cout << "********************************" << std::endl;
+}
+
 void Index::insert_document(std::string& url, std::string& newpage) {
     //Get timestamp, https://stackoverflow.com/a/16358111
     auto t = std::time(nullptr);
@@ -50,12 +72,13 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         ++nonpositional_size;
         if(nonpositional_size > POSTING_LIMIT) {
             //when dynamic index cannot fit into memory, write to disk
+            display_non_positional();
             staticwriter.write_np_disk(nonpositional_index.begin(), nonpositional_index.end());
             nonpositional_index.clear();
             nonpositional_size = 0;
         }
     }
-    
+
     //Insert P postings
     for(auto p_iter = results.Ppostings.begin(); p_iter != results.Ppostings.end(); p_iter++) {
         Lex_data entry = lex.getEntry(p_iter->term);
@@ -64,9 +87,12 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         positional_index[entry.termid].push_back(posting);
         ++positional_size;
         if(positional_size > POSTING_LIMIT) {
+            display_positional();
             staticwriter.write_p_disk(positional_index.begin(), positional_index.end());
             positional_index.clear();
             positional_size = 0;
         }
     }
+
+    //lex.display();
 }

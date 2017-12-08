@@ -12,6 +12,8 @@ public:
     void addPositional(unsigned int term, mData& entry);
     void addNonPositional(unsigned int term, mData& entry);
 
+    void displayNonPositional();
+
     mData getPositional(unsigned int term, std::string filename);
     mData getNonPositional(unsigned int term, std::string filename);
 
