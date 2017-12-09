@@ -9,6 +9,15 @@ void ExtendedLexicon::addPositional( unsigned int term, mData& entry ){
     exlexp[term].push_back(entry);
 }
 
+std::vector<mData>::iterator ExtendedLexicon::deleteNonPositional(unsigned int term, std::vector<mData>::iterator entry) {
+    return exlexnp[term].erase(entry);
+}
+
+std::vector<mData>::iterator ExtendedLexicon::deletePositional(unsigned int term, std::vector<mData>::iterator entry) {
+    return exlexp[term].erase(entry);
+}
+
+
 void ExtendedLexicon::displayNonPositional(){
     for( std::unordered_map<unsigned int, std::vector<mData>>::iterator it = exlexnp.begin(); it != exlexnp.end(); it ++){
         std::cout << it->first << std::endl;
@@ -19,16 +28,16 @@ void ExtendedLexicon::displayNonPositional(){
     }
 }
 
-mData ExtendedLexicon::getPositional(unsigned int term, std::string filename) {
+std::vector<mData>::iterator ExtendedLexicon::getPositional(unsigned int term, std::string filename) {
     for( std::vector<mData>::iterator it = exlexp[term].begin(); it != exlexp[term].end(); it ++){
-        if( it->filename == filename ) return *it;
+        if( it->filename == filename ) return it;
     }
     throw std::invalid_argument("(P) Error, extended lexicon does not have term " + std::to_string(term) + " in file " + filename);
 }
 
-mData ExtendedLexicon::getNonPositional(unsigned int term, std::string filename) {
+std::vector<mData>::iterator ExtendedLexicon::getNonPositional(unsigned int term, std::string filename) {
     for( std::vector<mData>::iterator it = exlexnp[term].begin(); it != exlexnp[term].end(); it ++){
-        if( it->filename == filename ) return *it;
+        if( it->filename == filename ) return it;
     }
     throw std::invalid_argument("(NP) Error, extended lexicon does not have term " + std::to_string(term) + " in file " + filename);
 }

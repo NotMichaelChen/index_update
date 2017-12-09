@@ -218,7 +218,7 @@ StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, st
         Since the last block may not necessarily contain 128 elements; need to find how many elements
         in the last block before adding them to respective vector. */
     std::string filename = std::string(posdir) + namebase;
-    mData meta = exlex.getPositional(termID, filename);
+    auto meta = exlex.getPositional(termID, filename);
 
     int method1, method2, method3;
 
@@ -226,11 +226,11 @@ StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, st
     ifile.read(reinterpret_cast<char *>(&method2), sizeof(method2));
     ifile.read(reinterpret_cast<char *>(&method3), sizeof(method3));
 
-    ifile.seekg(meta.posting_offset);
+    ifile.seekg(meta->posting_offset);
     std::vector<unsigned int> docID, fragID, pos;
     int count;
     //read all the alternating blocks from compressed index and decompress
-    int length = meta.docID_end - meta.posting_offset; //full blocks plus last docID block
+    int length = meta->docID_end - meta->posting_offset; //full blocks plus last docID block
     char* buffer = new char [length];
     ifile.read(buffer, length);
     std::vector<unsigned int> decompressed = VBDecode(buffer, length);
@@ -263,7 +263,7 @@ StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, st
     }
     //add elements from last two blocks
     decompressed.clear();
-    length = meta.postingCount_offset - meta.docID_end;
+    length = meta->postingCount_offset - meta->docID_end;
     buffer = new char [length];
     ifile.read(buffer, length);
     decompressed = VBDecode(buffer, length);
@@ -294,7 +294,7 @@ StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, st
         it3 ++;
     }
 
-    ifile.seekg(meta.end_offset);
+    ifile.seekg(meta->end_offset);
 
     return positional_index;
 }
@@ -309,16 +309,16 @@ StaticIndex::NonPos_Index StaticIndex::decompress_np_posting(unsigned int termID
     filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
     filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
 
-    mData metaz = exlex.getNonPositional(termID, nonposdir+namebase1);
-    mData metai = exlex.getNonPositional(termID, nonposdir+namebase2);
+    auto metaz = exlex.getNonPositional(termID, nonposdir+namebase1);
+    auto metai = exlex.getNonPositional(termID, nonposdir+namebase2);
 
-    filez.seekg(metaz.posting_offset);
-    filei.seekg(metai.posting_offset);
+    filez.seekg(metaz->posting_offset);
+    filei.seekg(metai->posting_offset);
     std::vector<unsigned int> docIDi, docIDz, freqi, freqz;
     int count;
     //read all the alternating blocks from compressed index and decompress
-    int lengthz = metaz.docID_end - metaz.posting_offset;
-    int lengthi = metai.docID_end - metai.posting_offset;
+    int lengthz = metaz->docID_end - metaz->posting_offset;
+    int lengthi = metai->docID_end - metai->posting_offset;
     char* bufferz = new char [lengthz];
     char* bufferi = new char [lengthi];
     filez.read(bufferz, lengthz);
@@ -368,8 +368,8 @@ StaticIndex::NonPos_Index StaticIndex::decompress_np_posting(unsigned int termID
     //add the last block
     decomi.clear();
     decomz.clear();
-    lengthz = metaz.postingCount_offset - metaz.docID_end;
-    lengthi = metai.postingCount_offset - metai.docID_end;
+    lengthz = metaz->postingCount_offset - metaz->docID_end;
+    lengthi = metai->postingCount_offset - metai->docID_end;
     bufferz = new char [lengthz];
     bufferi = new char [lengthi];
     filez.read(bufferz, lengthz);
@@ -429,8 +429,8 @@ StaticIndex::NonPos_Index StaticIndex::decompress_np_posting(unsigned int termID
         nonpositional_index[termID].push_back(p);
     }
 
-    filez.seekg(metaz.end_offset);
-    filei.seekg(metai.end_offset);
+    filez.seekg(metaz->end_offset);
+    filei.seekg(metai->end_offset);
     return nonpositional_index;
 }
 
@@ -506,7 +506,7 @@ void StaticIndex::merge(int indexnum, int positional){
         If both file contains same termID, need to decompress and merge posting.
         Decompress method push all the posting to the dynamic index.
     */
-    mData metai, metaz;
+    std::vector<mData>::iterator metai, metaz;
     unsigned int termIDZ, termIDI;
     filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
     filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
@@ -517,22 +517,30 @@ void StaticIndex::merge(int indexnum, int positional){
                 if( positional ) metaz = exlex.getPositional(termIDZ, dir+namebase1);
                 else metaz = exlex.getNonPositional(termIDZ, dir+namebase1);
                 //Subtract four since we already read the termID
-                int length = metaz.end_offset - metaz.start_pos - sizeof(unsigned int);
+                int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
                 char* buffer = new char [length];
                 filez.read(buffer, length);
                 ofile.write(buffer, length);
                 delete[] buffer;
+                //Metadata is no longer valid, so remove it
+                if( positional ) metaz = exlex.deletePositional(termIDZ, metaz);
+                else metaz = exlex.deleteNonPositional(termIDZ, metaz);
+
                 filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
             }
             else if( termIDI < termIDZ ){
                 if( positional ) metai = exlex.getPositional(termIDI, dir+namebase2);
                 else metai = exlex.getNonPositional(termIDI, dir+namebase2);
                 //Subtract four since we already read the termID
-                int length = metai.end_offset - metai.start_pos - sizeof(unsigned int);
+                int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
                 char* buffer = new char [length];
                 filei.read(buffer, length);
                 ofile.write(buffer, length);
                 delete[] buffer;
+                //Metadata is no longer valid, so remove it
+                if( positional ) metai = exlex.deletePositional(termIDI, metai);
+                else metai = exlex.deleteNonPositional(termIDI, metai);
+
                 filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
             }
             else if( termIDI == termIDZ ){
@@ -546,6 +554,9 @@ void StaticIndex::merge(int indexnum, int positional){
                     auto vit = ite->second.begin();
                     auto vend = ite->second.end();
                     write_compressed_index<Pos_Map_Iter, std::vector<Posting>::iterator>(dir + namebaseo, ofile, ite, end, vit, vend, 1);
+                    //Delete the metadata associated with the two termIDs for each file
+                    exlex.deletePositional(termIDZ, exlex.getPositional(termIDZ, dir+namebase1));
+                    exlex.deletePositional(termIDI, exlex.getPositional(termIDI, dir+namebase2));
                 }
                 else{
                     auto nonpositional_index = decompress_np_posting(termIDI, filez, filei, namebase1, namebase2);
@@ -554,6 +565,9 @@ void StaticIndex::merge(int indexnum, int positional){
                     auto vit = ite->second.begin();
                     auto vend = ite->second.end();
                     write_compressed_index<NonPos_Map_Iter, std::vector<nPosting>::iterator>(dir + namebaseo, ofile, ite, end, vit, vend, 0);
+                    //Delete the metadata associated with the two termIDs for each file
+                    exlex.deleteNonPositional(termIDZ, exlex.getNonPositional(termIDZ, dir+namebase1));
+                    exlex.deleteNonPositional(termIDI, exlex.getNonPositional(termIDI, dir+namebase2));
                 }
                 filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
                 filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));

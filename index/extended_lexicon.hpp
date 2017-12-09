@@ -12,10 +12,14 @@ public:
     void addPositional(unsigned int term, mData& entry);
     void addNonPositional(unsigned int term, mData& entry);
 
+    //Removes the given entry from the lexicon
+    std::vector<mData>::iterator deletePositional(unsigned int term, std::vector<mData>::iterator entry);
+    std::vector<mData>::iterator deleteNonPositional(unsigned int term, std::vector<mData>::iterator entry);
+
     void displayNonPositional();
 
-    mData getPositional(unsigned int term, std::string filename);
-    mData getNonPositional(unsigned int term, std::string filename);
+    std::vector<mData>::iterator getPositional(unsigned int term, std::string filename);
+    std::vector<mData>::iterator getNonPositional(unsigned int term, std::string filename);
 
     std::vector<mData>::iterator getPositionalBegin(unsigned int term);
     std::vector<mData>::iterator getPositionalEnd(unsigned int term);
