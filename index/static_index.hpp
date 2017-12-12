@@ -40,7 +40,7 @@ private:
 
     //Writes a given block (vector) of compressed posting data into the file
     template <typename T>
-    void write_block(std::vector<T> num, std::ofstream& ofile);
+    unsigned int write_block(std::vector<T> num, std::ofstream& ofile);
 
     //Compresses a vector of posting data using the given compression method
     std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, int method, int delta);

@@ -80,12 +80,16 @@ void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter inde
 }
 
 // Writes a vector of numbers byte by byte to the given file stream
+// Returns how many bytes it wrote to the stream
 template <typename T>
-void StaticIndex::write_block(std::vector<T> num, std::ofstream& ofile){
+unsigned int StaticIndex::write_block(std::vector<T> num, std::ofstream& ofile){
     /* Write the compressed posting to file byte by byte. */
+    unsigned int start = ofile.tellp();
     for(typename std::vector<T>::iterator it = num.begin(); it != num.end(); it++){
         ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
     }
+    unsigned int end = ofile.tellp();
+    return end - start;
 }
 
 std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& field, int method, int delta){
@@ -182,15 +186,15 @@ void StaticIndex::write_compressed_index(std::string namebase,
                 second_biv = compress_block(v_second, second_method, 0); //compress frequency in nonpositional posting
             }
             //blocks of docID, followed by blocks of frequency/fragmentID and position
-            write_block<uint8_t>(docID_biv, ofile);
+            size_of_block.push_back(write_block<uint8_t>(docID_biv, ofile));
             //if last block, need to store the ending postition of first two fields
             if( vit ==  vend ){
                 meta.docID_end = ofile.tellp();
-                write_block<uint8_t>(second_biv, ofile);
+                size_of_block.push_back(write_block<uint8_t>(second_biv, ofile));
                 meta.second_end = ofile.tellp();
             }
-            else write_block<uint8_t>(second_biv, ofile);
-            if(positional) write_block<uint8_t>(third_biv, ofile);
+            else size_of_block.push_back(write_block<uint8_t>(second_biv, ofile));
+            if(positional) size_of_block.push_back(write_block<uint8_t>(third_biv, ofile));
 
             v_docID.clear();
             v_second.clear();
@@ -276,7 +280,8 @@ StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, st
     int docsize = docID.size();
     int fragsize = fragID.size();
     int possize = pos.size();
-    if( docsize != fragsize || fragsize != possize ) std::cerr << "Error: number of postings doesn't match." << std::endl;
+    if( docsize != fragsize || fragsize != possize ) 
+        std::cerr << "Error: number of postings doesn't match: " << docsize << ' ' << fragsize << ' ' << possize << std::endl;
 
     std::vector<unsigned int>::iterator it1 = docID.begin();
     std::vector<unsigned int>::iterator it2 = fragID.begin();
