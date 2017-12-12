@@ -516,30 +516,36 @@ void StaticIndex::merge(int indexnum, int positional){
             if( termIDZ < termIDI ){
                 if( positional ) metaz = exlex.getPositional(termIDZ, dir+namebase1);
                 else metaz = exlex.getNonPositional(termIDZ, dir+namebase1);
+                //Calculate shift to use for updating the metadata
+                long shift = ofile.tellp() - metaz->start_pos;
                 //Subtract four since we already read the termID
                 int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
                 char* buffer = new char [length];
                 filez.read(buffer, length);
                 ofile.write(buffer, length);
                 delete[] buffer;
-                //Metadata is no longer valid, so remove it
-                if( positional ) metaz = exlex.deletePositional(termIDZ, metaz);
-                else metaz = exlex.deleteNonPositional(termIDZ, metaz);
+
+                //Update metadata
+                *metaz = shift_metadata(*metaz, shift);
+                metaz->filename = dir + namebaseo;
 
                 filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
             }
             else if( termIDI < termIDZ ){
                 if( positional ) metai = exlex.getPositional(termIDI, dir+namebase2);
                 else metai = exlex.getNonPositional(termIDI, dir+namebase2);
+                //Calculate shift to use for updating the metadata
+                long shift = ofile.tellp() - metai->start_pos;
                 //Subtract four since we already read the termID
                 int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
                 char* buffer = new char [length];
                 filei.read(buffer, length);
                 ofile.write(buffer, length);
                 delete[] buffer;
-                //Metadata is no longer valid, so remove it
-                if( positional ) metai = exlex.deletePositional(termIDI, metai);
-                else metai = exlex.deleteNonPositional(termIDI, metai);
+
+                //Update metadata
+                *metai = shift_metadata(*metai, shift);
+                metai->filename = dir + namebaseo;
 
                 filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
             }

@@ -27,6 +27,8 @@ public:
     std::vector<mData>::iterator getNonPositionalEnd(unsigned int term);
 
 private:
+    //Each term is associated with a list of metadata structs.
+    //Each struct corresponds to that term's entry in a certain file.
     std::unordered_map<unsigned int, std::vector<mData>> exlexnp;
     std::unordered_map<unsigned int, std::vector<mData>> exlexp;
 };

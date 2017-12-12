@@ -23,4 +23,8 @@ struct mData{
     long end_offset;
 };
 
+//Shifts all of the entries in the metadata struct
+//Does *not* change the filename, which must be done outside this function
+mData shift_metadata(mData metadata, long shift);
+
 #endif
