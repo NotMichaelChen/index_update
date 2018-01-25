@@ -1,6 +1,7 @@
 #include "static_index.hpp"
 
 #include <iostream>
+#include <functional>
 #include <dirent.h>
 
 #include "varbyte.hpp"
@@ -92,30 +93,24 @@ unsigned int StaticIndex::write_block(std::vector<T> num, std::ofstream& ofile){
     return end - start;
 }
 
-std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& field, int method, int delta){
-    /* the first entry of every block is NOT the delta of the last entry from the previous one */
-    std::vector<uint8_t> field_biv;
-    if(method){
-        if(delta){
-            std::vector<unsigned int> delta;
-            std::vector<unsigned int>::iterator it = field.begin();
-            unsigned int prev = 0;
-            while(it != field.end()){
-                if( *it != 0 ){
-                    delta.push_back(*it - prev);
-                    prev = *it;
-                    it ++;
-                }
-                else{
-                    delta.push_back(0);
-                    it ++;
-                }
-            }
-            field_biv = VBEncode(delta);
+//Compresses a vector of posting data using the given compression method
+std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& field, std::vector<uint8_t> encoder(std::vector<unsigned int>&), bool delta) {
+    std::vector<uint8_t> compressed;
+    if(delta) {
+        std::vector<unsigned int> deltaencode;
+        deltaencode.push_back(field[0]);
+
+        for(size_t i = 1; i < field.size(); i++) {
+            if(field[i] < field[i-1])
+                std::cerr << "negative during delta compressiong\n";
+            deltaencode.push_back(field[i] - field[i-1]);
         }
-        else field_biv = VBEncode(field);
+        compressed = encoder(deltaencode);
     }
-    return field_biv;
+    else {
+        compressed = encoder(field);
+    }
+    return compressed;
 }
 
 //Writes an inverted index to disk using compressed postings
@@ -178,12 +173,12 @@ void StaticIndex::write_compressed_index(std::string namebase,
             last_docID.push_back(vit->docID);
             vit ++;
             //compress block of 128
-            docID_biv = compress_block(v_docID, doc_method, 1);
+            docID_biv = compress_block(v_docID, VBEncode, true);
             if(positional){
-                second_biv = compress_block(v_second, second_method, 0); //compress fragmentID in positional posting
-                third_biv = compress_block(v_third, third_method, 0); //compress position in positional posting
+                second_biv = compress_block(v_second, VBEncode, false); //compress fragmentID in positional posting
+                third_biv = compress_block(v_third, VBEncode, false); //compress position in positional posting
             }else{
-                second_biv = compress_block(v_second, second_method, 0); //compress frequency in nonpositional posting
+                second_biv = compress_block(v_second, VBEncode, false); //compress frequency in nonpositional posting
             }
             //blocks of docID, followed by blocks of frequency/fragmentID and position
             size_of_block.push_back(write_block<uint8_t>(docID_biv, ofile));

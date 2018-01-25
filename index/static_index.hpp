@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <functional>
 
 #include "posting.hpp"
 #include "extended_lexicon.hpp"
@@ -43,7 +44,7 @@ private:
     unsigned int write_block(std::vector<T> num, std::ofstream& ofile);
 
     //Compresses a vector of posting data using the given compression method
-    std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, int method, int delta);
+    std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, std::vector<uint8_t> encoder(std::vector<unsigned int>&), bool delta);
 
     //Writes an index (stored as a map of wordIDs to posting lists) to disk
     template <typename T1, typename T2>
