@@ -46,7 +46,7 @@ void StaticIndex::write_p_disk(Pos_Map_Iter indexbegin, Pos_Map_Iter indexend) {
     if (ofile.is_open()){
         auto vit = indexbegin->second.begin();
         auto vend = indexbegin->second.end();
-        write_compressed_index<Pos_Map_Iter, std::vector<Posting>::iterator>(filename, ofile, indexbegin, indexend, vit, vend, 1);
+        write_index<Pos_Map_Iter>(filename, ofile, true, indexbegin, indexend);
 
         ofile.close();
     }else{
@@ -70,7 +70,7 @@ void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter inde
     if (ofile.is_open()){
         auto vit = indexbegin->second.begin();
         auto vend = indexbegin->second.end();
-        write_compressed_index<NonPos_Map_Iter, std::vector<nPosting>::iterator>(filename, ofile, indexbegin, indexend, vit, vend, 0);
+        write_compressed_index<NonPos_Map_Iter>(filename, ofile, false, indexbegin, indexend);
 
         ofile.close();
     }else{
@@ -114,8 +114,11 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
     return compressed;
 }
 
+//Writes an inverted index to disk using compressed postings
+//filepath: The filename of the file being written to
+//          INCLUDES THE PATH
 template <typename T>
-void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, T index, bool positional) {
+void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend) {
     //initialize compression method, 1: varbyte
     //compression method for docID
     unsigned int doc_method = 1;
@@ -124,7 +127,7 @@ void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, T inde
     //compression method for position
     unsigned int third_method = 1;
 
-    for(auto postinglistiter = index.begin(); postinglistiter != index.end(); postinglistiter++) {
+    for(auto postinglistiter = indexbegin; postinglistiter != indexend; postinglistiter++) {
         mData metadata;
         metadata.filename = filepath;
         metadata.start_pos = ofile.tellp();
@@ -224,105 +227,6 @@ void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, T inde
         metadata.end_offset = ofile.tellp();
         if(positional) exlex.addPositional(termID, metadata);
         else exlex.addNonPositional(termID, metadata);
-    }
-}
-
-//Writes an inverted index to disk using compressed postings
-//namebase: The filename of the file being written to
-//          INCLUDES THE PATH
-//ite, end = map iterator
-//vit, vend = vector iterator (posting list for each term)
-template <typename T1, typename T2>
-void StaticIndex::write_compressed_index(std::string namebase,
-    std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional){
-    mData meta;
-    meta.filename = namebase;
-
-    unsigned int currID = 0;
-    int postingCount = 0;
-    std::string currTerm;
-    //declare vectors to store 128 values TODO: use arrays instead of vectors
-    std::vector<unsigned int> v_docID;
-    std::vector<unsigned int> v_second;
-    std::vector<unsigned int> v_third;
-    //declare vectors that will be written to file
-    std::vector<unsigned int> last_docID;
-    std::vector<unsigned int> size_of_block;
-    std::vector<uint8_t> docID_biv;
-    std::vector<uint8_t> second_biv;
-    std::vector<uint8_t> third_biv;
-    //initialize compression method, 1: varbyte
-    //compression method for docID
-    int doc_method = 1;
-    //compression method for fragmentID (pos) or frequency (nonpos)
-    int second_method = 1;
-    //compression method for position
-    int third_method = 1;
-
-    while( ite != end ){
-        meta.start_pos = ofile.tellp();
-        currID = ite->first;
-        //std::cout << "Write compressed: " << currID << std::endl;
-        //writing metadata to file
-        ofile.write(reinterpret_cast<const char *>(&currID), sizeof(currID));
-        ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
-        ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
-        if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
-        meta.posting_offset = ofile.tellp();
-
-        vit = ite->second.begin();
-        vend = ite->second.end();
-
-        while( vit != vend ){
-            //Either grabs blocksize postings or exits early if no more postings
-            for(int i = 0; i < blocksize && vit != vend; i++) {
-                v_docID.push_back(vit->docID);
-                v_second.push_back(vit->second);
-                if(positional) v_third.push_back(vit->third);
-                vit ++;
-                postingCount ++;
-            }
-            //add last value of docID
-            vit --;
-            last_docID.push_back(vit->docID);
-            vit ++;
-            //compress block of 128
-            docID_biv = compress_block(v_docID, VBEncode, true);
-            if(positional){
-                second_biv = compress_block(v_second, VBEncode, false); //compress fragmentID in positional posting
-                third_biv = compress_block(v_third, VBEncode, false); //compress position in positional posting
-            }else{
-                second_biv = compress_block(v_second, VBEncode, false); //compress frequency in nonpositional posting
-            }
-            //blocks of docID, followed by blocks of frequency/fragmentID and position
-            size_of_block.push_back(write_block<uint8_t>(docID_biv, ofile));
-            //if last block, need to store the ending postition of first two fields
-            if( vit ==  vend ){
-                meta.docID_end = ofile.tellp();
-                size_of_block.push_back(write_block<uint8_t>(second_biv, ofile));
-                meta.second_end = ofile.tellp();
-            }
-            else size_of_block.push_back(write_block<uint8_t>(second_biv, ofile));
-            if(positional) size_of_block.push_back(write_block<uint8_t>(third_biv, ofile));
-
-            v_docID.clear();
-            v_second.clear();
-            v_third.clear();
-            docID_biv.clear();
-            second_biv.clear();
-            third_biv.clear();
-        }
-        meta.postingCount_offset = ofile.tellp();
-        ofile.write(reinterpret_cast<const char *>(&postingCount), sizeof(postingCount));
-        write_block<unsigned int>(last_docID, ofile);
-        meta.size_offset = ofile.tellp();
-        write_block<unsigned int>(size_of_block, ofile);
-        postingCount = 0;
-
-        meta.end_offset = ofile.tellp();
-        if(positional) exlex.addPositional(currID, meta);
-        else exlex.addNonPositional(currID, meta);
-        ite ++;
     }
 }
 
