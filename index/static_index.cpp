@@ -93,7 +93,19 @@ unsigned int StaticIndex::write_block(std::vector<T> num, std::ofstream& ofile){
     return end - start;
 }
 
+template <typename T>
+unsigned int StaticIndex::write_block(std::vector<T>::iterator begin, std::vector<T>::iterator end, std::ofstream& ofile){
+    /* Write the compressed posting to file byte by byte. */
+    unsigned int start = ofile.tellp();
+    for(typename std::vector<T>::iterator it = begin; it != end; it++){
+        ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
+    }
+    unsigned int end = ofile.tellp();
+    return end - start;
+}
+
 //Compresses a vector of posting data using the given compression method
+//When delta encoding, assume field is already sorted
 std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& field, std::vector<uint8_t> encoder(std::vector<unsigned int>&), bool delta) {
     std::vector<uint8_t> compressed;
     if(delta) {
@@ -111,6 +123,108 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
         compressed = encoder(field);
     }
     return compressed;
+}
+
+void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, Pos_Index index, bool positional) {
+    mData metadata;
+    //initialize compression method, 1: varbyte
+    //compression method for docID
+    int doc_method = 1;
+    //compression method for fragmentID (pos) or frequency (nonpos)
+    int second_method = 1;
+    //compression method for position
+    int third_method = 1;
+
+    for(auto postinglistiter = index.begin(); postinglistiter != index.end(); postinglistiter++) {
+        unsigned int termID = postinglistiter->first;
+
+        //Write out metadata
+        ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
+        ofile.write(reinterpret_cast<const char *>(&(postinglistiter->second.size())), sizeof(postinglistiter->second.size()));
+        ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
+        ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
+        if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
+
+        //Construct arrays holding the last entry in each docID block and the size of all blocks
+
+        //Last entry of each docID block will happen every blocksize number of postings (every 128th posting for example)
+        std::vector<unsigned int> lastdocID;
+        std::vector<unsigned int> blocksizes;
+        
+        size_t arraypos = blocksize-1;
+        if(arraypos > postinglistiter->second.size()) {
+            lastdocID.push_back(postinglistiter->second[postinglistiter->second.size()-1].docID);
+            blocksize.push_back(postinglistiter->second.size());
+        }
+
+        //No need for else; while will be skipped if if is true
+        while(arraypos < postinglistiter->second.size()) {
+            if(arraypos+blocksize < postinglistiter->second.size()) {
+                arraypos += blocksize;
+                lastdocID.push_back(postinglistiter->second[arraypos].docID);
+                blocksizes.push_back(blocksize);
+            }
+            else {
+                if arraypos != postinglistiter->second.size()-1 {
+                    lastdocID.push_back(postinglistiter->second[postinglistiter->second.size()-1].docID);
+                    blocksize.push_back((postinglistiter->second.size()-1) - arraypos);
+                }
+                break;
+            }
+        }
+
+        write_block<unsigned int>(lastdocID, ofile);
+        write_block<unsigned int>(blocksizes, ofile);
+
+        //Write out alternating blocks
+
+        //Begin inclusive, End exclusive
+        size_t blockbegin = 0;
+        size_t blockend = blocksize;
+
+        while(blockend <= postinglistiter->second.size()) {
+            std::vector<unsigned int> blockdocID;
+            std::vector<unsigned int> blocksecond;
+            std::vector<unsigned int> blockthird;
+
+            for(auto postingiter = postinglistiter->second.begin() + blockbegin; postingiter != postinglistiter->second.begin() + blockend; postingiter++) {
+                blockdocID.push_back(postingiter->docID);
+                blocksecond.push_back(postingiter->second);
+                if(positional) blockthird.push_back(postingiter->third);
+            }
+
+            std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
+            std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
+            std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
+
+            write_block<uint8_t>(compresseddocID, ofile);
+            write_block<uint8_t>(compressedsecond, ofile);
+            write_block<uint8_t>(compressedthird, ofile);
+
+            blockbegin += blocksize;
+            blockend += blocksize;
+        }
+
+        if(blockbegin != postinglistiter->second.size()) {
+            std::vector<unsigned int> blockdocID;
+            std::vector<unsigned int> blocksecond;
+            std::vector<unsigned int> blockthird;
+
+            for(auto postingiter = postinglistiter->second.begin() + blockbegin; postingiter != postinglistiter->second.end(); postingiter++) {
+                blockdocID.push_back(postingiter->docID);
+                blocksecond.push_back(postingiter->second);
+                if(positional) blockthird.push_back(postingiter->third);
+            }
+
+            std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
+            std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
+            std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
+
+            write_block<uint8_t>(compresseddocID, ofile);
+            write_block<uint8_t>(compressedsecond, ofile);
+            write_block<uint8_t>(compressedthird, ofile);
+        }
+    }
 }
 
 //Writes an inverted index to disk using compressed postings
