@@ -50,6 +50,9 @@ private:
     template <typename T1, typename T2>
     void write_compressed_index(std::string namebase, std::ofstream& ofile, T1& ite, T1& end, T2& vit, T2& vend, int positional);
 
+    template <typename T>
+    void write_index(std::string filepath, std::ofstream& ofile, T index, bool positional);
+
     //Decompresses the given positional static index
     Pos_Index decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase);
 

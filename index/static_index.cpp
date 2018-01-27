@@ -93,17 +93,6 @@ unsigned int StaticIndex::write_block(std::vector<T> num, std::ofstream& ofile){
     return end - start;
 }
 
-template <typename T>
-unsigned int StaticIndex::write_block(std::vector<T>::iterator begin, std::vector<T>::iterator end, std::ofstream& ofile){
-    /* Write the compressed posting to file byte by byte. */
-    unsigned int start = ofile.tellp();
-    for(typename std::vector<T>::iterator it = begin; it != end; it++){
-        ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
-    }
-    unsigned int end = ofile.tellp();
-    return end - start;
-}
-
 //Compresses a vector of posting data using the given compression method
 //When delta encoding, assume field is already sorted
 std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& field, std::vector<uint8_t> encoder(std::vector<unsigned int>&), bool delta) {
@@ -125,17 +114,21 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
     return compressed;
 }
 
-void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, Pos_Index index, bool positional) {
-    mData metadata;
+template <typename T>
+void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, T index, bool positional) {
     //initialize compression method, 1: varbyte
     //compression method for docID
-    int doc_method = 1;
+    unsigned int doc_method = 1;
     //compression method for fragmentID (pos) or frequency (nonpos)
-    int second_method = 1;
+    unsigned int second_method = 1;
     //compression method for position
-    int third_method = 1;
+    unsigned int third_method = 1;
 
     for(auto postinglistiter = index.begin(); postinglistiter != index.end(); postinglistiter++) {
+        mData metadata;
+        metadata.filename = filepath;
+        metadata.start_pos = ofile.tellp();
+
         unsigned int termID = postinglistiter->first;
 
         //Write out metadata
@@ -154,7 +147,7 @@ void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, Pos_In
         size_t arraypos = blocksize-1;
         if(arraypos > postinglistiter->second.size()) {
             lastdocID.push_back(postinglistiter->second[postinglistiter->second.size()-1].docID);
-            blocksize.push_back(postinglistiter->second.size());
+            blocksizes.push_back(postinglistiter->second.size());
         }
 
         //No need for else; while will be skipped if if is true
@@ -165,16 +158,19 @@ void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, Pos_In
                 blocksizes.push_back(blocksize);
             }
             else {
-                if arraypos != postinglistiter->second.size()-1 {
+                if(arraypos != postinglistiter->second.size()-1) {
                     lastdocID.push_back(postinglistiter->second[postinglistiter->second.size()-1].docID);
-                    blocksize.push_back((postinglistiter->second.size()-1) - arraypos);
+                    blocksizes.push_back((postinglistiter->second.size()-1) - arraypos);
                 }
                 break;
             }
         }
 
+        metadata.last_docID = ofile.tellp();
         write_block<unsigned int>(lastdocID, ofile);
+        metadata.blocksizes = ofile.tellp();
         write_block<unsigned int>(blocksizes, ofile);
+        metadata.postings_blocks = ofile.tellp();
 
         //Write out alternating blocks
 
@@ -195,11 +191,11 @@ void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, Pos_In
 
             std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
             std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
-            std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
+            if(positional) std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
 
             write_block<uint8_t>(compresseddocID, ofile);
             write_block<uint8_t>(compressedsecond, ofile);
-            write_block<uint8_t>(compressedthird, ofile);
+            if(positional) write_block<uint8_t>(compressedthird, ofile);
 
             blockbegin += blocksize;
             blockend += blocksize;
@@ -224,6 +220,10 @@ void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, Pos_In
             write_block<uint8_t>(compressedsecond, ofile);
             write_block<uint8_t>(compressedthird, ofile);
         }
+
+        metadata.end_offset = ofile.tellp();
+        if(positional) exlex.addPositional(termID, metadata);
+        else exlex.addNonPositional(termID, metadata);
     }
 }
 

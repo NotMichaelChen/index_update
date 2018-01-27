@@ -9,16 +9,12 @@ struct mData{
     std::string filename;
     //Starting position of the inverted list
     long start_pos;
-    //Where the blocks of compressed postings start
-    long posting_offset;
-    //Ending position of docIDs
-    long docID_end;
-    //Ending position of second field
-    long second_end;
-    //Where the posting count variable (and lastdocID array) is
-    long postingCount_offset;
-    //Where the array of block sizes begins
-    long size_offset;
+    //Starting position of the lastdocID array
+    long last_docID;
+    //Starting position of the blocksizes array
+    long blocksizes;
+    //Starting position of the postinglist blocks
+    long postings_blocks;
     //Where the inverted list ends
     long end_offset;
 };
