@@ -50,12 +50,9 @@ private:
     template <typename T>
     void write_index(std::string filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend);
 
-    //Decompresses the given positional static index
-    Pos_Index decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase);
-
-    //Decompresses the given nonpositional static index
-    NonPos_Index decompress_np_posting(unsigned int termID, std::ifstream& filez,
-        std::ifstream& filei, std::string namebase1, std::string namebase2);
+    //Reads the index from disk
+    Pos_Index StaticIndex::read_positional_index(std::ifstream& ifile, std::string filename);
+    NonPos_Index StaticIndex::read_nonpositional_index(std::ifstream& ifile, std::string filename);
 
     //Checks whether there are any indexes that need to be merged (which is indicated by I-indexes)
     //and merges them until there are no more indexes to merge (no more I-indexes)

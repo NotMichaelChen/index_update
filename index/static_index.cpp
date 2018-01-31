@@ -70,7 +70,7 @@ void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter inde
     if (ofile.is_open()){
         auto vit = indexbegin->second.begin();
         auto vend = indexbegin->second.end();
-        write_compressed_index<NonPos_Map_Iter>(filename, ofile, false, indexbegin, indexend);
+        write_index<NonPos_Map_Iter>(filename, ofile, false, indexbegin, indexend);
 
         ofile.close();
     }else{
@@ -239,9 +239,9 @@ void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, bool p
 
 StaticIndex::Pos_Index StaticIndex::read_positional_index(std::ifstream& ifile, std::string filename) {
     Pos_Index index;
-    filepath = std::string(posdir) + filename;
+    std::string filepath = std::string(posdir) + filename;
 
-    ifile.seekg(0,ios::beg);
+    ifile.seekg(0,std::ios::beg);
 
     unsigned int readtermID;
 
@@ -250,15 +250,14 @@ StaticIndex::Pos_Index StaticIndex::read_positional_index(std::ifstream& ifile, 
 
         unsigned int doc_method, second_method, third_method, postinglistlength;
 
-
         ifile.read(reinterpret_cast<char *>(&postinglistlength), sizeof(postinglistlength));
         ifile.read(reinterpret_cast<char *>(&doc_method), sizeof(doc_method));
         ifile.read(reinterpret_cast<char *>(&second_method), sizeof(second_method));
         ifile.read(reinterpret_cast<char *>(&third_method), sizeof(third_method));
 
         //Read the blocksize array
-        ifile.seekg(meta.blocksizes);
-        unsigned int buffersize = meta.end_offset - meta.blocksizes;
+        ifile.seekg(meta->blocksizes);
+        unsigned int buffersize = meta->end_offset - meta->blocksizes;
         std::vector<char> buffer(buffersize);
         ifile.read(&buffer[0], buffersize);
         std::vector<unsigned int> blocksizes = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
@@ -268,7 +267,7 @@ StaticIndex::Pos_Index StaticIndex::read_positional_index(std::ifstream& ifile, 
             throw std::invalid_argument("Error, blocksize array is not a multiple of 3: " + std::to_string(blocksizes.size()));
         }
 
-        ifile.seekg(meta.postings_block);
+        ifile.seekg(meta->postings_blocks);
         //For every three blocksize entries, read in three blocks of numbers and insert postings into the index
         for(size_t i = 0; i < blocksizes.size(); i += 3) {
             unsigned int doclength = blocksizes[i];
@@ -315,226 +314,73 @@ StaticIndex::Pos_Index StaticIndex::read_positional_index(std::ifstream& ifile, 
     return index;
 }
 
-StaticIndex::Pos_Index StaticIndex::decompress_p_posting(unsigned int termID, std::ifstream& ifile, std::string namebase){
-    /* Decompress positional postings and store them in map structure
-        Since the last block may not necessarily contain 128 elements; need to find how many elements
-        in the last block before adding them to respective vector. */
-    std::string filename = std::string(posdir) + namebase;
-    auto meta = exlex.getPositional(termID, filename);
+StaticIndex::NonPos_Index StaticIndex::read_nonpositional_index(std::ifstream& ifile, std::string filename) {
+    NonPos_Index index;
+    std::string filepath = std::string(nonposdir) + filename;
 
-    int method1, method2, method3;
+    ifile.seekg(0,std::ios::beg);
 
-    ifile.read(reinterpret_cast<char *>(&method1), sizeof(method1));
-    ifile.read(reinterpret_cast<char *>(&method2), sizeof(method2));
-    ifile.read(reinterpret_cast<char *>(&method3), sizeof(method3));
+    unsigned int readtermID;
 
-    ifile.seekg(meta->posting_offset);
-    std::vector<unsigned int> docID, fragID, pos;
-    int count;
-    //read all the alternating blocks from compressed index and decompress
-    int length = meta->docID_end - meta->posting_offset; //full blocks plus last docID block
-    char* buffer = new char [length];
-    ifile.read(buffer, length);
-    std::vector<unsigned int> decompressed = VBDecode(buffer, length);
-    delete[] buffer;
-    int last_block = decompressed.size() % blocksize;//find the how many elements in the last block
-    std::vector<unsigned int>::iterator it = decompressed.begin();
-    unsigned int prevID;
-    //TODO: here assume only doc ID is delta encoded; the other two can also be delta encoded,
-    while( it != decompressed.end() ){
-        count = 0;
-        prevID = 0;
-        while( count < blocksize && it != decompressed.end()){
-            docID.push_back( prevID + *it );
-            prevID = *it;
-            count ++;
-            it ++;
+    while(ifile.read(reinterpret_cast<char *>(&readtermID), sizeof(readtermID))) {
+        auto meta = exlex.getNonPositional(readtermID, filepath);
+
+        unsigned int doc_method, second_method, postinglistlength;
+
+        ifile.read(reinterpret_cast<char *>(&postinglistlength), sizeof(postinglistlength));
+        ifile.read(reinterpret_cast<char *>(&doc_method), sizeof(doc_method));
+        ifile.read(reinterpret_cast<char *>(&second_method), sizeof(second_method));
+
+        //Read the blocksize array
+        ifile.seekg(meta->blocksizes);
+        unsigned int buffersize = meta->end_offset - meta->blocksizes;
+        std::vector<char> buffer(buffersize);
+        ifile.read(&buffer[0], buffersize);
+        std::vector<unsigned int> blocksizes = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        buffer.clear();
+
+        if(blocksizes.size() % 2 != 0) {
+            throw std::invalid_argument("Error, blocksize array is not a multiple of 2: " + std::to_string(blocksizes.size()));
         }
-        count = 0;
-        while( count < blocksize && it != decompressed.end()){
-            fragID.push_back(*it);
-            count ++;
-            it ++;
+
+        ifile.seekg(meta->postings_blocks);
+        //For every three blocksize entries, read in three blocks of numbers and insert postings into the index
+        for(size_t i = 0; i < blocksizes.size(); i += 2) {
+            unsigned int doclength = blocksizes[i];
+            unsigned int secondlength = blocksizes[i+1];
+        
+            std::vector<unsigned int> docIDs, secondvec;
+
+            buffer.resize(doclength);
+            ifile.read(&buffer[0], doclength);
+            docIDs = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+            buffer.clear();
+
+            buffer.resize(secondlength);
+            ifile.read(&buffer[0], secondlength);
+            secondvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+            buffer.clear();
+
+            if(docIDs.size() != secondvec.size()) {
+                throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()));
+            }
+
+            for(size_t j = 0; j < docIDs.size(); j++) {
+                nPosting newpost;
+                newpost.termID = readtermID;
+                newpost.docID = docIDs[j];
+                newpost.second = secondvec[j];
+
+                index[readtermID].push_back(newpost);
+            }
         }
-        count = 0;
-        while( count < blocksize && it != decompressed.end()){
-            pos.push_back(*it);
-            count ++;
-            it ++;
-        }
-    }
-    //add elements from last two blocks
-    decompressed.clear();
-    length = meta->postingCount_offset - meta->docID_end;
-    buffer = new char [length];
-    ifile.read(buffer, length);
-    decompressed = VBDecode(buffer, length);
-    delete[] buffer;
-    it = decompressed.begin();
-    count = 0;
-    fragID.insert(fragID.end(), it, it + last_block);
-    pos.insert(pos.end(), it + last_block, decompressed.end());
 
-    int docsize = docID.size();
-    int fragsize = fragID.size();
-    int possize = pos.size();
-    if( docsize != fragsize || fragsize != possize ) 
-        std::cerr << "Error: number of postings doesn't match: " << docsize << ' ' << fragsize << ' ' << possize << std::endl;
-
-    std::vector<unsigned int>::iterator it1 = docID.begin();
-    std::vector<unsigned int>::iterator it2 = fragID.begin();
-    std::vector<unsigned int>::iterator it3 = pos.begin();
-    Posting p;
-    Pos_Index positional_index;
-    while( it1 != docID.end() ){
-        p.termID = termID;
-        p.docID = *it1;
-        p.second = *it2;
-        p.third = *it3;
-        positional_index[termID].push_back(p);
-        it1 ++;
-        it2 ++;
-        it3 ++;
-    }
-
-    ifile.seekg(meta->end_offset);
-
-    return positional_index;
-}
-
-StaticIndex::NonPos_Index StaticIndex::decompress_np_posting(unsigned int termID, std::ifstream& filez,
-    std::ifstream& filei, std::string namebase1, std::string namebase2) {
-    int doc_methodi, second_methodi, doc_methodz, second_methodz;
-
-    //assume termID already read
-    filez.read(reinterpret_cast<char *>(&doc_methodz), sizeof(doc_methodz));
-    filez.read(reinterpret_cast<char *>(&second_methodz), sizeof(second_methodz));
-    filei.read(reinterpret_cast<char *>(&doc_methodi), sizeof(doc_methodi));
-    filei.read(reinterpret_cast<char *>(&second_methodi), sizeof(second_methodi));
-
-    auto metaz = exlex.getNonPositional(termID, nonposdir+namebase1);
-    auto metai = exlex.getNonPositional(termID, nonposdir+namebase2);
-
-    filez.seekg(metaz->posting_offset);
-    filei.seekg(metai->posting_offset);
-    std::vector<unsigned int> docIDi, docIDz, freqi, freqz;
-    int count;
-    //read all the alternating blocks from compressed index and decompress
-    int lengthz = metaz->docID_end - metaz->posting_offset;
-    int lengthi = metai->docID_end - metai->posting_offset;
-    char* bufferz = new char [lengthz];
-    char* bufferi = new char [lengthi];
-    filez.read(bufferz, lengthz);
-    filei.read(bufferi, lengthi);
-    std::vector<unsigned int> decomz = VBDecode(bufferz, lengthz);
-    std::vector<unsigned int> decomi = VBDecode(bufferi, lengthi);
-    delete[] bufferi;
-    delete[] bufferz;
-    int last_block_z = decomz.size() % 128;
-    int last_block_i = decomi.size() % 128;
-    std::vector<unsigned int>::iterator itz = decomz.begin();
-    std::vector<unsigned int>::iterator iti = decomi.begin();
-    unsigned int prevIDz, prevIDi;
-
-    while( itz != decomz.end() ){
-        count = 0;
-        prevIDz = 0;
-        while( count < blocksize && itz != decomz.end() ){
-            prevIDz = prevIDz + *itz;
-            docIDz.push_back( prevIDz );
-            count ++;
-            itz ++;
-        }
-        count = 0;
-        while( count < blocksize && itz != decomz.end() ){
-            freqz.push_back(*itz);
-            count ++;
-            itz ++;
+        if(index[readtermID].size() != postinglistlength) {
+            throw std::invalid_argument("Error, posting list length not equal to specified length: " + std::to_string(index[readtermID].size()) + "," + std::to_string(postinglistlength));
         }
     }
-    while( iti != decomi.end() ){
-        count = 0;
-        prevIDi = 0;
-        while( count < blocksize && iti != decomi.end() ){
-            prevIDi = prevIDi + *iti;
-            docIDi.push_back( prevIDi );
-            count ++;
-            iti ++;
-        }
-        count = 0;
-        while( count < blocksize && iti != decomi.end() ){
-            freqi.push_back(*iti);
-            count ++;
-            iti ++;
-        }
-    }
-    //add the last block
-    decomi.clear();
-    decomz.clear();
-    lengthz = metaz->postingCount_offset - metaz->docID_end;
-    lengthi = metai->postingCount_offset - metai->docID_end;
-    bufferz = new char [lengthz];
-    bufferi = new char [lengthi];
-    filez.read(bufferz, lengthz);
-    filei.read(bufferi, lengthi);
-    decomz = VBDecode(bufferz, lengthz);
-    decomi = VBDecode(bufferi, lengthi);
-    freqi.insert(freqi.end(), decomi.begin(), decomi.end());
-    freqz.insert(freqz.end(), decomz.begin(), decomz.end());
-    delete[] bufferi;
-    delete[] bufferz;
 
-    itz = docIDz.begin();
-    iti = docIDi.begin();
-    std::vector<unsigned int>::iterator itfz = freqz.begin();
-    std::vector<unsigned int>::iterator itfi = freqi.begin();
-    nPosting p;
-    NonPos_Index nonpositional_index;
-    while( itz != docIDz.end() && iti != docIDi.end() ){
-        if( *itz > *iti ){
-            p.docID = *itz;
-            p.second = *itfz;
-            itz ++;
-            itfz ++;
-            nonpositional_index[termID].push_back(p);
-        }
-        else if( *itz < *iti ){
-            p.docID = *iti;
-            p.second = *itfi;
-            iti ++;
-            itfi ++;
-            nonpositional_index[termID].push_back(p);
-        }
-        else{
-            //if equal, use the frequency of I file
-            p.docID = *iti;
-            p.second = *itfi;
-            iti ++;
-            itz ++;
-            itfi ++;
-            itfz ++;
-            nonpositional_index[termID].push_back(p);
-        }
-
-    }
-    if( itz != docIDz.end() ){
-        p.docID = *itz;
-        p.second = *itfz;
-        itz ++;
-        itfz ++;
-        nonpositional_index[termID].push_back(p);
-    }
-    else if( iti != docIDi.end() ){
-        p.docID = *iti;
-        p.second = *itfi;
-        iti ++;
-        itfi ++;
-        nonpositional_index[termID].push_back(p);
-    }
-
-    filez.seekg(metaz->end_offset);
-    filei.seekg(metai->end_offset);
-    return nonpositional_index;
+    return index;
 }
 
 /**
