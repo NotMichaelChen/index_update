@@ -230,150 +230,136 @@ void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, bool p
     }
 }
 
-StaticIndex::Pos_Index StaticIndex::read_positional_index(std::ifstream& ifile, std::string filename) {
-    Pos_Index index;
-    std::string filepath = std::string(posdir) + filename;
+//Given an ifstream, read the positional posting list indicated by the metadata
+std::vector<Posting> read_pos_postinglist(std::ifstream ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
+    std::vector<Posting> postinglist;
+    unsigned int postinglistlength, doc_method, second_method, third_method;
+    
+    //Don't read termID since it is already read and is given to us
+    ifile.read(reinterpret_cast<char *>(&postinglistlength), sizeof(postinglistlength));
+    ifile.read(reinterpret_cast<char *>(&doc_method), sizeof(doc_method));
+    ifile.read(reinterpret_cast<char *>(&second_method), sizeof(second_method));
+    ifile.read(reinterpret_cast<char *>(&third_method), sizeof(third_method));
 
-    ifile.seekg(0,std::ios::beg);
+    postinglist.reserve(postinglistlength);
 
-    unsigned int readtermID;
+    unsigned int buffersize = metadata->blocksizes - metadata->last_docID;
+    std::vector<char> buffer(buffersize);
+    ifile.read(&buffer[0], buffersize);
+    std::vector<unsigned int> blocksizes = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+    buffer.clear();
 
-    while(ifile.read(reinterpret_cast<char *>(&readtermID), sizeof(readtermID))) {
-        auto meta = exlex.getPositional(readtermID, filepath);
+    if(blocksizes.size() % 3 != 0) {
+        throw std::invalid_argument("Error, blocksize array is not a multiple of 3: " + std::to_string(blocksizes.size()));
+    }
 
-        unsigned int doc_method, second_method, third_method, postinglistlength;
+    //Skip the lastdocID block since we don't need it for reading
+    ifile.seekg(metadata->postings_blocks);
+    //For every three blocksize entries, read in three blocks of numbers and insert postings into the index
+    for(size_t i = 0; i < blocksizes.size(); i += 3) {
+        unsigned int doclength = blocksizes[i];
+        unsigned int secondlength = blocksizes[i+1];
+        unsigned int thirdlength = blocksizes[i+2];
+    
+        std::vector<unsigned int> docIDs, secondvec, thirdvec;
 
-        ifile.read(reinterpret_cast<char *>(&postinglistlength), sizeof(postinglistlength));
-        ifile.read(reinterpret_cast<char *>(&doc_method), sizeof(doc_method));
-        ifile.read(reinterpret_cast<char *>(&second_method), sizeof(second_method));
-        ifile.read(reinterpret_cast<char *>(&third_method), sizeof(third_method));
-
-        //Read the blocksize array
-        ifile.seekg(meta->blocksizes);
-        unsigned int buffersize = meta->end_offset - meta->blocksizes;
-        std::vector<char> buffer(buffersize);
-        ifile.read(&buffer[0], buffersize);
-        std::vector<unsigned int> blocksizes = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        buffer.resize(doclength);
+        ifile.read(&buffer[0], doclength);
+        docIDs = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
         buffer.clear();
 
-        if(blocksizes.size() % 3 != 0) {
-            throw std::invalid_argument("Error, blocksize array is not a multiple of 3: " + std::to_string(blocksizes.size()));
+        buffer.resize(secondlength);
+        ifile.read(&buffer[0], secondlength);
+        secondvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        buffer.clear();
+
+        buffer.resize(thirdlength);
+        ifile.read(&buffer[0], thirdlength);
+        thirdvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        buffer.clear();
+
+        if(docIDs.size() != secondvec.size() || secondvec.size() != thirdvec.size()) {
+            throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()) + "," + std::to_string(thirdvec.size()));
         }
 
-        ifile.seekg(meta->postings_blocks);
-        //For every three blocksize entries, read in three blocks of numbers and insert postings into the index
-        for(size_t i = 0; i < blocksizes.size(); i += 3) {
-            unsigned int doclength = blocksizes[i];
-            unsigned int secondlength = blocksizes[i+1];
-            unsigned int thirdlength = blocksizes[i+2];
-        
-            std::vector<unsigned int> docIDs, secondvec, thirdvec;
+        for(size_t j = 0; j < docIDs.size(); j++) {
+            Posting newpost;
+            newpost.termID = termID;
+            newpost.docID = docIDs[j];
+            newpost.second = secondvec[j];
+            newpost.third = thirdvec[j];
 
-            buffer.resize(doclength);
-            ifile.read(&buffer[0], doclength);
-            docIDs = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
-            buffer.clear();
-
-            buffer.resize(secondlength);
-            ifile.read(&buffer[0], secondlength);
-            secondvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
-            buffer.clear();
-
-            buffer.resize(thirdlength);
-            ifile.read(&buffer[0], thirdlength);
-            thirdvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
-            buffer.clear();
-
-            if(docIDs.size() != secondvec.size() || secondvec.size() != thirdvec.size()) {
-                throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()) + "," + std::to_string(thirdvec.size()));
-            }
-
-            for(size_t j = 0; j < docIDs.size(); j++) {
-                Posting newpost;
-                newpost.termID = readtermID;
-                newpost.docID = docIDs[j];
-                newpost.second = secondvec[j];
-                newpost.third = thirdvec[j];
-
-                index[readtermID].push_back(newpost);
-            }
-        }
-
-        if(index[readtermID].size() != postinglistlength) {
-            throw std::invalid_argument("Error, posting list length not equal to specified length: " + std::to_string(index[readtermID].size()) + "," + std::to_string(postinglistlength));
+            postinglist.push_back(newpost);
         }
     }
 
-    return index;
+    if(postinglist.size() != postinglistlength) {
+        throw std::invalid_argument("Error, posting list length not equal to specified length: " + std::to_string(postinglist.size()) + "," + std::to_string(postinglistlength));
+    }
+
+    return postinglist;
 }
 
-StaticIndex::NonPos_Index StaticIndex::read_nonpositional_index(std::ifstream& ifile, std::string filename) {
-    NonPos_Index index;
-    std::string filepath = std::string(nonposdir) + filename;
+//Given an ifstream, read the positional posting list indicated by the metadata
+std::vector<nPosting> read_nonpos_postinglist(std::ifstream ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
+    std::vector<nPosting> postinglist;
+    unsigned int postinglistlength, doc_method, second_method;
+    
+    //Don't read termID since it is already read and is given to us
+    ifile.read(reinterpret_cast<char *>(&postinglistlength), sizeof(postinglistlength));
+    ifile.read(reinterpret_cast<char *>(&doc_method), sizeof(doc_method));
+    ifile.read(reinterpret_cast<char *>(&second_method), sizeof(second_method));
 
-    ifile.seekg(0,std::ios::beg);
+    postinglist.reserve(postinglistlength);
 
-    unsigned int readtermID;
+    unsigned int buffersize = metadata->blocksizes - metadata->last_docID;
+    std::vector<char> buffer(buffersize);
+    ifile.read(&buffer[0], buffersize);
+    std::vector<unsigned int> blocksizes = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+    buffer.clear();
 
-    while(ifile.read(reinterpret_cast<char *>(&readtermID), sizeof(readtermID))) {
-        auto meta = exlex.getNonPositional(readtermID, filepath);
+    if(blocksizes.size() % 2 != 0) {
+        throw std::invalid_argument("Error, blocksize array is not a multiple of 2: " + std::to_string(blocksizes.size()));
+    }
 
-        unsigned int doc_method, second_method, postinglistlength;
+    //Skip the lastdocID block since we don't need it for reading
+    ifile.seekg(metadata->postings_blocks);
+    //For every two blocksize entries, read in three blocks of numbers and insert postings into the index
+    for(size_t i = 0; i < blocksizes.size(); i += 2) {
+        unsigned int doclength = blocksizes[i];
+        unsigned int secondlength = blocksizes[i+1];
+    
+        std::vector<unsigned int> docIDs, secondvec;
 
-        ifile.read(reinterpret_cast<char *>(&postinglistlength), sizeof(postinglistlength));
-        ifile.read(reinterpret_cast<char *>(&doc_method), sizeof(doc_method));
-        ifile.read(reinterpret_cast<char *>(&second_method), sizeof(second_method));
-
-        //Read the blocksize array
-        ifile.seekg(meta->blocksizes);
-        unsigned int buffersize = meta->end_offset - meta->blocksizes;
-        std::vector<char> buffer(buffersize);
-        ifile.read(&buffer[0], buffersize);
-        std::vector<unsigned int> blocksizes = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        buffer.resize(doclength);
+        ifile.read(&buffer[0], doclength);
+        docIDs = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
         buffer.clear();
 
-        if(blocksizes.size() % 2 != 0) {
-            throw std::invalid_argument("Error, blocksize array is not a multiple of 2: " + std::to_string(blocksizes.size()));
+        buffer.resize(secondlength);
+        ifile.read(&buffer[0], secondlength);
+        secondvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        buffer.clear();
+
+        if(docIDs.size() != secondvec.size()) {
+            throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()));
         }
 
-        ifile.seekg(meta->postings_blocks);
-        //For every three blocksize entries, read in three blocks of numbers and insert postings into the index
-        for(size_t i = 0; i < blocksizes.size(); i += 2) {
-            unsigned int doclength = blocksizes[i];
-            unsigned int secondlength = blocksizes[i+1];
-        
-            std::vector<unsigned int> docIDs, secondvec;
+        for(size_t j = 0; j < docIDs.size(); j++) {
+            nPosting newpost;
+            newpost.termID = termID;
+            newpost.docID = docIDs[j];
+            newpost.second = secondvec[j];
 
-            buffer.resize(doclength);
-            ifile.read(&buffer[0], doclength);
-            docIDs = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
-            buffer.clear();
-
-            buffer.resize(secondlength);
-            ifile.read(&buffer[0], secondlength);
-            secondvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
-            buffer.clear();
-
-            if(docIDs.size() != secondvec.size()) {
-                throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()));
-            }
-
-            for(size_t j = 0; j < docIDs.size(); j++) {
-                nPosting newpost;
-                newpost.termID = readtermID;
-                newpost.docID = docIDs[j];
-                newpost.second = secondvec[j];
-
-                index[readtermID].push_back(newpost);
-            }
-        }
-
-        if(index[readtermID].size() != postinglistlength) {
-            throw std::invalid_argument("Error, posting list length not equal to specified length: " + std::to_string(index[readtermID].size()) + "," + std::to_string(postinglistlength));
+            postinglist.push_back(newpost);
         }
     }
 
-    return index;
+    if(postinglist.size() != postinglistlength) {
+        throw std::invalid_argument("Error, posting list length not equal to specified length: " + std::to_string(postinglist.size()) + "," + std::to_string(postinglistlength));
+    }
+
+    return postinglist;
 }
 
 /**
@@ -477,14 +463,11 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
             if(!filez.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID))) break;
         }
         else {
-            if(positional) {
-                metaz = exlex.getPositional(ZtermID, dir+namebase1);
-                metai = exlex.getPositional(ItermID, dir+namebase1);
-            }
-            else {
-                metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
-                metai = exlex.getNonPositional(ItermID, dir+namebase1);
-            }
+            //read both posting lists from both files
+            //pass them into the posting list parser
+            //merge the posting lists
+            //write the final posting list to disk, creating a new metadata entry
+            //delete old metadata from both files
         }
     }
     if(zfilestream) {
