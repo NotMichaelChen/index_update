@@ -83,7 +83,7 @@ void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter inde
 // Writes a vector of numbers byte by byte to the given file stream
 // Returns how many bytes it wrote to the stream
 template <typename T>
-unsigned int StaticIndex::write_block(std::vector<T> num, std::ofstream& ofile){
+unsigned int StaticIndex::write_block(std::vector<T>& num, std::ofstream& ofile){
     /* Write the compressed posting to file byte by byte. */
     unsigned int start = ofile.tellp();
     for(typename std::vector<T>::iterator it = num.begin(); it != num.end(); it++){
@@ -118,7 +118,7 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
 //filepath: The filename of the file being written to
 //          INCLUDES THE PATH
 template <typename T>
-void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend) {
+void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool positional, T indexbegin, T indexend) {
     //initialize compression method, 1: varbyte
     //compression method for docID
     unsigned int doc_method = 1;
@@ -231,7 +231,7 @@ void StaticIndex::write_index(std::string filepath, std::ofstream& ofile, bool p
 }
 
 //Given an ifstream, read the positional posting list indicated by the metadata
-std::vector<Posting> read_pos_postinglist(std::ifstream ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
+std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
     std::vector<Posting> postinglist;
     unsigned int postinglistlength, doc_method, second_method, third_method;
     
@@ -301,7 +301,7 @@ std::vector<Posting> read_pos_postinglist(std::ifstream ifile, std::vector<mData
 }
 
 //Given an ifstream, read the positional posting list indicated by the metadata
-std::vector<nPosting> read_nonpos_postinglist(std::ifstream ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
+std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
     std::vector<nPosting> postinglist;
     unsigned int postinglistlength, doc_method, second_method;
     
@@ -645,60 +645,69 @@ void StaticIndex::merge(int indexnum, int positional){
     if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
 }
 
-StaticIndex::Pos_Index StaticIndex::merge_positional_index(StaticIndex::Pos_Index& indexZ, StaticIndex::Pos_Index& indexI) {
-    Pos_Index mergedindex;
-    auto Ziter = indexZ.begin();
-    auto Iiter = indexI.begin();
+std::vector<Posting> merge_pos_postinglist(std::vector<Posting>& listz, std::vector<Posting>& listi) {
+    std::vector<Posting> finallist(listz.size() + listi.size());
+    auto ziter = listz.begin();
+    auto iiter = listi.begin();
 
-    while(Ziter != indexZ.end() && Iiter != indexI.end()) {
-        if(Ziter->first > Iiter->first) {
-            mergedindex[Iiter->first] = Iiter->second;
-            ++Iiter;
+    while(ziter != listz.end() && iiter != listi.end()) {
+        if(ziter->docID < iiter->docID) {
+            finallist.push_back(*ziter);
+            ziter++;
         }
-        else if(Ziter->first < Iiter->first) {
-            mergedindex[Ziter->first] = Ziter->second;
-            ++Ziter;
+        else if(iiter->docID < ziter->docID) {
+            finallist.push_back(*iiter);
+            iiter++;
         }
-        //Ziter == Iiter
         else {
-            std::vector<Posting> newlist;
-
-            auto Zveciter = Ziter->second.begin();
-            auto Iveciter = Iiter->second.begin();
-            while(Zveciter != Ziter->second.end() && Iveciter != Iiter->second.end()) {
-                if(Zveciter->docID > Iveciter->docID) {
-                    newlist.push_back(*Iveciter);
-                    ++Iveciter;
-                }
-                else if(Zveciter->docID < Iveciter->docID) {
-                    newlist.push_back(*Zveciter);
-                    ++Zveciter;
-                }
-                //TODO: Determine how postings should be cleaned here
-                else {
-                    newlist.push_back(*Zveciter);
-                    newlist.push_back(*Iveciter);
-                    ++Zveciter;
-                    ++Iveciter;
-                }
-            }
-
-            //Either the Z-vector is empty, or the I-vector is empty. In either case we empty out the non-empty vector
-            while(Zveciter != Ziter->second.end()) {
-                newlist.push_back(*Zveciter);
-                ++Zveciter;
-            }
-            while(Iveciter != Iiter->second.end()) {
-                newlist.push_back(*Iveciter);
-                ++Iveciter;
-            }
-
-            mergedindex.emplace(Ziter->first, std::move(newlist));
-
-            ++Iiter;
-            ++Ziter;
+            //TODO: Determine how postings should be cleaned here
+            finallist.push_back(*ziter);
+            finallist.push_back(*iiter);
+            ziter++;
+            iiter++;
         }
     }
+    while(ziter != listz.end()) {
+        finallist.push_back(*ziter);
+        ziter++;
+    }
+    while(iiter != listi.end()) {
+        finallist.push_back(*iiter);
+        iiter++;
+    }
+    return finallist;
+}
 
-    return mergedindex;
+std::vector<nPosting> merge_nonpos_postinglist(std::vector<nPosting>& listz, std::vector<nPosting>& listi) {
+    std::vector<nPosting> finallist(listz.size() + listi.size());
+    auto ziter = listz.begin();
+    auto iiter = listi.begin();
+
+    while(ziter != listz.end() && iiter != listi.end()) {
+        if(ziter->docID < iiter->docID) {
+            finallist.push_back(*ziter);
+            ziter++;
+        }
+        else if(iiter->docID < ziter->docID) {
+            finallist.push_back(*iiter);
+            iiter++;
+        }
+        else {
+            //TODO: Determine how postings should be cleaned here
+            nPosting tempposting = *ziter;
+            tempposting.second += iiter->second;
+            finallist.push_back(tempposting);
+            ziter++;
+            iiter++;
+        }
+    }
+    while(ziter != listz.end()) {
+        finallist.push_back(*ziter);
+        ziter++;
+    }
+    while(iiter != listi.end()) {
+        finallist.push_back(*iiter);
+        iiter++;
+    }
+    return finallist;
 }
