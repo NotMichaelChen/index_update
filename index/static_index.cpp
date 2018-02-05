@@ -429,9 +429,109 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
     namebaseo = flag + std::to_string(indexnum + 1);
     ofile.open(dir + namebaseo);
 
+    //declare variables for loop
     std::vector<mData>::iterator metai, metaz;
-    unsigned int termIDZ, termIDI;
+
+    unsigned int ZtermID, ItermID;
+    zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
+    ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
+    while(true) {
+        if(ItermID < ZtermID) {
+            if( positional ) metai = exlex.getPositional(ItermID, dir+namebase1);
+            else metai = exlex.getNonPositional(ItermID, dir+namebase1);
+            //Calculate shift to use for updating the metadata
+            long shift = ofile.tellp() - metai->start_pos;
+            //Subtract four since we already read the termID
+            int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
+            char* buffer = new char [length];
+            filei.read(buffer, length);
+            //Write termID then rest of posting list
+            ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
+            ofile.write(buffer, length);
+            delete[] buffer;
+
+            //Update metadata
+            *metai = shift_metadata(*metai, shift);
+            metai->filename = dir + namebaseo;
+
+            if(!filei.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID))) break;
+        }
+        else if(ZtermID < ItermID) {
+            if( positional ) metaz = exlex.getPositional(ZtermID, dir+namebase1);
+            else metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
+            //Calculate shift to use for updating the metadata
+            long shift = ofile.tellp() - metaz->start_pos;
+            //Subtract four since we already read the termID
+            int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
+            char* buffer = new char [length];
+            filez.read(buffer, length);
+            //Write termID then rest of posting list
+            ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
+            ofile.write(buffer, length);
+            delete[] buffer;
+
+            //Update metadata
+            *metaz = shift_metadata(*metaz, shift);
+            metaz->filename = dir + namebaseo;
+
+            if(!filez.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID))) break;
+        }
+        else {
+            if(positional) {
+                metaz = exlex.getPositional(ZtermID, dir+namebase1);
+                metai = exlex.getPositional(ItermID, dir+namebase1);
+            }
+            else {
+                metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
+                metai = exlex.getNonPositional(ItermID, dir+namebase1);
+            }
+        }
     }
+    if(zfilestream) {
+        if( positional ) metaz = exlex.getPositional(ZtermID, dir+namebase1);
+        else metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
+        //Calculate shift to use for updating the metadata
+        long shift = ofile.tellp() - metaz->start_pos;
+        //Subtract four since we already read the termID
+        int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
+        char* buffer = new char [length];
+        filez.read(buffer, length);
+        //Write termID then rest of posting list
+        ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
+        ofile.write(buffer, length);
+        delete[] buffer;
+
+        //Update metadata
+        *metaz = shift_metadata(*metaz, shift);
+        metaz->filename = dir + namebaseo;
+    }
+    if(ifilestream) {
+        if( positional ) metai = exlex.getPositional(ItermID, dir+namebase1);
+        else metai = exlex.getNonPositional(ItermID, dir+namebase1);
+        //Calculate shift to use for updating the metadata
+        long shift = ofile.tellp() - metai->start_pos;
+        //Subtract four since we already read the termID
+        int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
+        char* buffer = new char [length];
+        filei.read(buffer, length);
+        //Write termID then rest of posting list
+        ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
+        ofile.write(buffer, length);
+        delete[] buffer;
+
+        //Update metadata
+        *metai = shift_metadata(*metai, shift);
+        metai->filename = dir + namebaseo;
+    }
+
+    zfilestream.close();
+    ifilestream.close();
+    ofile.close();
+    std::string filename1 = dir + "Z" + std::to_string(indexnum);
+    std::string filename2 = dir + "I" + std::to_string(indexnum);
+    //deleting two files
+    if( remove( filename1.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
+    if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
 }
 
 /**
