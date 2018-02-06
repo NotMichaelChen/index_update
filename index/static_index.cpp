@@ -230,6 +230,114 @@ void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool 
     }
 }
 
+template <typename T>
+void write_postinglist(std::ofstream& ofile, std::string filepath&, unsigned int termID, std::vector<T> postinglist, bool positional) {
+    //initialize compression method, 1: varbyte
+    //compression method for docID
+    unsigned int doc_method = 1;
+    //compression method for fragmentID (pos) or frequency (nonpos)
+    unsigned int second_method = 1;
+    //compression method for position
+    unsigned int third_method = 1;
+
+    mData metadata;
+    metadata.filename = filepath;
+    metadata.start_pos = ofile.tellp();
+
+    //Write out metadata
+    //TODO: Compress metadata
+    ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
+    ofile.write(reinterpret_cast<const char *>(&(postinglist.size())), sizeof(postinglist.size()));
+    ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
+    ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
+    if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
+
+    //Construct compressed blocks of postings in memory
+    std::vector<std::vector<uint8_t>> compressedblocks;
+    std::vector<unsigned int> lastdocID;
+    std::vector<unsigned int> compressedblocksizes;
+
+    //Begin inclusive, End exclusive
+    size_t blockbegin = 0;
+    size_t blockend = blocksize;
+
+    while(blockend <= postinglist.size()) {
+        std::vector<unsigned int> blockdocID;
+        std::vector<unsigned int> blocksecond;
+        std::vector<unsigned int> blockthird;
+
+        //Grab blocksize number of postings
+        for(auto postingiter = postinglist.begin() + blockbegin; postingiter != postinglist.begin() + blockend; postingiter++) {
+            blockdocID.push_back(postingiter->docID);
+            blocksecond.push_back(postingiter->second);
+            if(positional) blockthird.push_back(postingiter->third);
+        }
+
+        //Compress the three vectors
+        std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
+        std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
+        if(positional) std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
+
+        //Store the three vectors into the compressedblocks vector
+        compressedblocks.push_back(compresseddocID);
+        compressedblocks.push_back(compressedsecond);
+        if(positional) compressedblocks.push_back(compressedthird);
+
+        //Store metadata
+        compressedblocksizes.push_back(compresseddocID.size());
+        compressedblocksizes.push_back(compressedsecond.size());
+        if(positional) compressedblocksizes.push_back(compressedthird.size());
+        lastdocID.push_back(blockdocID.back());
+
+        blockbegin += blocksize;
+        blockend += blocksize;
+    }
+
+    //Extra postings at end of block
+    if(blockbegin != postinglist.size()) {
+        std::vector<unsigned int> blockdocID;
+        std::vector<unsigned int> blocksecond;
+        std::vector<unsigned int> blockthird;
+
+        for(auto postingiter = postinglist.begin() + blockbegin; postingiter != postinglist.end(); postingiter++) {
+            blockdocID.push_back(postingiter->docID);
+            blocksecond.push_back(postingiter->second);
+            if(positional) blockthird.push_back(postingiter->third);
+        }
+
+        //Compress the three vectors
+        std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
+        std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
+        if(positional) std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
+
+        //Store the three vectors into the compressedblocks vector
+        compressedblocks.push_back(compresseddocID);
+        compressedblocks.push_back(compressedsecond);
+        if(positional) compressedblocks.push_back(compressedthird);
+
+        //Store metadata
+        compressedblocksizes.push_back(compresseddocID.size());
+        compressedblocksizes.push_back(compressedsecond.size());
+        if(positional) compressedblocksizes.push_back(compressedthird.size());
+        lastdocID.push_back(blockdocID.back());
+    }
+
+    //Write out metadata and compressed postings
+    metadata.last_docID = ofile.tellp();
+    write_block<unsigned int>(lastdocID, ofile);
+    metadata.blocksizes = ofile.tellp();
+    write_block<unsigned int>(blocksizes, ofile);
+    metadata.postings_blocks = ofile.tellp();
+
+    for(auto iter = compressedblocks.begin(); iter != compressedblocks.end(); iter++) {
+        write_block<uint8_t>(*iter, ofile);
+    }
+
+    metadata.end_offset = ofile.tellp();
+    if(positional) exlex.addPositional(termID, metadata);
+    else exlex.addNonPositional(termID, metadata);
+}
+
 //Given an ifstream, read the positional posting list indicated by the metadata
 std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
     std::vector<Posting> postinglist;
@@ -392,6 +500,10 @@ void StaticIndex::merge_test(bool isPositional) {
     }
 }
 
+/**
+ * Merges the indexes of the given order. Both the Z-index and I-index must already exist before
+ * this method is called.
+ */
 void StaticIndex::newmerge(int indexnum, bool positional) {
     std::ifstream zfilestream;
     std::ifstream ifilestream;
@@ -423,14 +535,14 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
     ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
     while(true) {
         if(ItermID < ZtermID) {
-            if( positional ) metai = exlex.getPositional(ItermID, dir+namebase1);
-            else metai = exlex.getNonPositional(ItermID, dir+namebase1);
+            if( positional ) metai = exlex.getPositional(ItermID, dir+namebase2);
+            else metai = exlex.getNonPositional(ItermID, dir+namebase2);
             //Calculate shift to use for updating the metadata
             long shift = ofile.tellp() - metai->start_pos;
             //Subtract four since we already read the termID
             int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
             char* buffer = new char [length];
-            filei.read(buffer, length);
+            ifilestream.read(buffer, length);
             //Write termID then rest of posting list
             ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
             ofile.write(buffer, length);
@@ -440,7 +552,7 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
             *metai = shift_metadata(*metai, shift);
             metai->filename = dir + namebaseo;
 
-            if(!filei.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID))) break;
+            if(!ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID))) break;
         }
         else if(ZtermID < ItermID) {
             if( positional ) metaz = exlex.getPositional(ZtermID, dir+namebase1);
@@ -450,7 +562,7 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
             //Subtract four since we already read the termID
             int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
             char* buffer = new char [length];
-            filez.read(buffer, length);
+            zfilestream.read(buffer, length);
             //Write termID then rest of posting list
             ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
             ofile.write(buffer, length);
@@ -460,14 +572,48 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
             *metaz = shift_metadata(*metaz, shift);
             metaz->filename = dir + namebaseo;
 
-            if(!filez.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID))) break;
+            if(!zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID))) break;
         }
         else {
-            //read both posting lists from both files
-            //pass them into the posting list parser
-            //merge the posting lists
-            //write the final posting list to disk, creating a new metadata entry
-            //delete old metadata from both files
+            if(positional) {
+                metaz = exlex.getPositional(ZtermID, dir+namebase1);
+                metai = exlex.getPositional(ItermID, dir+namebase2);
+            }
+            else {
+                metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
+                metai = exlex.getNonPositional(ItermID, dir+namebase2);
+            }
+
+            if(positional) {
+                //read both posting lists from both files
+                std::vector<Posting> zpostinglist = read_pos_postinglist(zfilestream, metaz, ZtermID);
+                std::vector<Posting> ipostinglist = read_pos_postinglist(ifilestream, metai, ItermID);
+
+                //merge the posting lists
+                std::vector<Posting> merged = merge_pos_postinglist(zpostinglist, ipostinglist);
+
+                //write the final posting list to disk, creating a new metadata entry
+                write_postinglist<Posting>(ofile, dir+namebaseo, ZtermID, merged, true);
+
+                //delete old metadata from both files
+                exlex.deletePositional(ZtermID, exlex.getPositional(ZtermID, dir+namebase1));
+                exlex.deletePositional(ItermID, exlex.getPositional(ItermID, dir+namebase2));
+            }
+            else {
+                //read both posting lists from both files
+                std::vector<nPosting> zpostinglist = read_nonpos_postinglist(zfilestream, metaz, ZtermID);
+                std::vector<nPosting> ipostinglist = read_nonpos_postinglist(ifilestream, metai, ItermID);
+                
+                //merge the posting lists
+                std::vector<nPosting> merged = merge_nonpos_postinglist(zpostinglist, ipostinglist);
+
+                //write the final posting list to disk, creating a new metadata entry
+                write_postinglist<nPosting>(ofile, dir+namebaseo, ZtermID, merged, false);
+
+                //delete old metadata from both files
+                exlex.deleteNonPositional(ZtermID, exlex.getNonPositional(ZtermID, dir+namebase1));
+                exlex.deleteNonPositional(ItermID, exlex.getNonPositional(ItermID, dir+namebase2));
+            }
         }
     }
     if(zfilestream) {
@@ -478,7 +624,7 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
         //Subtract four since we already read the termID
         int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
         char* buffer = new char [length];
-        filez.read(buffer, length);
+        zfilestream.read(buffer, length);
         //Write termID then rest of posting list
         ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
         ofile.write(buffer, length);
@@ -489,14 +635,14 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
         metaz->filename = dir + namebaseo;
     }
     if(ifilestream) {
-        if( positional ) metai = exlex.getPositional(ItermID, dir+namebase1);
-        else metai = exlex.getNonPositional(ItermID, dir+namebase1);
+        if( positional ) metai = exlex.getPositional(ItermID, dir+namebase2);
+        else metai = exlex.getNonPositional(ItermID, dir+namebase2);
         //Calculate shift to use for updating the metadata
         long shift = ofile.tellp() - metai->start_pos;
         //Subtract four since we already read the termID
         int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
         char* buffer = new char [length];
-        filei.read(buffer, length);
+        ifilestream.read(buffer, length);
         //Write termID then rest of posting list
         ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
         ofile.write(buffer, length);
@@ -517,10 +663,6 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
     if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
 }
 
-/**
- * Merges the indexes of the given order. Both the Z-index and I-index must already exist before
- * this method is called.
- */
 void StaticIndex::merge(int indexnum, int positional){
 
     std::ifstream filez;
