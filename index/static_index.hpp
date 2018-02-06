@@ -41,18 +41,22 @@ private:
 
     //Writes a given block (vector) of compressed posting data into the file
     template <typename T>
-    unsigned int write_block(std::vector<T> num, std::ofstream& ofile);
+    unsigned int write_block(std::vector<T>& num, std::ofstream& ofile);
 
     //Compresses a vector of posting data using the given compression method
     std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, std::vector<uint8_t> encoder(std::vector<unsigned int>&), bool delta);
 
     //Writes an index (stored as a map of wordIDs to posting lists) to disk
     template <typename T>
-    void write_index(std::string filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend);
+    void write_index(std::string& filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend);
 
-    //Reads the index from disk
-    Pos_Index StaticIndex::read_positional_index(std::ifstream& ifile, std::string filename);
-    NonPos_Index StaticIndex::read_nonpositional_index(std::ifstream& ifile, std::string filename);
+    //Writes a posting list to disk with compression
+    template <typename T>
+    void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int termID, std::vector<T>& postinglist, bool positional);
+
+    //Reads a posting list from disk
+    std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID);
+    std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID);
 
     //Checks whether there are any indexes that need to be merged (which is indicated by I-indexes)
     //and merges them until there are no more indexes to merge (no more I-indexes)
@@ -60,11 +64,11 @@ private:
 
     //Merges the indexes of the given order. Both the Z-index and I-index must already exist before
     //this method is called.
-    void merge(int indexnum, int positional);
+    void merge(int indexnum, bool positional);
 
-    //Merges two positional indexes
-    //Used in the "merge" method
-    Pos_Index merge_positional_index(Pos_Index& indexZ, Pos_Index& indexI);
+    //Merges two posting lists into one posting list
+    std::vector<Posting> merge_pos_postinglist(std::vector<Posting>& listz, std::vector<Posting>& listi);
+    std::vector<nPosting> merge_nonpos_postinglist(std::vector<nPosting>& listz, std::vector<nPosting>& listi);
 };
 
 #endif

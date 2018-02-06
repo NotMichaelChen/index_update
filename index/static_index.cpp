@@ -118,7 +118,7 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
 //filepath: The filename of the file being written to
 //          INCLUDES THE PATH
 template <typename T>
-void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool positional, T indexbegin, T indexend) {
+void StaticIndex::write_index(std::string& filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend) {
     //initialize compression method, 1: varbyte
     //compression method for docID
     unsigned int doc_method = 1;
@@ -137,8 +137,10 @@ void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool 
 
         //Write out metadata
         //TODO: Compress metadata
+
+        size_t postinglistsize = postinglistiter->second.size();
         ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
-        ofile.write(reinterpret_cast<const char *>(&(postinglistiter->second.size())), sizeof(postinglistiter->second.size()));
+        ofile.write(reinterpret_cast<const char *>(&(postinglistsize)), sizeof(postinglistsize));
         ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
         ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
         if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
@@ -152,7 +154,7 @@ void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool 
         size_t blockbegin = 0;
         size_t blockend = blocksize;
 
-        while(blockend <= postinglistiter->second.size()) {
+        while(blockend <= postinglistsize) {
             std::vector<unsigned int> blockdocID;
             std::vector<unsigned int> blocksecond;
             std::vector<unsigned int> blockthird;
@@ -167,7 +169,8 @@ void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool 
             //Compress the three vectors
             std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
             std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
-            if(positional) std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
+            std::vector<uint8_t> compressedthird;
+            if(positional) compressedthird = compress_block(blockthird, VBEncode, false);
 
             //Store the three vectors into the compressedblocks vector
             compressedblocks.push_back(compresseddocID);
@@ -185,7 +188,7 @@ void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool 
         }
 
         //Extra postings at end of block
-        if(blockbegin != postinglistiter->second.size()) {
+        if(blockbegin != postinglistsize) {
             std::vector<unsigned int> blockdocID;
             std::vector<unsigned int> blocksecond;
             std::vector<unsigned int> blockthird;
@@ -199,7 +202,8 @@ void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool 
             //Compress the three vectors
             std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
             std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
-            if(positional) std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
+            std::vector<uint8_t> compressedthird;
+            if(positional) compressedthird = compress_block(blockthird, VBEncode, false);
 
             //Store the three vectors into the compressedblocks vector
             compressedblocks.push_back(compresseddocID);
@@ -217,7 +221,7 @@ void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool 
         metadata.last_docID = ofile.tellp();
         write_block<unsigned int>(lastdocID, ofile);
         metadata.blocksizes = ofile.tellp();
-        write_block<unsigned int>(blocksizes, ofile);
+        write_block<unsigned int>(compressedblocksizes, ofile);
         metadata.postings_blocks = ofile.tellp();
 
         for(auto iter = compressedblocks.begin(); iter != compressedblocks.end(); iter++) {
@@ -230,8 +234,9 @@ void StaticIndex::write_index(std::string filepath&, std::ofstream& ofile, bool 
     }
 }
 
+//Writes a posting list to disk with compression
 template <typename T>
-void write_postinglist(std::ofstream& ofile, std::string filepath&, unsigned int termID, std::vector<T> postinglist, bool positional) {
+void StaticIndex::write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int termID, std::vector<T>& postinglist, bool positional) {
     //initialize compression method, 1: varbyte
     //compression method for docID
     unsigned int doc_method = 1;
@@ -246,8 +251,10 @@ void write_postinglist(std::ofstream& ofile, std::string filepath&, unsigned int
 
     //Write out metadata
     //TODO: Compress metadata
+    //required to get address of variable
+    size_t postinglistsize = postinglist.size();
     ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
-    ofile.write(reinterpret_cast<const char *>(&(postinglist.size())), sizeof(postinglist.size()));
+    ofile.write(reinterpret_cast<const char *>(&(postinglistsize)), sizeof(postinglistsize));
     ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
     ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
     if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
@@ -276,7 +283,8 @@ void write_postinglist(std::ofstream& ofile, std::string filepath&, unsigned int
         //Compress the three vectors
         std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
         std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
-        if(positional) std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
+        std::vector<uint8_t> compressedthird;
+        if(positional) compressedthird = compress_block(blockthird, VBEncode, false);
 
         //Store the three vectors into the compressedblocks vector
         compressedblocks.push_back(compresseddocID);
@@ -308,7 +316,8 @@ void write_postinglist(std::ofstream& ofile, std::string filepath&, unsigned int
         //Compress the three vectors
         std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
         std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
-        if(positional) std::vector<uint8_t> compressedthird = compress_block(blockthird, VBEncode, false);
+        std::vector<uint8_t> compressedthird;
+        if(positional) compressedthird = compress_block(blockthird, VBEncode, false);
 
         //Store the three vectors into the compressedblocks vector
         compressedblocks.push_back(compresseddocID);
@@ -326,7 +335,7 @@ void write_postinglist(std::ofstream& ofile, std::string filepath&, unsigned int
     metadata.last_docID = ofile.tellp();
     write_block<unsigned int>(lastdocID, ofile);
     metadata.blocksizes = ofile.tellp();
-    write_block<unsigned int>(blocksizes, ofile);
+    write_block<unsigned int>(compressedblocksizes, ofile);
     metadata.postings_blocks = ofile.tellp();
 
     for(auto iter = compressedblocks.begin(); iter != compressedblocks.end(); iter++) {
@@ -339,7 +348,7 @@ void write_postinglist(std::ofstream& ofile, std::string filepath&, unsigned int
 }
 
 //Given an ifstream, read the positional posting list indicated by the metadata
-std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
+std::vector<Posting> StaticIndex::read_pos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
     std::vector<Posting> postinglist;
     unsigned int postinglistlength, doc_method, second_method, third_method;
     
@@ -408,8 +417,8 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mDat
     return postinglist;
 }
 
-//Given an ifstream, read the positional posting list indicated by the metadata
-std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
+//Given an ifstream, read the nonpositional posting list indicated by the metadata
+std::vector<nPosting> StaticIndex::read_nonpos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
     std::vector<nPosting> postinglist;
     unsigned int postinglistlength, doc_method, second_method;
     
@@ -504,7 +513,7 @@ void StaticIndex::merge_test(bool isPositional) {
  * Merges the indexes of the given order. Both the Z-index and I-index must already exist before
  * this method is called.
  */
-void StaticIndex::newmerge(int indexnum, bool positional) {
+void StaticIndex::merge(int indexnum, bool positional) {
     std::ifstream zfilestream;
     std::ifstream ifilestream;
     std::ofstream ofile;
@@ -593,7 +602,8 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
                 std::vector<Posting> merged = merge_pos_postinglist(zpostinglist, ipostinglist);
 
                 //write the final posting list to disk, creating a new metadata entry
-                write_postinglist<Posting>(ofile, dir+namebaseo, ZtermID, merged, true);
+                std::string outputfilepath = dir+namebaseo;
+                write_postinglist<Posting>(ofile, outputfilepath, ZtermID, merged, true);
 
                 //delete old metadata from both files
                 exlex.deletePositional(ZtermID, exlex.getPositional(ZtermID, dir+namebase1));
@@ -608,7 +618,8 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
                 std::vector<nPosting> merged = merge_nonpos_postinglist(zpostinglist, ipostinglist);
 
                 //write the final posting list to disk, creating a new metadata entry
-                write_postinglist<nPosting>(ofile, dir+namebaseo, ZtermID, merged, false);
+                std::string outputfilepath = dir+namebaseo;
+                write_postinglist<nPosting>(ofile, outputfilepath, ZtermID, merged, false);
 
                 //delete old metadata from both files
                 exlex.deleteNonPositional(ZtermID, exlex.getNonPositional(ZtermID, dir+namebase1));
@@ -663,131 +674,7 @@ void StaticIndex::newmerge(int indexnum, bool positional) {
     if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
 }
 
-void StaticIndex::merge(int indexnum, int positional){
-
-    std::ifstream filez;
-    std::ifstream filei;
-    std::ofstream ofile;
-    std::string dir;
-    if(positional) dir = posdir;
-    else dir = nonposdir;
-
-    //determine the name of the output file, if "Z" file exists, than compressed to "I" file.
-    char flag = 'Z';
-    filez.open(dir + "Z" + std::to_string(indexnum));
-    filei.open(dir + "I" + std::to_string(indexnum));
-
-    std::string namebase1 = "Z" + std::to_string(indexnum);
-    std::string namebase2 = "I" + std::to_string(indexnum);
-    std::string namebaseo;
-
-    std::ifstream filetest(dir + "Z" + std::to_string(indexnum+1));
-    if(filetest.good())
-        flag = 'I';
-    filetest.close();
-
-    namebaseo = flag + std::to_string(indexnum + 1);
-    ofile.open(dir + namebaseo);
-
-    if(positional)
-        std::cout << "Positional is ";
-    else
-        std::cout << "Non-Positional is ";
-    std::cout << "merging into " << flag << indexnum + 1 << "------------------------------------" << std::endl;
-
-    /* To merge, first read the first integer from file, which is the termID.
-        Compare the termID, copy and paste the postings of smaller termID to the output file.
-        This is basically a next-greater-or-equal-to process.
-        If both file contains same termID, need to decompress and merge posting.
-        Decompress method push all the posting to the dynamic index.
-    */
-    std::vector<mData>::iterator metai, metaz;
-    unsigned int termIDZ, termIDI;
-    filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
-    filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
-    if( filez.is_open() && filei.is_open() ){
-        while(  !filez.eof() && !filei.eof() ){
-            std::cout << "TermIDZ " << termIDZ << " TermIDI "<< termIDI << std::endl;
-            if( termIDZ < termIDI ){
-                if( positional ) metaz = exlex.getPositional(termIDZ, dir+namebase1);
-                else metaz = exlex.getNonPositional(termIDZ, dir+namebase1);
-                //Calculate shift to use for updating the metadata
-                long shift = ofile.tellp() - metaz->start_pos;
-                //Subtract four since we already read the termID
-                int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
-                char* buffer = new char [length];
-                filez.read(buffer, length);
-                ofile.write(buffer, length);
-                delete[] buffer;
-
-                //Update metadata
-                *metaz = shift_metadata(*metaz, shift);
-                metaz->filename = dir + namebaseo;
-
-                filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
-            }
-            else if( termIDI < termIDZ ){
-                if( positional ) metai = exlex.getPositional(termIDI, dir+namebase2);
-                else metai = exlex.getNonPositional(termIDI, dir+namebase2);
-                //Calculate shift to use for updating the metadata
-                long shift = ofile.tellp() - metai->start_pos;
-                //Subtract four since we already read the termID
-                int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
-                char* buffer = new char [length];
-                filei.read(buffer, length);
-                ofile.write(buffer, length);
-                delete[] buffer;
-
-                //Update metadata
-                *metai = shift_metadata(*metai, shift);
-                metai->filename = dir + namebaseo;
-
-                filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
-            }
-            else if( termIDI == termIDZ ){
-                if( positional ){
-                    auto indexZ = decompress_p_posting(termIDZ, filez, namebase1);
-                    auto indexI = decompress_p_posting(termIDI, filei, namebase2);
-                    auto positional_index = merge_positional_index(indexZ, indexI);
-
-                    Pos_Map_Iter ite = positional_index.begin();
-                    Pos_Map_Iter end = positional_index.end();
-                    auto vit = ite->second.begin();
-                    auto vend = ite->second.end();
-                    write_compressed_index<Pos_Map_Iter, std::vector<Posting>::iterator>(dir + namebaseo, ofile, ite, end, vit, vend, 1);
-                    //Delete the metadata associated with the two termIDs for each file
-                    exlex.deletePositional(termIDZ, exlex.getPositional(termIDZ, dir+namebase1));
-                    exlex.deletePositional(termIDI, exlex.getPositional(termIDI, dir+namebase2));
-                }
-                else{
-                    auto nonpositional_index = decompress_np_posting(termIDI, filez, filei, namebase1, namebase2);
-                    NonPos_Map_Iter ite = nonpositional_index.begin();
-                    NonPos_Map_Iter end = nonpositional_index.end();
-                    auto vit = ite->second.begin();
-                    auto vend = ite->second.end();
-                    write_compressed_index<NonPos_Map_Iter, std::vector<nPosting>::iterator>(dir + namebaseo, ofile, ite, end, vit, vend, 0);
-                    //Delete the metadata associated with the two termIDs for each file
-                    exlex.deleteNonPositional(termIDZ, exlex.getNonPositional(termIDZ, dir+namebase1));
-                    exlex.deleteNonPositional(termIDI, exlex.getNonPositional(termIDI, dir+namebase2));
-                }
-                filez.read(reinterpret_cast<char *>(&termIDZ), sizeof(termIDZ));
-                filei.read(reinterpret_cast<char *>(&termIDI), sizeof(termIDI));
-            }
-        }
-    }
-    else std::cerr << "Error opening file." << std::endl;
-
-    filez.close();
-    filei.close();
-    ofile.close();
-    std::string filename1 = dir + "Z" + std::to_string(indexnum);
-    std::string filename2 = dir + "I" + std::to_string(indexnum);
-    //deleting two files
-    if( remove( filename1.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
-    if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
-}
-
-std::vector<Posting> merge_pos_postinglist(std::vector<Posting>& listz, std::vector<Posting>& listi) {
+std::vector<Posting> StaticIndex::merge_pos_postinglist(std::vector<Posting>& listz, std::vector<Posting>& listi) {
     std::vector<Posting> finallist(listz.size() + listi.size());
     auto ziter = listz.begin();
     auto iiter = listi.begin();
@@ -820,7 +707,7 @@ std::vector<Posting> merge_pos_postinglist(std::vector<Posting>& listz, std::vec
     return finallist;
 }
 
-std::vector<nPosting> merge_nonpos_postinglist(std::vector<nPosting>& listz, std::vector<nPosting>& listi) {
+std::vector<nPosting> StaticIndex::merge_nonpos_postinglist(std::vector<nPosting>& listz, std::vector<nPosting>& listi) {
     std::vector<nPosting> finallist(listz.size() + listi.size());
     auto ziter = listz.begin();
     auto iiter = listi.begin();

@@ -72,7 +72,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         ++nonpositional_size;
         if(nonpositional_size > POSTING_LIMIT) {
             //when dynamic index cannot fit into memory, write to disk
-            display_non_positional();
+            //display_non_positional();
             staticwriter.write_np_disk(nonpositional_index.begin(), nonpositional_index.end());
             nonpositional_index.clear();
             nonpositional_size = 0;
@@ -87,7 +87,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         positional_index[entry.termid].push_back(posting);
         ++positional_size;
         if(positional_size > POSTING_LIMIT) {
-            display_positional();
+            //display_positional();
             staticwriter.write_p_disk(positional_index.begin(), positional_index.end());
             positional_index.clear();
             positional_size = 0;
