@@ -716,7 +716,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
 }
 
 std::vector<Posting> StaticIndex::merge_pos_postinglist(std::vector<Posting>& listz, std::vector<Posting>& listi) {
-    std::vector<Posting> finallist(listz.size() + listi.size());
+    std::vector<Posting> finallist;
     auto ziter = listz.begin();
     auto iiter = listi.begin();
 
@@ -749,7 +749,7 @@ std::vector<Posting> StaticIndex::merge_pos_postinglist(std::vector<Posting>& li
 }
 
 std::vector<nPosting> StaticIndex::merge_nonpos_postinglist(std::vector<nPosting>& listz, std::vector<nPosting>& listi) {
-    std::vector<nPosting> finallist(listz.size() + listi.size());
+    std::vector<nPosting> finallist;
     auto ziter = listz.begin();
     auto iiter = listi.begin();
 
