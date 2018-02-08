@@ -31,7 +31,7 @@ std::vector<uint8_t> VBEncode(std::vector<unsigned int>& nums) {
     return bytestream;
 }
 
-std::vector<unsigned int> VBDecode(std::vector<uint8_t> bytestream) {
+std::vector<unsigned int> VBDecode(std::vector<uint8_t>& bytestream) {
     std::vector<unsigned int> numbers;
     int n = 0;
 

@@ -103,7 +103,7 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
 
         for(size_t i = 1; i < field.size(); i++) {
             if(field[i] < field[i-1])
-                std::cerr << "negative during delta compressiong\n";
+                std::cerr << "negative during delta compressing " << field[i-1] << ' ' << field[i] << "\n";
             deltaencode.push_back(field[i] - field[i-1]);
         }
         compressed = encoder(deltaencode);
@@ -112,6 +112,25 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
         compressed = encoder(field);
     }
     return compressed;
+}
+
+//Decompresses a vector of posting data using the given decompression method
+std::vector<unsigned int> StaticIndex::decompress_block(std::vector<uint8_t>& block, std::vector<unsigned int> decoder(std::vector<uint8_t>&), bool delta) {
+    std::vector<unsigned int> decompressed;
+    decompressed = decoder(block);
+    if(decompressed.size() == 0) {
+        throw std::invalid_argument("Error, decompress_block final size is zero");
+    }
+    if(delta) {
+        std::vector<unsigned int> undelta(decompressed.size());
+        undelta[0] = decompressed[0];
+
+        for(size_t i = 1; i < decompressed.size(); i++) {
+            undelta[i] = undelta[i-1] + decompressed[i];
+        }
+        return undelta;
+    }
+    return decompressed;
 }
 
 //Writes an inverted index to disk using compressed postings
@@ -371,8 +390,10 @@ std::vector<Posting> StaticIndex::read_pos_postinglist(std::ifstream& ifile, std
     unsigned int buffersize = metadata->postings_blocks - metadata->blocksizes;
     std::vector<char> buffer(buffersize);
     ifile.read(&buffer[0], buffersize);
-    std::vector<unsigned int> blocksizes = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+    std::vector<uint8_t> unsignedbuffer = std::vector<uint8_t>(buffer.begin(), buffer.end());
+    std::vector<unsigned int> blocksizes = VBDecode(unsignedbuffer);
     buffer.clear();
+    unsignedbuffer.clear();
 
     if(blocksizes.size() % 3 != 0) {
         throw std::invalid_argument("Error, blocksize array is not a multiple of 3: " + std::to_string(blocksizes.size()));
@@ -388,18 +409,24 @@ std::vector<Posting> StaticIndex::read_pos_postinglist(std::ifstream& ifile, std
 
         buffer.resize(doclength);
         ifile.read(&buffer[0], doclength);
-        docIDs = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        unsignedbuffer = std::vector<uint8_t>(buffer.begin(), buffer.end());
+        docIDs = decompress_block(unsignedbuffer, VBDecode, true);
         buffer.clear();
+        unsignedbuffer.clear();
 
         buffer.resize(secondlength);
         ifile.read(&buffer[0], secondlength);
-        secondvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        unsignedbuffer = std::vector<uint8_t>(buffer.begin(), buffer.end());
+        secondvec = decompress_block(unsignedbuffer, VBDecode, false);
         buffer.clear();
+        unsignedbuffer.clear();
 
         buffer.resize(thirdlength);
         ifile.read(&buffer[0], thirdlength);
-        thirdvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        unsignedbuffer = std::vector<uint8_t>(buffer.begin(), buffer.end());
+        thirdvec = decompress_block(unsignedbuffer, VBDecode, false);
         buffer.clear();
+        unsignedbuffer.clear();
 
         if(docIDs.size() != secondvec.size() || secondvec.size() != thirdvec.size()) {
             throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()) + "," + std::to_string(thirdvec.size()));
@@ -442,8 +469,10 @@ std::vector<nPosting> StaticIndex::read_nonpos_postinglist(std::ifstream& ifile,
     unsigned int buffersize = metadata->postings_blocks - metadata->blocksizes;
     std::vector<char> buffer(buffersize);
     ifile.read(&buffer[0], buffersize);
-    std::vector<unsigned int> blocksizes = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+    std::vector<uint8_t> unsignedbuffer = std::vector<uint8_t>(buffer.begin(), buffer.end());
+    std::vector<unsigned int> blocksizes = VBDecode(unsignedbuffer);
     buffer.clear();
+    unsignedbuffer.clear();
 
     if(blocksizes.size() % 2 != 0) {
         throw std::invalid_argument("Error, blocksize array is not a multiple of 2: " + std::to_string(blocksizes.size()));
@@ -458,13 +487,17 @@ std::vector<nPosting> StaticIndex::read_nonpos_postinglist(std::ifstream& ifile,
 
         buffer.resize(doclength);
         ifile.read(&buffer[0], doclength);
-        docIDs = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        unsignedbuffer = std::vector<uint8_t>(buffer.begin(), buffer.end());
+        docIDs = decompress_block(unsignedbuffer, VBDecode, true);
         buffer.clear();
+        unsignedbuffer.clear();
 
         buffer.resize(secondlength);
         ifile.read(&buffer[0], secondlength);
-        secondvec = VBDecode(std::vector<uint8_t>(buffer.begin(), buffer.end()));
+        unsignedbuffer = std::vector<uint8_t>(buffer.begin(), buffer.end());
+        secondvec = decompress_block(unsignedbuffer, VBDecode, false);
         buffer.clear();
+        unsignedbuffer.clear();
 
         if(docIDs.size() != secondvec.size()) {
             throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()));

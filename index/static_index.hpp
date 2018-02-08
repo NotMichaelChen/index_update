@@ -46,6 +46,9 @@ private:
     //Compresses a vector of posting data using the given compression method
     std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, std::vector<uint8_t> encoder(std::vector<unsigned int>&), bool delta);
 
+    //Decompresses a vector of posting data using the given decompression method
+    std::vector<unsigned int> decompress_block(std::vector<uint8_t>& block, std::vector<unsigned int> decoder(std::vector<uint8_t>&), bool delta);
+
     //Writes an index (stored as a map of wordIDs to posting lists) to disk
     template <typename T>
     void write_index(std::string& filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend);
