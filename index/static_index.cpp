@@ -666,6 +666,11 @@ void StaticIndex::merge(int indexnum, bool positional) {
                 exlex.deleteNonPositional(ZtermID, exlex.getNonPositional(ZtermID, dir+namebase1));
                 exlex.deleteNonPositional(ItermID, exlex.getNonPositional(ItermID, dir+namebase2));
             }
+
+            zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
+            ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
+
+            if(zfilestream.fail() || ifilestream.fail()) break;
         }
     }
     if(zfilestream) {
