@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
         cout << "Inserting file: " << filename << endl;
         index.insert_document(filename, filecontents);
-        cin.get();
+        //cin.get();
     }
 
     return 0;

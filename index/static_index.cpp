@@ -132,6 +132,7 @@ std::vector<unsigned int> StaticIndex::decompress_block(std::vector<uint8_t>& bl
 //Writes an inverted index to disk using compressed postings
 //filepath: The filename of the file being written to
 //          INCLUDES THE PATH
+//TODO: Determine if this method should be removed
 template <typename T>
 void StaticIndex::write_index(std::string& filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend) {
     //for each posting list in the index
@@ -473,6 +474,10 @@ void StaticIndex::merge(int indexnum, bool positional) {
         if(ItermID < ZtermID) {
             if( positional ) metai = exlex.getPositional(ItermID, dir+namebase2);
             else metai = exlex.getNonPositional(ItermID, dir+namebase2);
+
+            if(ifilestream.tellg() != metai->start_pos+4)
+                std::cerr << "filestream doesn't match metadata i " << ifilestream.tellg() << ' ' << metai->start_pos+4 << '\n';
+
             //Calculate shift to use for updating the metadata
             long shift = ofile.tellp() - metai->start_pos;
             //Subtract four since we already read the termID
@@ -493,6 +498,10 @@ void StaticIndex::merge(int indexnum, bool positional) {
         else if(ZtermID < ItermID) {
             if( positional ) metaz = exlex.getPositional(ZtermID, dir+namebase1);
             else metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
+
+            if(zfilestream.tellg() != metaz->start_pos+4)
+                std::cerr << "filestream doesn't match metadata z " << zfilestream.tellg() << ' ' << metaz->start_pos+4 << '\n';
+                
             //Calculate shift to use for updating the metadata
             long shift = ofile.tellp() - metaz->start_pos;
             //Subtract four since we already read the termID
@@ -519,7 +528,6 @@ void StaticIndex::merge(int indexnum, bool positional) {
                 metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
                 metai = exlex.getNonPositional(ItermID, dir+namebase2);
             }
-
             if(positional) {
                 //read both posting lists from both files
                 std::vector<Posting> zpostinglist = read_pos_postinglist(zfilestream, metaz, ZtermID);
@@ -556,44 +564,48 @@ void StaticIndex::merge(int indexnum, bool positional) {
             zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
             ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
 
-            if(zfilestream.fail() || ifilestream.fail()) break;
+            if(!zfilestream || !ifilestream) break;
         }
     }
     if(zfilestream) {
-        if( positional ) metaz = exlex.getPositional(ZtermID, dir+namebase1);
-        else metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
-        //Calculate shift to use for updating the metadata
-        long shift = ofile.tellp() - metaz->start_pos;
-        //Subtract four since we already read the termID
-        int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
-        char* buffer = new char [length];
-        zfilestream.read(buffer, length);
-        //Write termID then rest of posting list
-        ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
-        ofile.write(buffer, length);
-        delete[] buffer;
+        do {
+            if( positional ) metaz = exlex.getPositional(ZtermID, dir+namebase1);
+            else metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
+            //Calculate shift to use for updating the metadata
+            long shift = ofile.tellp() - metaz->start_pos;
+            //Subtract four since we already read the termID
+            int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
+            char* buffer = new char [length];
+            zfilestream.read(buffer, length);
+            //Write termID then rest of posting list
+            ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
+            ofile.write(buffer, length);
+            delete[] buffer;
 
-        //Update metadata
-        *metaz = shift_metadata(*metaz, shift);
-        metaz->filename = dir + namebaseo;
+            //Update metadata
+            *metaz = shift_metadata(*metaz, shift);
+            metaz->filename = dir + namebaseo;
+        } while (zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID)));
     }
     if(ifilestream) {
-        if( positional ) metai = exlex.getPositional(ItermID, dir+namebase2);
-        else metai = exlex.getNonPositional(ItermID, dir+namebase2);
-        //Calculate shift to use for updating the metadata
-        long shift = ofile.tellp() - metai->start_pos;
-        //Subtract four since we already read the termID
-        int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
-        char* buffer = new char [length];
-        ifilestream.read(buffer, length);
-        //Write termID then rest of posting list
-        ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
-        ofile.write(buffer, length);
-        delete[] buffer;
+        do {
+            if( positional ) metai = exlex.getPositional(ItermID, dir+namebase2);
+            else metai = exlex.getNonPositional(ItermID, dir+namebase2);
+            //Calculate shift to use for updating the metadata
+            long shift = ofile.tellp() - metai->start_pos;
+            //Subtract four since we already read the termID
+            int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
+            char* buffer = new char [length];
+            ifilestream.read(buffer, length);
+            //Write termID then rest of posting list
+            ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
+            ofile.write(buffer, length);
+            delete[] buffer;
 
-        //Update metadata
-        *metai = shift_metadata(*metai, shift);
-        metai->filename = dir + namebaseo;
+            //Update metadata
+            *metai = shift_metadata(*metai, shift);
+            metai->filename = dir + namebaseo;
+        } while (ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID)));
     }
 
     zfilestream.close();

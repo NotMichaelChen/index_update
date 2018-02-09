@@ -22,7 +22,7 @@ void ExtendedLexicon::displayNonPositional(){
     for( std::unordered_map<unsigned int, std::vector<mData>>::iterator it = exlexnp.begin(); it != exlexnp.end(); it ++){
         std::cout << it->first << std::endl;
         for( std::vector<mData>::iterator vit = it->second.begin(); vit != it->second.end(); vit ++){
-            std::cout << vit->filename << " ";
+            std::cout << '\t' << vit->start_pos << " ";
         }
         std::cout << std::endl;
     }
