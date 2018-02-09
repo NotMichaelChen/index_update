@@ -44,8 +44,6 @@ void StaticIndex::write_p_disk(Pos_Map_Iter indexbegin, Pos_Map_Iter indexend) {
     std::ofstream ofile(filename);
 
     if (ofile.is_open()){
-        auto vit = indexbegin->second.begin();
-        auto vend = indexbegin->second.end();
         write_index<Pos_Map_Iter>(filename, ofile, true, indexbegin, indexend);
 
         ofile.close();
@@ -68,8 +66,6 @@ void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter inde
     std::ofstream ofile(filename);
 
     if (ofile.is_open()){
-        auto vit = indexbegin->second.begin();
-        auto vend = indexbegin->second.end();
         write_index<NonPos_Map_Iter>(filename, ofile, false, indexbegin, indexend);
 
         ofile.close();
@@ -138,120 +134,10 @@ std::vector<unsigned int> StaticIndex::decompress_block(std::vector<uint8_t>& bl
 //          INCLUDES THE PATH
 template <typename T>
 void StaticIndex::write_index(std::string& filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend) {
-    //initialize compression method, 1: varbyte
-    //compression method for docID
-    unsigned int doc_method = 1;
-    //compression method for fragmentID (pos) or frequency (nonpos)
-    unsigned int second_method = 1;
-    //compression method for position
-    unsigned int third_method = 1;
-
     //for each posting list in the index
     for(auto postinglistiter = indexbegin; postinglistiter != indexend; postinglistiter++) {
-        mData metadata;
-        metadata.filename = filepath;
-        metadata.start_pos = ofile.tellp();
-
-        unsigned int termID = postinglistiter->first;
-
-        //Write out metadata
-        //TODO: Compress metadata
-
-        size_t postinglistsize = postinglistiter->second.size();
-        ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
-        ofile.write(reinterpret_cast<const char *>(&(postinglistsize)), sizeof(postinglistsize));
-        ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
-        ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
-        if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
-
-        //Construct compressed blocks of postings in memory
-        std::vector<std::vector<uint8_t>> compressedblocks;
-        std::vector<unsigned int> lastdocID;
-        std::vector<unsigned int> compressedblocksizes;
-
-        //Begin inclusive, End exclusive
-        size_t blockbegin = 0;
-        size_t blockend = blocksize;
-
-        while(blockend <= postinglistsize) {
-            std::vector<unsigned int> blockdocID;
-            std::vector<unsigned int> blocksecond;
-            std::vector<unsigned int> blockthird;
-
-            //Grab blocksize number of postings
-            for(auto postingiter = postinglistiter->second.begin() + blockbegin; postingiter != postinglistiter->second.begin() + blockend; postingiter++) {
-                blockdocID.push_back(postingiter->docID);
-                blocksecond.push_back(postingiter->second);
-                if(positional) blockthird.push_back(postingiter->third);
-            }
-
-            //Compress the three vectors
-            std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
-            std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
-            std::vector<uint8_t> compressedthird;
-            if(positional) compressedthird = compress_block(blockthird, VBEncode, false);
-
-            //Store the three vectors into the compressedblocks vector
-            compressedblocks.push_back(compresseddocID);
-            compressedblocks.push_back(compressedsecond);
-            if(positional) compressedblocks.push_back(compressedthird);
-
-            //Store metadata
-            compressedblocksizes.push_back(compresseddocID.size());
-            compressedblocksizes.push_back(compressedsecond.size());
-            if(positional) compressedblocksizes.push_back(compressedthird.size());
-            lastdocID.push_back(blockdocID.back());
-
-            blockbegin += blocksize;
-            blockend += blocksize;
-        }
-
-        //Extra postings at end of block
-        if(blockbegin != postinglistsize) {
-            std::vector<unsigned int> blockdocID;
-            std::vector<unsigned int> blocksecond;
-            std::vector<unsigned int> blockthird;
-
-            for(auto postingiter = postinglistiter->second.begin() + blockbegin; postingiter != postinglistiter->second.end(); postingiter++) {
-                blockdocID.push_back(postingiter->docID);
-                blocksecond.push_back(postingiter->second);
-                if(positional) blockthird.push_back(postingiter->third);
-            }
-
-            //Compress the three vectors
-            std::vector<uint8_t> compresseddocID = compress_block(blockdocID, VBEncode, true);
-            std::vector<uint8_t> compressedsecond = compress_block(blocksecond, VBEncode, false);
-            std::vector<uint8_t> compressedthird;
-            if(positional) compressedthird = compress_block(blockthird, VBEncode, false);
-
-            //Store the three vectors into the compressedblocks vector
-            compressedblocks.push_back(compresseddocID);
-            compressedblocks.push_back(compressedsecond);
-            if(positional) compressedblocks.push_back(compressedthird);
-
-            //Store metadata
-            compressedblocksizes.push_back(compresseddocID.size());
-            compressedblocksizes.push_back(compressedsecond.size());
-            if(positional) compressedblocksizes.push_back(compressedthird.size());
-            lastdocID.push_back(blockdocID.back());
-        }
-
-        //Write out metadata and compressed postings
-        metadata.last_docID = ofile.tellp();
-        std::vector<uint8_t> compressedlastdocID = compress_block(lastdocID, VBEncode, false);
-        write_block<uint8_t>(compressedlastdocID, ofile);
-        metadata.blocksizes = ofile.tellp();
-        std::vector<uint8_t> encodedblocksizes = compress_block(compressedblocksizes, VBEncode, false);
-        write_block<uint8_t>(encodedblocksizes, ofile);
-        metadata.postings_blocks = ofile.tellp();
-
-        for(auto iter = compressedblocks.begin(); iter != compressedblocks.end(); iter++) {
-            write_block<uint8_t>(*iter, ofile);
-        }
-
-        metadata.end_offset = ofile.tellp();
-        if(positional) exlex.addPositional(termID, metadata);
-        else exlex.addNonPositional(termID, metadata);
+        //Write out the posting list to disk
+        write_postinglist(ofile, filepath, postinglistiter->first, postinglistiter->second, positional);
     }
 }
 
