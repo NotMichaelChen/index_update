@@ -62,10 +62,10 @@ namespace Matcher {
         sort(commonblocks.begin(), commonblocks.end(), compareNew);
 
         index = 0;
+        blockindex = 0;
         if(commonblocks.size() > 0 && index == commonblocks[0]->newloc) {
             index = commonblocks[blockindex]->run.size();
         }
-        blockindex = 0;
         
         while(index < se.getNewSize()) {
             //Edited sections in new file are considered "inserted"

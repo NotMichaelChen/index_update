@@ -501,7 +501,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
 
             if(zfilestream.tellg() != metaz->start_pos+4)
                 std::cerr << "filestream doesn't match metadata z " << zfilestream.tellg() << ' ' << metaz->start_pos+4 << '\n';
-                
+
             //Calculate shift to use for updating the metadata
             long shift = ofile.tellp() - metaz->start_pos;
             //Subtract four since we already read the termID
@@ -528,6 +528,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
                 metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
                 metai = exlex.getNonPositional(ItermID, dir+namebase2);
             }
+            
             if(positional) {
                 //read both posting lists from both files
                 std::vector<Posting> zpostinglist = read_pos_postinglist(zfilestream, metaz, ZtermID);
