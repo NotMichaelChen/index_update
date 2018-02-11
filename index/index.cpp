@@ -68,7 +68,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         lex.updateFreq(np_iter->term, np_iter->freq);
 
         nPosting posting(entry.termid, np_iter->docID, np_iter->freq);
-        nonpositional_index[entry.termid].push_back(posting);
+        insert_posting<nPosting>(nonpositional_index[entry.termid], posting);
         ++nonpositional_size;
         if(nonpositional_size > POSTING_LIMIT) {
             //when dynamic index cannot fit into memory, write to disk
@@ -84,7 +84,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
         Lex_data entry = lex.getEntry(p_iter->term);
 
         Posting posting(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
-        positional_index[entry.termid].push_back(posting);
+        insert_posting<Posting>(positional_index[entry.termid], posting);
         ++positional_size;
         if(positional_size > POSTING_LIMIT) {
             //display_positional();
@@ -93,6 +93,38 @@ void Index::insert_document(std::string& url, std::string& newpage) {
             positional_size = 0;
         }
     }
+}
 
-    //lex.display();
+template<typename T>
+void Index::insert_posting(std::vector<T>& postinglist, T posting) {
+    if(postinglist.empty()) {
+        postinglist.push_back(posting);
+        return;
+    }
+
+    int low = 0;
+    int high = postinglist.size()-1;
+    int mid = 0;
+
+    while(true) {
+        mid = low + (high - low) / 2;
+
+        if(posting.docID < postinglist[mid].docID) {
+            high = mid - 1;
+            if(low > high) {
+                break;
+            }
+        }
+        else if(posting.docID > postinglist[mid].docID) {
+            low = mid + 1;
+            if(low > high) {
+                mid += 1;
+                break;
+            }
+        }
+        else 
+            break;
+    }
+
+    postinglist.insert(postinglist.begin() + mid, posting);
 }

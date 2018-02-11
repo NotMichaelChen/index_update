@@ -3,6 +3,7 @@
 #include <iostream>
 #include <functional>
 #include <dirent.h>
+#include <algorithm>
 
 #include "varbyte.hpp"
 
@@ -99,7 +100,7 @@ std::vector<uint8_t> StaticIndex::compress_block(std::vector<unsigned int>& fiel
 
         for(size_t i = 1; i < field.size(); i++) {
             if(field[i] < field[i-1])
-                std::cerr << "negative during delta compressing " << field[i-1] << ' ' << field[i] << "\n";
+                throw std::invalid_argument("negative during delta compressing " + std::to_string(field[i-1]) + " " + std::to_string(field[i]) + "\n");
             deltaencode.push_back(field[i] - field[i-1]);
         }
         compressed = encoder(deltaencode);
@@ -319,6 +320,10 @@ std::vector<Posting> StaticIndex::read_pos_postinglist(std::ifstream& ifile, std
             throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()) + "," + std::to_string(thirdvec.size()));
         }
 
+        if(!std::is_sorted(docIDs.begin(), docIDs.end())) {
+            throw std::invalid_argument("Error, docID array not sorted");
+        }
+
         for(size_t j = 0; j < docIDs.size(); j++) {
             Posting newpost;
             newpost.termID = termID;
@@ -388,6 +393,10 @@ std::vector<nPosting> StaticIndex::read_nonpos_postinglist(std::ifstream& ifile,
 
         if(docIDs.size() != secondvec.size()) {
             throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()));
+        }
+
+        if(!std::is_sorted(docIDs.begin(), docIDs.end())) {
+            throw std::invalid_argument("Error, docID array not sorted");
         }
 
         for(size_t j = 0; j < docIDs.size(); j++) {

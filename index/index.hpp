@@ -31,6 +31,9 @@ public:
     void display_positional();
 
 private:
+    template<typename T>
+    void insert_posting(std::vector<T>& postinglist, T posting);
+
     std::map<unsigned int, std::vector<Posting>> positional_index;
     std::map<unsigned int, std::vector<nPosting>> nonpositional_index;
     //TODO: Is it possible to not use separate variables for these?
