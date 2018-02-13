@@ -5,7 +5,7 @@
 
 #include "doc_analyzer/analyzer.h"
 
-#define POSTING_LIMIT 500 //make sure doesn't exceed memory limit
+#define POSTING_LIMIT 10000 //make sure doesn't exceed memory limit
 #define BLOCKSIZE 128
 
 Index::Index() : docstore(), transtable(), lex(), staticwriter("disk_index", BLOCKSIZE) {

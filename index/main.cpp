@@ -1,6 +1,7 @@
 #include "dirent.h"
 
 #include <fstream>
+#include <chrono>
 
 #include "index.hpp"
 
@@ -39,6 +40,8 @@ int main(int argc, char **argv) {
     Index index;
     vector<string> filelist = openInDir("./dataset-format/");
 
+    auto begin = chrono::high_resolution_clock::now();
+    int docs = 0;
     for(string& i : filelist) {
 
         if(i == "." || i == "..")
@@ -58,8 +61,12 @@ int main(int argc, char **argv) {
 
         cout << "Inserting file: " << filename << endl;
         index.insert_document(filename, filecontents);
-        //cin.get();
+        ++docs;
     }
 
+    auto end = chrono::high_resolution_clock::now();    
+    auto dur = end - begin;
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+    std::cout << "Inserted " << docs << " documents in " << ms << "ms for an average of " << ms / (double)docs << " ms/doc\n";
     return 0;
 }
