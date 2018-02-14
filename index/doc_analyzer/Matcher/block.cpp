@@ -88,6 +88,8 @@ namespace Matcher {
             //if we successfully extended the block, check for possible overlaps
             if(allblocks[index]->run.size() > oldblocklength) {
                 auto overlapchecker = allblocks.begin() + index + 1;
+                auto overlapbegin = overlapchecker;
+
                 //Potential overlap as long as the other block's begin is before this block's end
                 while(overlapchecker != allblocks.end() && (*overlapchecker)->oldloc < (olditer - se.getOldIter())) {
                     if((*overlapchecker)->oldloc >= allblocks[index]->oldloc &&
@@ -95,10 +97,21 @@ namespace Matcher {
                         (*overlapchecker)->newloc >= allblocks[index]->newloc &&
                         (*overlapchecker)->newendloc() <= (newiter - se.getNewIter()))
                     {
-                        overlapchecker = allblocks.erase(overlapchecker);
-                    }
-                    else
                         overlapchecker++;
+                        //overlapchecker = allblocks.erase(overlapchecker);
+                    }
+                    else if(overlapbegin != overlapchecker) {
+                        overlapchecker = allblocks.erase(overlapbegin, overlapchecker);
+                        overlapbegin = overlapchecker;
+                    }
+                    else {
+                        overlapchecker++;
+                        overlapbegin++;
+                    }
+                        //overlapchecker++;
+                }
+                if(overlapbegin != overlapchecker) {
+                    overlapchecker = allblocks.erase(overlapbegin, overlapchecker);
                 }
             }
             
