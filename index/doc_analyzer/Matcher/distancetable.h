@@ -1,7 +1,7 @@
 #ifndef DISTANCETABLE_H
 #define DISTANCETABLE_H
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "graph.h"
@@ -58,7 +58,7 @@ namespace Matcher {
         //Each table is a list of distance and previous_block pairs, with the position
         //in the vector denoting the number of hops it takes from S.
         //**We assume that index=0 means 1 hop from S
-        std::map<std::shared_ptr<Block>, std::vector<TableEntry>> tablelist;
+        std::unordered_map<std::shared_ptr<Block>, std::vector<TableEntry>> tablelist;
         //The maximum number of steps we're allowed to take through the graph
         int maxsteps;
     };

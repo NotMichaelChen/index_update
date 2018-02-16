@@ -1,7 +1,7 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <set>
 
@@ -28,7 +28,7 @@ namespace Matcher {
     private:
         //Each Block is associated with an adjacency list of neighboring vertices
         //Edge weights aren't required since weights are defined in each vertex
-        std::map<std::shared_ptr<Block>, std::vector<std::shared_ptr<Block>>> G;
+        std::unordered_map<std::shared_ptr<Block>, std::vector<std::shared_ptr<Block>>> G;
         
         //List of all vertices that appear in the graph
         //Not guaranteed to be sorted in any way

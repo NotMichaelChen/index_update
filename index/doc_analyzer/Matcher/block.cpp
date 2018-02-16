@@ -111,7 +111,7 @@ namespace Matcher {
                         //overlapchecker++;
                 }
                 if(overlapbegin != overlapchecker) {
-                    overlapchecker = allblocks.erase(overlapbegin, overlapchecker);
+                    allblocks.erase(overlapbegin, overlapchecker);
                 }
             }
             
