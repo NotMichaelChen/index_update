@@ -6,6 +6,7 @@
 //Used in the extended lexicon and associated with a termID
 struct mData{
     //For which file the metadata is for
+    //Includes the whole filepath
     std::string filename;
     //Starting position of the inverted list
     long start_pos;

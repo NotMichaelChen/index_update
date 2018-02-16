@@ -25,28 +25,6 @@ Index::Index() : docstore(), transtable(), lex(), staticwriter("disk_index", BLO
     nonpositional_size = 0;
 }
 
-void Index::display_non_positional(){
-    std::cout << "***************** Displaying non positional **************** " << std::endl;
-    for( std::map<unsigned int, std::vector<nPosting>>::iterator it = nonpositional_index.begin(); it != nonpositional_index.end(); it ++){
-        std::cout << it->first << std::endl;
-        for( std::vector<nPosting>::iterator vit = it->second.begin(); vit != it->second.end(); vit ++){
-            std::cout << vit->docID << ' ' << vit->second << std::endl;
-        }
-    }
-    std:: cout << "********************************" << std::endl;
-}
-
-void Index::display_positional(){
-    std::cout << "***************** Displaying positional **************** " << std::endl;
-    for( std::map<unsigned int, std::vector<Posting>>::iterator it = positional_index.begin(); it != positional_index.end(); it ++){
-        std::cout << it->first << std::endl;
-        for( std::vector<Posting>::iterator vit = it->second.begin(); vit != it->second.end(); vit ++){
-            std::cout << vit->docID << ' ' << vit->second << ' '<< vit->third << std::endl;
-        }
-    }
-    std:: cout << "********************************" << std::endl;
-}
-
 void Index::insert_document(std::string& url, std::string& newpage) {
     //Get timestamp, https://stackoverflow.com/a/16358111
     auto t = std::time(nullptr);
