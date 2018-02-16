@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <map>
+#include <unordered_set>
 
 using namespace std;
 
@@ -68,6 +69,8 @@ namespace Matcher {
     void extendBlocks(vector<shared_ptr<Block>>& allblocks, StringEncoder& se) {
         //Sort based on old locations
         sort(allblocks.begin(), allblocks.end(), compareOld);
+        //Create a set to store deleted locations
+        std::unordered_set<size_t> deletedlocs;
         
         //Index of block to be extended
         size_t index = 0;
@@ -88,7 +91,6 @@ namespace Matcher {
             //if we successfully extended the block, check for possible overlaps
             if(allblocks[index]->run.size() > oldblocklength) {
                 auto overlapchecker = allblocks.begin() + index + 1;
-                auto overlapbegin = overlapchecker;
 
                 //Potential overlap as long as the other block's begin is before this block's end
                 while(overlapchecker != allblocks.end() && (*overlapchecker)->oldloc < (olditer - se.getOldIter())) {
@@ -97,26 +99,25 @@ namespace Matcher {
                         (*overlapchecker)->newloc >= allblocks[index]->newloc &&
                         (*overlapchecker)->newendloc() <= (newiter - se.getNewIter()))
                     {
-                        overlapchecker++;
-                        //overlapchecker = allblocks.erase(overlapchecker);
+                        deletedlocs.insert((size_t)(overlapchecker - allblocks.begin()));
                     }
-                    else if(overlapbegin != overlapchecker) {
-                        overlapchecker = allblocks.erase(overlapbegin, overlapchecker);
-                        overlapbegin = overlapchecker;
-                    }
-                    else {
-                        overlapchecker++;
-                        overlapbegin++;
-                    }
-                        //overlapchecker++;
-                }
-                if(overlapbegin != overlapchecker) {
-                    allblocks.erase(overlapbegin, overlapchecker);
+                    overlapchecker++;
                 }
             }
             
-            index++;
+            do {
+                index++;
+            } while(deletedlocs.find(index) != deletedlocs.end());
         }
+
+        //Copy over valid blocks
+        vector<shared_ptr<Block>> newblocks;
+        for(size_t i = 0; i < allblocks.size(); i++) {
+            if(deletedlocs.find(i) == deletedlocs.end()) {
+                newblocks.push_back(allblocks[i]);
+            }
+        }
+        allblocks.swap(newblocks);
     }
     
     //Resolve blocks that are intersecting
