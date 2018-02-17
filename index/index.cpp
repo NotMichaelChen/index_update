@@ -4,11 +4,9 @@
 #include <sys/stat.h>
 
 #include "doc_analyzer/analyzer.h"
+#include "global_parameters.hpp"
 
-#define POSTING_LIMIT 10000 //make sure doesn't exceed memory limit
-#define BLOCKSIZE 128
-
-Index::Index() : docstore(), transtable(), lex(), staticwriter("disk_index", BLOCKSIZE) {
+Index::Index() : docstore(), transtable(), lex(), staticwriter() {
     //https://stackoverflow.com/a/4980833
     struct stat st;
     if(!(stat(INDEXDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {

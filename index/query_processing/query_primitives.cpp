@@ -11,5 +11,6 @@ query_primitive::query_primitive(int termID, std::vector<mData>::iterator mdata)
 
     ifile.open(metadata->filename);
     ifile.seekg(metadata->last_docID);
-    
+    //Save the last_docID array in memory
+    //Decompress and store the first docID and frequency block
 }

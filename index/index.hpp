@@ -12,11 +12,6 @@
 #include "Structures/translationtable.h"
 #include "static_index.hpp"
 
-#define INDEXDIR "./disk_index/"//path to static index folders
-#define PDIR "./disk_index/positional/"//path to static positional index
-#define NPDIR "./disk_index/non_positional/"//path to static non-positional index
-#define BLOCK 128
-
 typedef std::map<unsigned int, std::vector<Posting>>::iterator P_ITE;
 typedef std::map<unsigned int, std::vector<nPosting>>::iterator NP_ITE;
 typedef std::vector<Posting>::iterator P_V;
