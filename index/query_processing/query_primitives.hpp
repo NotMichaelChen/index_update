@@ -20,6 +20,10 @@ private:
 
     std::vector<mData>::iterator metadata;
     std::vector<unsigned int> last_docID;
+    std::vector<unsigned int> blocksizes;
+
+    size_t blockindex;
+
     std::vector<unsigned int> docblock;
     std::vector<unsigned int> freqblock;
     std::ifstream ifile;
