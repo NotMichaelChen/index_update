@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "../global_parameters.hpp"
-#include "../varbyte.hpp"
+#include "compression_functions/varbyte.hpp"
 #include "compression.hpp"
 
 //Compresses and writes the given vector to the file
