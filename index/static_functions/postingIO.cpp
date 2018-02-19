@@ -6,13 +6,24 @@
 #include "../varbyte.hpp"
 #include "compression.hpp"
 
+//Compresses and writes the given vector to the file
+unsigned int write_block(std::vector<unsigned int>& block, std::ofstream& ofile, std::vector<uint8_t> encoder(std::vector<unsigned int>&), bool delta) {
+    std::vector<uint8_t> compressedblock = compress_block(block, encoder, delta);
+    return write_raw_block(compressedblock, ofile);
+}
+
+//Reads and decompressed the block in the file
+std::vector<unsigned int> read_block(size_t buffersize, std::ifstream& ifile, std::vector<unsigned int> decoder(std::vector<uint8_t>&), bool delta) {
+    std::vector<uint8_t> unsignedbuffer = read_raw_block(buffersize, ifile);
+    return decompress_block(unsignedbuffer, decoder, delta);
+}
+
 // Writes a vector of numbers byte by byte to the given file stream
 // Returns how many bytes it wrote to the stream
-template <typename T>
-unsigned int write_block(std::vector<T>& num, std::ofstream& ofile){
+unsigned int write_raw_block(std::vector<uint8_t>& num, std::ofstream& ofile) {
     /* Write the compressed posting to file byte by byte. */
     unsigned int start = ofile.tellp();
-    for(typename std::vector<T>::iterator it = num.begin(); it != num.end(); it++){
+    for(auto it = num.begin(); it != num.end(); it++){
         ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
     }
     unsigned int end = ofile.tellp();
@@ -21,7 +32,7 @@ unsigned int write_block(std::vector<T>& num, std::ofstream& ofile){
 
 // Reads a vector of unsigned chars from the given file stream
 // Assumes input stream is already at the correct place
-std::vector<uint8_t> read_block(size_t buffersize, std::ifstream& ifile) {
+std::vector<uint8_t> read_raw_block(size_t buffersize, std::ifstream& ifile) {
     std::vector<char> buffer(buffersize);
     ifile.read(&buffer[0], buffersize);
     std::vector<uint8_t> unsignedbuffer = std::vector<uint8_t>(buffer.begin(), buffer.end());
@@ -127,15 +138,13 @@ void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int
 
     //Write out metadata and compressed postings
     metadata.last_docID = ofile.tellp();
-    std::vector<uint8_t> compressedlastdocID = compress_block(lastdocID, VBEncode, false);
-    write_block<uint8_t>(compressedlastdocID, ofile);
+    write_block(lastdocID, ofile, VBEncode, false);
     metadata.blocksizes = ofile.tellp();
-    std::vector<uint8_t> encodedblocksizes = compress_block(compressedblocksizes, VBEncode, false);
-    write_block<uint8_t>(encodedblocksizes, ofile);
+    write_block(compressedblocksizes, ofile, VBEncode, false);
     metadata.postings_blocks = ofile.tellp();
 
     for(auto iter = compressedblocks.begin(); iter != compressedblocks.end(); iter++) {
-        write_block<uint8_t>(*iter, ofile);
+        write_raw_block(*iter, ofile);
     }
 
     metadata.end_offset = ofile.tellp();
@@ -161,9 +170,7 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mDat
     ifile.seekg(metadata->blocksizes);
 
     unsigned int buffersize = metadata->postings_blocks - metadata->blocksizes;
-    std::vector<uint8_t> unsignedbuffer = read_block(buffersize, ifile);
-    std::vector<unsigned int> blocksizes = decompress_block(unsignedbuffer, VBDecode, false);
-    unsignedbuffer.clear();
+    std::vector<unsigned int> blocksizes = read_block(buffersize, ifile, VBDecode, false);
 
     if(blocksizes.size() % 3 != 0) {
         throw std::invalid_argument("Error, blocksize array is not a multiple of 3: " + std::to_string(blocksizes.size()));
@@ -177,17 +184,9 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mDat
     
         std::vector<unsigned int> docIDs, secondvec, thirdvec;
 
-        unsignedbuffer = read_block(doclength, ifile);
-        docIDs = decompress_block(unsignedbuffer, VBDecode, true);
-        unsignedbuffer.clear();
-
-        unsignedbuffer = read_block(secondlength, ifile);
-        secondvec = decompress_block(unsignedbuffer, VBDecode, false);
-        unsignedbuffer.clear();
-
-        unsignedbuffer = read_block(thirdlength, ifile);
-        thirdvec = decompress_block(unsignedbuffer, VBDecode, false);
-        unsignedbuffer.clear();
+        docIDs = read_block(doclength, ifile, VBDecode, true);
+        secondvec = read_block(secondlength, ifile, VBDecode, false);
+        thirdvec = read_block(thirdlength, ifile, VBDecode, false);
 
         if(docIDs.size() != secondvec.size() || secondvec.size() != thirdvec.size()) {
             throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()) + "," + std::to_string(thirdvec.size()));
@@ -232,9 +231,7 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, std::vector<
     ifile.seekg(metadata->blocksizes);
 
     unsigned int buffersize = metadata->postings_blocks - metadata->blocksizes;
-    std::vector<uint8_t> unsignedbuffer = read_block(buffersize, ifile);
-    std::vector<unsigned int> blocksizes = decompress_block(unsignedbuffer, VBDecode, false);
-    unsignedbuffer.clear();
+    std::vector<unsigned int> blocksizes = read_block(buffersize, ifile, VBDecode, false);
 
     if(blocksizes.size() % 2 != 0) {
         throw std::invalid_argument("Error, blocksize array is not a multiple of 2: " + std::to_string(blocksizes.size()));
@@ -247,13 +244,8 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, std::vector<
     
         std::vector<unsigned int> docIDs, secondvec;
 
-        unsignedbuffer = read_block(doclength, ifile);
-        docIDs = decompress_block(unsignedbuffer, VBDecode, true);
-        unsignedbuffer.clear();
-
-        unsignedbuffer = read_block(secondlength, ifile);
-        secondvec = decompress_block(unsignedbuffer, VBDecode, false);
-        unsignedbuffer.clear();
+        docIDs = read_block(doclength, ifile, VBDecode, true);
+        secondvec = read_block(secondlength, ifile, VBDecode, false);
 
         if(docIDs.size() != secondvec.size()) {
             throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()));
