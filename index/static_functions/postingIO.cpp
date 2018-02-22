@@ -7,7 +7,7 @@
 #include "compression.hpp"
 
 //Compresses and writes the given vector to the file
-unsigned int write_block(std::vector<unsigned int>& block, std::ofstream& ofile, std::vector<uint8_t> encoder(std::vector<unsigned int>&), bool delta) {
+unsigned int write_block(std::vector<unsigned int>& block, std::ofstream& ofile, std::vector<uint8_t> encoder(unsigned int), bool delta) {
     std::vector<uint8_t> compressedblock = compress_block(block, encoder, delta);
     return write_raw_block(compressedblock, ofile);
 }

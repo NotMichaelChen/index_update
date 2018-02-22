@@ -20,17 +20,6 @@ std::vector<uint8_t> VBEncode(unsigned int num) {
     return bytes;
 }
 
-std::vector<uint8_t> VBEncode(std::vector<unsigned int>& nums) {
-    std::vector<uint8_t> bytestream;
-
-    for(const unsigned int &n : nums) {
-        std::vector<uint8_t> bytes = VBEncode(n);
-        bytestream.insert(bytestream.end(), bytes.begin(), bytes.end());
-    }
-
-    return bytestream;
-}
-
 std::vector<unsigned int> VBDecode(std::vector<uint8_t>& bytestream) {
     std::vector<unsigned int> numbers;
     int n = 0;
@@ -46,9 +35,4 @@ std::vector<unsigned int> VBDecode(std::vector<uint8_t>& bytestream) {
         }
     }
     return numbers;
-}
-
-std::vector<unsigned int> VBDecode(char* buffer, int length) {
-    std::vector<uint8_t> bytestream(buffer, buffer + length);
-    return VBDecode(bytestream);
 }

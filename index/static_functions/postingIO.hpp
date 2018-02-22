@@ -12,7 +12,7 @@
 // Contains functions related to reading and writing from static_indexes
 
 //Compressed a block (vector) of ints and writes it to the file
-unsigned int write_block(std::vector<unsigned int>& block, std::ofstream& ofile, std::vector<uint8_t> encoder(std::vector<unsigned int>&), bool delta);
+unsigned int write_block(std::vector<unsigned int>& block, std::ofstream& ofile, std::vector<uint8_t> encoder(unsigned int), bool delta);
 
 //Reads a block of compressed data and decompressed it
 std::vector<unsigned int> read_block(size_t buffersize, std::ifstream& ifile, std::vector<unsigned int> decoder(std::vector<uint8_t>&), bool delta);
