@@ -30,7 +30,8 @@ query_primitive::query_primitive(int termID, std::vector<mData>::iterator mdata)
     buffersize = blocksizes[0];
     docblock = read_block(buffersize, ifile, VBDecode, true);
 
-    docIDindex = 1;
+    docIDindex = 0;
+    docblockpos = metadata->postings_blocks;
 }
 
 unsigned int query_primitive::nextGEQ(unsigned int pos) {
@@ -48,24 +49,41 @@ unsigned int query_primitive::nextGEQ(unsigned int pos) {
         size_t oldindex = docIDindex;
         //Find the correct block to look at
         while(docIDindex < last_docID.size() && last_docID[docIDindex] < pos) {
-            //Seek to next block location
-            long amount = blocksizes[(docIDindex*2)-1] + blocksizes[(docIDindex*2)];
-            ifile.seekg(amount, std::ios_base::cur);
+            //Move the docID block pointer
+            docblockpos += blocksizes[(docIDindex*2)-1] + blocksizes[(docIDindex*2)];
 
             ++docIDindex;
         }
         //If it's different than our current block then decompress new block
         if(oldindex != docIDindex) {
+            //Move the filestream to the new position
+            ifile.seekg(docblockpos);
             size_t buffersize = blocksizes[docIDindex*2];
             docblock = read_block(buffersize, ifile, VBDecode, true);
 
             blockindex = 0;
         }
-
         //Perform standard docID searching
         while(blockindex < docblock.size() && docblock[blockindex] < pos)
             ++blockindex;
+        //TODO: determine what to return if out of bounds
+        if(blockindex == docblock.size())
+            --blockindex;
         
         return docblock[blockindex];
+    }
+}
+
+unsigned int query_primitive::getFreq() {
+    if(inmemory) {
+        return postinglist[postingindex].second;
+    }
+    else {
+        if(!freqdecompressed) {
+            size_t buffersize = blocksizes[(docIDindex*2)+1];
+            freqblock = read_block(buffersize, ifile, VBDecode, false);
+            freqdecompressed = true;
+        }
+        return freqblock[blockindex];
     }
 }

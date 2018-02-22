@@ -19,23 +19,41 @@ public:
     //will not be moved, and y will be returned
     unsigned int nextGEQ(unsigned int pos);
 
+    //getFreq() decompresses the block of frequency values associated with the current
+    //posting, if it has not been decompressed yet, and returns the frequency value of the current
+    //posting
+    //NOTE: undefined if nextGEQ returned invalid
+    unsigned int getFreq();
+
 private:
     bool inmemory;
     
+    //In-memory variables
     std::vector<nPosting> postinglist;
     size_t postingindex;
 
+    //Metadata
     std::vector<mData>::iterator metadata;
     std::vector<unsigned int> last_docID;
     std::vector<unsigned int> blocksizes;
 
-    //Which docID block to examine next
+    //State
+
+    //Which docID block we are in
+    //Index of last_docID
     size_t docIDindex;
     //Which number in the block we are currently pointed to
     size_t blockindex;
+    //File pointer position pointing to the beginning of a docID block
+    long docblockpos;
+    //Determines if frequency block has been decompressed/is valid
+    bool freqdecompressed;
 
+    //Vectors to hold decompressed blocks
     std::vector<unsigned int> docblock;
     std::vector<unsigned int> freqblock;
+
+    //Filestream
     std::ifstream ifile;
 };
 
