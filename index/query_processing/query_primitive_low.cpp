@@ -1,15 +1,15 @@
-#include "query_primitives.hpp"
+#include "query_primitive_low.hpp"
 
 #include "../static_functions/postingIO.hpp"
 #include "../static_functions/compression_functions/varbyte.hpp"
 
-query_primitive::query_primitive(int termID, std::map<unsigned int, std::vector<nPosting>>& index) {
+query_primitive_low::query_primitive_low(int termID, std::map<unsigned int, std::vector<nPosting>>& index) {
     inmemory = true;
     postinglist = index[termID];
     postingindex = 0;
 }
 
-query_primitive::query_primitive(int termID, std::vector<mData>::iterator mdata) {
+query_primitive_low::query_primitive_low(int termID, std::vector<mData>::iterator mdata) {
     inmemory = false;
     metadata = mdata;
 
@@ -32,9 +32,11 @@ query_primitive::query_primitive(int termID, std::vector<mData>::iterator mdata)
 
     docIDindex = 0;
     docblockpos = metadata->postings_blocks;
+    blockindex = 0;
+    freqdecompressed = false;
 }
 
-unsigned int query_primitive::nextGEQ(unsigned int pos) {
+unsigned int query_primitive_low::nextGEQ(unsigned int pos) {
     if(inmemory) {
         while(postingindex < postinglist.size() && postinglist[postingindex].docID < pos) {
             ++postingindex;
@@ -62,6 +64,7 @@ unsigned int query_primitive::nextGEQ(unsigned int pos) {
             docblock = read_block(buffersize, ifile, VBDecode, true);
 
             blockindex = 0;
+            freqdecompressed = false;
         }
         //Perform standard docID searching
         while(blockindex < docblock.size() && docblock[blockindex] < pos)
@@ -74,7 +77,7 @@ unsigned int query_primitive::nextGEQ(unsigned int pos) {
     }
 }
 
-unsigned int query_primitive::getFreq() {
+unsigned int query_primitive_low::getFreq() {
     if(inmemory) {
         return postinglist[postingindex].second;
     }
