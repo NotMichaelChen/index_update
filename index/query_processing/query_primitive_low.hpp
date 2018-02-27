@@ -1,5 +1,5 @@
-#ifndef QUERY_PRIMITIVES_HPP
-#define QUERY_PRIMITIVES_HPP
+#ifndef QUERY_PRIMITIVE_LOW_HPP
+#define QUERY_PRIMITIVE_LOW_HPP
 
 #include <vector>
 #include <map>
@@ -10,8 +10,8 @@
 
 class query_primitive_low {
 public:
-    query_primitive_low(int termID, std::map<unsigned int, std::vector<nPosting>>& index);
-    query_primitive_low(int termID, std::vector<mData>::iterator mdata);
+    query_primitive_low(unsigned int termID, std::map<unsigned int, std::vector<nPosting>>& index);
+    query_primitive_low(unsigned int termID, std::vector<mData>::iterator mdata);
 
     //advances the read pointer of lp to the posting with the smallest
     //docID that is at least x, and then returns that docID. Note that read pointers only move

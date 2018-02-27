@@ -16,8 +16,6 @@ public:
     std::vector<mData>::iterator deletePositional(unsigned int term, std::vector<mData>::iterator entry);
     std::vector<mData>::iterator deleteNonPositional(unsigned int term, std::vector<mData>::iterator entry);
 
-    void displayNonPositional();
-
     std::vector<mData>::iterator getPositional(unsigned int term, std::string filename);
     std::vector<mData>::iterator getNonPositional(unsigned int term, std::string filename);
 

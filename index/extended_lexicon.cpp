@@ -17,17 +17,6 @@ std::vector<mData>::iterator ExtendedLexicon::deletePositional(unsigned int term
     return exlexp[term].erase(entry);
 }
 
-
-void ExtendedLexicon::displayNonPositional(){
-    for( std::unordered_map<unsigned int, std::vector<mData>>::iterator it = exlexnp.begin(); it != exlexnp.end(); it ++){
-        std::cout << it->first << std::endl;
-        for( std::vector<mData>::iterator vit = it->second.begin(); vit != it->second.end(); vit ++){
-            std::cout << '\t' << vit->start_pos << " ";
-        }
-        std::cout << std::endl;
-    }
-}
-
 std::vector<mData>::iterator ExtendedLexicon::getPositional(unsigned int term, std::string filename) {
     for( std::vector<mData>::iterator it = exlexp[term].begin(); it != exlexp[term].end(); it ++){
         if( it->filename == filename ) return it;

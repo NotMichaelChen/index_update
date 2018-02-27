@@ -3,13 +3,13 @@
 #include "../static_functions/postingIO.hpp"
 #include "../static_functions/compression_functions/varbyte.hpp"
 
-query_primitive_low::query_primitive_low(int termID, std::map<unsigned int, std::vector<nPosting>>& index) {
+query_primitive_low::query_primitive_low(unsigned int termID, std::map<unsigned int, std::vector<nPosting>>& index) {
     inmemory = true;
     postinglist = index[termID];
     postingindex = 0;
 }
 
-query_primitive_low::query_primitive_low(int termID, std::vector<mData>::iterator mdata) {
+query_primitive_low::query_primitive_low(unsigned int termID, std::vector<mData>::iterator mdata) {
     inmemory = false;
     metadata = mdata;
 
