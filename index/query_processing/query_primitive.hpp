@@ -16,6 +16,10 @@ public:
     unsigned int getFreq();
 private:
     std::vector<query_primitive_low> lists;
+    //Contains the current docID that each QP is pointed at
+    std::vector<unsigned int> curdocIDs;
+    //Contains the minimum docID of all QPs
+    unsigned int docID;
 };
 
 #endif

@@ -11,21 +11,26 @@ query_primitive::query_primitive(unsigned int termID, std::map<unsigned int, std
     for(auto iter = exlex.getNonPositionalBegin(termID); iter != exlex.getNonPositionalEnd(termID); iter++) {
         lists.emplace_back(termID, iter);
     }
+
+    curdocIDs.resize(lists.size());
+    docID = 0;
 }
 
 unsigned int query_primitive::nextGEQ(unsigned int x) {
     //TODO: Handle nextGEQ failures
-    unsigned int min = lists[0].nextGEQ(x);
-    for(size_t i = 1; i < lists.size(); ++i) {
+    unsigned int min = docID;
+
+    for(size_t i = 0; i < lists.size(); ++i) {
         unsigned int next = lists[i].nextGEQ(x);
+        curdocIDs[i] = next;
         if(next < min)
             min = next;
     }
 
+    docID = min;
     return min;
 }
 
 unsigned int query_primitive::getFreq() {
-
 }
 
