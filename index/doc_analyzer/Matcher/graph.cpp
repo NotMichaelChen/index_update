@@ -1,6 +1,7 @@
 #include "graph.h"
 
 #include <algorithm>
+#include <iostream>
 
 using namespace std;
 
@@ -22,7 +23,13 @@ namespace Matcher {
             }
         }
         
+        int edges = 0;
+        for(auto iter = G.begin(); iter != G.end(); iter++) {
+            edges += iter->second.size();
+        }
+        
         vertices = commonblocks;
+        cout << vertices.size() << " vertices; " << edges << " edges\n";
     }
     
     vector<shared_ptr<Block>> BlockGraph::getAdjacencyList(shared_ptr<Block> V) {

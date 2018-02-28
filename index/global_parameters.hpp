@@ -1,7 +1,10 @@
 #ifndef GLOBAL_PARAMETERS_HPP
 #define GLOBAL_PARAMETERS_HPP
 
-#define POSTING_LIMIT 10000 //make sure doesn't exceed memory limit
+#define MIN_BLOCK_SIZE 15
+#define MAX_BLOCK_COUNT 20
+
+#define POSTING_LIMIT 100000 //make sure doesn't exceed memory limit
 #define BLOCKSIZE 128
 #define INDEXDIR "./disk_index/"//path to static index folders
 #define PDIR "./disk_index/positional/"//path to static positional index

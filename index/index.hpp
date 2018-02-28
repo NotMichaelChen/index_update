@@ -30,8 +30,8 @@ private:
     std::map<unsigned int, std::vector<Posting>> positional_index;
     std::map<unsigned int, std::vector<nPosting>> nonpositional_index;
     //TODO: Is it possible to not use separate variables for these?
-    unsigned int positional_size;
-    unsigned int nonpositional_size;
+    unsigned long positional_size;
+    unsigned long nonpositional_size;
 
     Structures::DocumentStore docstore;
     Structures::TranslationTable transtable;

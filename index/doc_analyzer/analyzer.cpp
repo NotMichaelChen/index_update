@@ -1,9 +1,7 @@
 #include "analyzer.h"
 
 #include "Matcher/matcher.h"
-
-#define MIN_BLOCK_SIZE 10
-#define MAX_BLOCK_COUNT 20
+#include "../global_parameters.hpp"
 
 using namespace std;
 
