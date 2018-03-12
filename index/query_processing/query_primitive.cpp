@@ -32,5 +32,20 @@ unsigned int query_primitive::nextGEQ(unsigned int x) {
 }
 
 unsigned int query_primitive::getFreq() {
-}
+    //Make larger than any possible index num, specific number doesn't matter
+    int minindexnum = lists.size();
+    unsigned int freq = -1;
 
+    for(size_t i = 0; i < lists.size(); ++i) {
+        if(curdocIDs[i] == docID) {
+            int newindexnum = lists[i].getIndexNumber();
+
+            if(newindexnum < minindexnum) {
+                minindexnum = newindexnum;
+                freq = lists[i].getFreq();
+            }
+        }
+    }
+
+    return freq;
+}

@@ -25,6 +25,10 @@ public:
     //NOTE: undefined if nextGEQ returned invalid
     unsigned int getFreq();
 
+    //Gets the number of the index that qpl is pointing to
+    //Returns -1 for inmemory index
+    int getIndexNumber();
+
 private:
     bool inmemory;
     

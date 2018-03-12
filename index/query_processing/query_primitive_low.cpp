@@ -1,5 +1,7 @@
 #include "query_primitive_low.hpp"
 
+#include <algorithm>
+
 #include "../static_functions/postingIO.hpp"
 #include "../static_functions/compression_functions/varbyte.hpp"
 
@@ -89,4 +91,16 @@ unsigned int query_primitive_low::getFreq() {
         }
         return freqblock[blockindex];
     }
+}
+
+int query_primitive_low::getIndexNumber() {
+    if(inmemory)
+        return -1;
+
+    std::string filepath = metadata->filename;
+
+    //WARNING: Uses unix-specific file separators
+    std::string filename = std::string(std::find( filepath.rbegin(), filepath.rend(), '/' ).base(), filepath.end());
+
+    return std::stoi(filename.substr(1, filename.length()));
 }
