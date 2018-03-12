@@ -7,6 +7,9 @@
 
 using namespace std;
 
+//TODO: Collect all long typenames into a global typedef header
+//TODO: Review unsigned/signed type decisions
+
 //http://forum.codecall.net/topic/60157-read-all-files-in-a-folder/
 vector<string> openInDir(string path = ".") {
     DIR*    dir;

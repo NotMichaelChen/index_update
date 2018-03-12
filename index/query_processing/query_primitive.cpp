@@ -4,7 +4,6 @@
 
 #include "../global_parameters.hpp"
 
-
 query_primitive::query_primitive(unsigned int termID, std::map<unsigned int, std::vector<nPosting>>& index, ExtendedLexicon& exlex) {
     lists.emplace_back(termID, index);
 
