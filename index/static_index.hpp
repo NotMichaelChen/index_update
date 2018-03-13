@@ -8,6 +8,7 @@
 
 #include "posting.hpp"
 #include "extended_lexicon.hpp"
+#include "global_parameters.hpp"
 
 /**
  * Responsible for writing and managing the static indexes on disk
@@ -17,18 +18,10 @@
 class StaticIndex {
 
 public:
-    void write_p_disk(std::map<unsigned int, std::vector<Posting>>::iterator indexbegin,
-        std::map<unsigned int, std::vector<Posting>>::iterator indexend);
-
-    void write_np_disk(std::map<unsigned int, std::vector<nPosting>>::iterator indexbegin,
-        std::map<unsigned int, std::vector<nPosting>>::iterator indexend);
+    void write_p_disk(GlobalType::PosMapIter indexbegin, GlobalType::PosMapIter indexend);
+    void write_np_disk(GlobalType::NonPosMapIter indexbegin, GlobalType::NonPosMapIter indexend);
 
 private:
-    using Pos_Map_Iter = std::map<unsigned int, std::vector<Posting>>::iterator;
-    using NonPos_Map_Iter = std::map<unsigned int, std::vector<nPosting>>::iterator;
-
-    using Pos_Index = std::map<unsigned int, std::vector<Posting>>;
-    using NonPos_Index = std::map<unsigned int, std::vector<nPosting>>;
 
     ExtendedLexicon exlex;
 

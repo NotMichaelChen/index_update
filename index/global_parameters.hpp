@@ -10,4 +10,21 @@
 #define PDIR "./disk_index/positional/"//path to static positional index
 #define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 
+#include <vector>
+#include <map>
+#include <queue>
+
+struct Posting;
+struct nPosting;
+
+namespace GlobalType {
+    using PosMapIter = std::map<unsigned int, std::vector<Posting>>::iterator;
+    using NonPosMapIter = std::map<unsigned int, std::vector<nPosting>>::iterator;
+
+    using PosIndex = std::map<unsigned int, std::vector<Posting>>;
+    using NonPosIndex = std::map<unsigned int, std::vector<nPosting>>;
+
+    using DoubleMinHeap = std::priority_queue<double, std::vector<double>, std::greater<double>>;
+}
+
 #endif

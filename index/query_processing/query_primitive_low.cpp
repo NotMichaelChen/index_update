@@ -5,7 +5,7 @@
 #include "../static_functions/postingIO.hpp"
 #include "../static_functions/compression_functions/varbyte.hpp"
 
-query_primitive_low::query_primitive_low(unsigned int termID, std::map<unsigned int, std::vector<nPosting>>& index) {
+query_primitive_low::query_primitive_low(unsigned int termID, GlobalType::NonPosIndex& index) {
     inmemory = true;
     postinglist = index[termID];
     postingindex = 0;

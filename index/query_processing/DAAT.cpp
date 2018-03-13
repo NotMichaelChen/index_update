@@ -2,11 +2,10 @@
 
 #include <limits>
 
-std::priority_queue<double, std::vector<double>, std::greater<double>> DAAT(std::vector<unsigned int> docIDs, 
-    std::map<unsigned int, std::vector<nPosting>>& index, ExtendedLexicon& exlex)
+GlobalType::DoubleMinHeap DAAT(std::vector<unsigned int> docIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex)
 {
     if(docIDs.empty()) {
-        return std::priority_queue<double, std::vector<double>, std::greater<double>>();
+        return GlobalType::DoubleMinHeap();
     }
 
     std::vector<query_primitive> listpointers;

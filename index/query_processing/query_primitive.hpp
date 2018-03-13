@@ -10,7 +10,7 @@
 
 class query_primitive {
 public:
-    query_primitive(unsigned int termID, std::map<unsigned int, std::vector<nPosting>>& index, ExtendedLexicon& exlex);
+    query_primitive(unsigned int termID, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex);
 
     unsigned int nextGEQ(unsigned int x);
     unsigned int getFreq();

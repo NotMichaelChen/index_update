@@ -5,7 +5,7 @@
 
 #include "../global_parameters.hpp"
 
-query_primitive::query_primitive(unsigned int termID, std::map<unsigned int, std::vector<nPosting>>& index, ExtendedLexicon& exlex) {
+query_primitive::query_primitive(unsigned int termID, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex) {
     lists.emplace_back(termID, index);
 
     for(auto iter = exlex.getNonPositionalBegin(termID); iter != exlex.getNonPositionalEnd(termID); iter++) {

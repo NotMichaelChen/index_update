@@ -8,8 +8,8 @@
 #include "query_primitive.hpp"
 #include "../posting.hpp"
 #include "../extended_lexicon.hpp"
+#include "../global_parameters.hpp"
 
-std::priority_queue<double, std::vector<double>, std::greater<double>> DAAT(std::vector<unsigned int> docIDs, 
-    std::map<unsigned int, std::vector<nPosting>>& index, ExtendedLexicon& exlex);
+GlobalType::DoubleMinHeap DAAT(std::vector<unsigned int> docIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex);
 
 #endif

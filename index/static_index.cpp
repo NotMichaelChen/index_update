@@ -5,7 +5,6 @@
 #include <dirent.h>
 #include <algorithm>
 
-#include "global_parameters.hpp"
 #include "static_functions/postingIO.hpp"
 
 //List all the files in a directory
@@ -30,7 +29,7 @@ std::vector<std::string> read_directory( std::string path ){
 }
 
 //Writes the positional index to disk, which means it is saved either in file Z0 or I0.
-void StaticIndex::write_p_disk(Pos_Map_Iter indexbegin, Pos_Map_Iter indexend) {
+void StaticIndex::write_p_disk(GlobalType::PosMapIter indexbegin, GlobalType::PosMapIter indexend) {
     std::string filename = PDIR;
     //Z0 exists
     if(std::ifstream(filename + "Z0"))
@@ -41,7 +40,7 @@ void StaticIndex::write_p_disk(Pos_Map_Iter indexbegin, Pos_Map_Iter indexend) {
     std::ofstream ofile(filename);
 
     if (ofile.is_open()){
-        write_index<Pos_Map_Iter>(filename, ofile, true, indexbegin, indexend);
+        write_index<GlobalType::PosMapIter>(filename, ofile, true, indexbegin, indexend);
 
         ofile.close();
     }else{
@@ -52,7 +51,7 @@ void StaticIndex::write_p_disk(Pos_Map_Iter indexbegin, Pos_Map_Iter indexend) {
 }
 
 //Writes the non-positional index to disk, which is saved in either file Z0 or I0
-void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter indexend) {
+void StaticIndex::write_np_disk(GlobalType::NonPosMapIter indexbegin, GlobalType::NonPosMapIter indexend) {
     std::string filename = NPDIR;
     //Z0 exists
     if(std::ifstream(filename + "Z0"))
@@ -63,7 +62,7 @@ void StaticIndex::write_np_disk(NonPos_Map_Iter indexbegin, NonPos_Map_Iter inde
     std::ofstream ofile(filename);
 
     if (ofile.is_open()){
-        write_index<NonPos_Map_Iter>(filename, ofile, false, indexbegin, indexend);
+        write_index<GlobalType::NonPosMapIter>(filename, ofile, false, indexbegin, indexend);
 
         ofile.close();
     }else{

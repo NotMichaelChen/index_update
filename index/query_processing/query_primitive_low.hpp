@@ -7,10 +7,11 @@
 
 #include "../extended_lexicon.hpp"
 #include "../posting.hpp"
+#include "../global_parameters.hpp"
 
 class query_primitive_low {
 public:
-    query_primitive_low(unsigned int termID, std::map<unsigned int, std::vector<nPosting>>& index);
+    query_primitive_low(unsigned int termID, GlobalType::NonPosIndex& index);
     query_primitive_low(unsigned int termID, std::vector<mData>::iterator mdata);
 
     //advances the read pointer of lp to the posting with the smallest
