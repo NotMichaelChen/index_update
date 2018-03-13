@@ -5,9 +5,9 @@
 #include <string>
 #include <fstream>
 
-#include "../posting.hpp"
-#include "../meta.hpp"
-#include "../extended_lexicon.hpp"
+#include "posting.hpp"
+#include "meta.hpp"
+#include "extended_lexicon.hpp"
 
 // Contains functions related to reading and writing from static_indexes
 

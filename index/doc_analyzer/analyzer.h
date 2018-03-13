@@ -7,8 +7,8 @@
 
 #include "externalpostings.h"
 #include "Matcher/translate.h"
-#include "../Structures/documentstore.h"
-#include "../Structures/translationtable.h"
+#include "Structures/documentstore.h"
+#include "Structures/translationtable.h"
 
 //A collection of positional/nonpositional postings and translation vector
 struct MatcherInfo {

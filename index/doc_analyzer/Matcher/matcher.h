@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-#include "../externalpostings.h"
+#include "doc_analyzer/externalpostings.h"
 #include "block.h"
 #include "stringencoder.h"
 

@@ -1,7 +1,7 @@
 #include "analyzer.h"
 
 #include "Matcher/matcher.h"
-#include "../global_parameters.hpp"
+#include "global_parameters.hpp"
 
 using namespace std;
 

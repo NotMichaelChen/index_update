@@ -6,9 +6,9 @@
 #include <map>
 
 #include "query_primitive.hpp"
-#include "../posting.hpp"
-#include "../extended_lexicon.hpp"
-#include "../global_parameters.hpp"
+#include "posting.hpp"
+#include "extended_lexicon.hpp"
+#include "global_parameters.hpp"
 
 GlobalType::DoubleMinHeap DAAT(std::vector<unsigned int> docIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex);
 

@@ -4,8 +4,8 @@
 #include <map>
 #include <vector>
 
-#include "../posting.hpp"
-#include "../extended_lexicon.hpp"
+#include "posting.hpp"
+#include "extended_lexicon.hpp"
 #include "query_primitive_low.hpp"
 
 class query_primitive {

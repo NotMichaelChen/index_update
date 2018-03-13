@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-#include "../static_functions/postingIO.hpp"
-#include "../static_functions/compression_functions/varbyte.hpp"
+#include "static_functions/postingIO.hpp"
+#include "static_functions/compression_functions/varbyte.hpp"
 
 query_primitive_low::query_primitive_low(unsigned int termID, GlobalType::NonPosIndex& index) {
     inmemory = true;

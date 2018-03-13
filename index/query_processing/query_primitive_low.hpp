@@ -5,9 +5,9 @@
 #include <map>
 #include <fstream>
 
-#include "../extended_lexicon.hpp"
-#include "../posting.hpp"
-#include "../global_parameters.hpp"
+#include "extended_lexicon.hpp"
+#include "posting.hpp"
+#include "global_parameters.hpp"
 
 class query_primitive_low {
 public:
