@@ -38,15 +38,17 @@ query_primitive_low::query_primitive_low(unsigned int termID, std::vector<mData>
     freqdecompressed = false;
 }
 
-unsigned int query_primitive_low::nextGEQ(unsigned int pos) {
+unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
+    //Reset to clear previous value
+    failure = false;
     if(inmemory) {
         while(postingindex < postinglist.size() && postinglist[postingindex].docID < pos) {
             ++postingindex;
         }
-        //Never go out of bounds
-        //TODO: determine what to return if out of bounds
+        //Never go out of bounds, but notify upon return
         if(postingindex == postinglist.size())
             --postingindex;
+        failure = true;
         return postinglist[postingindex].docID;
     }
     else {
@@ -74,6 +76,7 @@ unsigned int query_primitive_low::nextGEQ(unsigned int pos) {
         //TODO: determine what to return if out of bounds
         if(blockindex == docblock.size())
             --blockindex;
+        failure = true;
         
         return docblock[blockindex];
     }

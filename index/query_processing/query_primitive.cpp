@@ -1,6 +1,7 @@
 #include "query_primitive.hpp"
 
 #include <dirent.h>
+#include <limits>
 
 #include "../global_parameters.hpp"
 
@@ -16,16 +17,19 @@ query_primitive::query_primitive(unsigned int termID, std::map<unsigned int, std
 }
 
 unsigned int query_primitive::nextGEQ(unsigned int x) {
-    //TODO: Handle nextGEQ failures
-    unsigned int min = docID;
+    unsigned int min = std::numeric_limits<unsigned int>::max();
 
     for(size_t i = 0; i < lists.size(); ++i) {
-        unsigned int next = lists[i].nextGEQ(x);
-        curdocIDs[i] = next;
-        if(next < min)
-            min = next;
+        bool failure = false;
+        unsigned int next = lists[i].nextGEQ(x, failure);
+        if(failure)
+            curdocIDs[i] = std::numeric_limits<unsigned int>::max();
+        else {
+            curdocIDs[i] = next;
+            if(next <= min)
+                min = next;
+        }
     }
-
     docID = min;
     return min;
 }
@@ -33,7 +37,7 @@ unsigned int query_primitive::nextGEQ(unsigned int x) {
 unsigned int query_primitive::getFreq() {
     //Make larger than any possible index num, specific number doesn't matter
     int minindexnum = lists.size();
-    unsigned int freq = -1;
+    unsigned int freq = 0;
 
     for(size_t i = 0; i < lists.size(); ++i) {
         if(curdocIDs[i] == docID) {

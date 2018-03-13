@@ -17,7 +17,7 @@ public:
     //docID that is at least x, and then returns that docID. Note that read pointers only move
     //forward; thus, if the pointer currently points to a posting with docID y > x, then the pointer
     //will not be moved, and y will be returned
-    unsigned int nextGEQ(unsigned int pos);
+    unsigned int nextGEQ(unsigned int pos, bool& failure);
 
     //getFreq() decompresses the block of frequency values associated with the current
     //posting, if it has not been decompressed yet, and returns the frequency value of the current
