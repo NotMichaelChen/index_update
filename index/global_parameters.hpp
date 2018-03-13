@@ -13,6 +13,9 @@
 #include <vector>
 #include <map>
 #include <queue>
+#include <limits>
+
+//Type Aliases
 
 struct Posting;
 struct nPosting;
@@ -25,6 +28,12 @@ namespace GlobalType {
     using NonPosIndex = std::map<unsigned int, std::vector<nPosting>>;
 
     using DoubleMinHeap = std::priority_queue<double, std::vector<double>, std::greater<double>>;
+}
+
+//Constants
+
+namespace GlobalConst {
+    const auto UIntMax = std::numeric_limits<unsigned int>::max();
 }
 
 #endif

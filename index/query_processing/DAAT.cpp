@@ -1,7 +1,5 @@
 #include "DAAT.hpp"
 
-#include <limits>
-
 GlobalType::DoubleMinHeap DAAT(std::vector<unsigned int> docIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex)
 {
     if(docIDs.empty()) {
@@ -18,7 +16,7 @@ GlobalType::DoubleMinHeap DAAT(std::vector<unsigned int> docIDs, GlobalType::Non
     unsigned int did = 0;
 
     //TODO: Replace condition here with something reasonable
-    while(did < std::numeric_limits<unsigned int>::max()) {
+    while(did < GlobalConst::UIntMax) {
         did = listpointers[0].nextGEQ(did);
 
         unsigned int d = 0;

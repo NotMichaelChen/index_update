@@ -1,7 +1,6 @@
 #include "query_primitive.hpp"
 
 #include <dirent.h>
-#include <limits>
 
 #include "global_parameters.hpp"
 
@@ -17,13 +16,13 @@ query_primitive::query_primitive(unsigned int termID, GlobalType::NonPosIndex& i
 }
 
 unsigned int query_primitive::nextGEQ(unsigned int x) {
-    unsigned int min = std::numeric_limits<unsigned int>::max();
+    unsigned int min = GlobalConst::UIntMax;
 
     for(size_t i = 0; i < lists.size(); ++i) {
         bool failure = false;
         unsigned int next = lists[i].nextGEQ(x, failure);
         if(failure)
-            curdocIDs[i] = std::numeric_limits<unsigned int>::max();
+            curdocIDs[i] = GlobalConst::UIntMax;
         else {
             curdocIDs[i] = next;
             if(next <= min)
