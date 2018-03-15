@@ -21,6 +21,7 @@ Index::Index() : docstore(), transtable(), lex(), staticwriter() {
 
     positional_size = 0;
     nonpositional_size = 0;
+    avgdoclength = 0;
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {
@@ -34,7 +35,14 @@ void Index::insert_document(std::string& url, std::string& newpage) {
     //Perform document analysis
     MatcherInfo results = indexUpdate(url, newpage, timestamp, docstore, transtable);
 
-    //Update document length info
+    //Update document length info + average document length
+    //https://math.stackexchange.com/a/1567342
+    if(doclength.find(results.docID) == doclength.end()) {
+        //Remove old value
+        avgdoclength = ((avgdoclength * doclength.size()) - newpage.length()) / (doclength.size() - 1);
+    }
+    //Add new value
+    avgdoclength += (newpage.length() - avgdoclength) / (doclength.size()+1);
     doclength[results.docID] = newpage.length();
 
     std::cerr << "Got P:" << results.Ppostings.size() << " NP:" << results.NPpostings.size() << " Postings" << std::endl;
