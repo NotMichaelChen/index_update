@@ -27,12 +27,15 @@ void Index::insert_document(std::string& url, std::string& newpage) {
     //Get timestamp, https://stackoverflow.com/a/16358111
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
-
     std::ostringstream oss;
     oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
     auto timestamp = oss.str();
 
+    //Perform document analysis
     MatcherInfo results = indexUpdate(url, newpage, timestamp, docstore, transtable);
+
+    //Update document length info
+    doclength[results.docID] = newpage.length();
 
     std::cerr << "Got P:" << results.Ppostings.size() << " NP:" << results.NPpostings.size() << " Postings" << std::endl;
 
@@ -69,6 +72,10 @@ void Index::insert_document(std::string& url, std::string& newpage) {
             positional_size = 0;
         }
     }
+}
+
+uint32_t Index::get_doclength(unsigned int docID) {
+    return doclength[docID];
 }
 
 template<typename T>

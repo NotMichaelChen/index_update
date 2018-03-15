@@ -21,6 +21,7 @@ struct MatcherInfo {
     Matcher::StringEncoder se;
 
     int maxfragID;
+    unsigned int docID;
 };
 
 //Updates the index given a new page

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 #include "lexicon.hpp"
 #include "posting.hpp"
@@ -18,13 +19,18 @@ class Index {
 public:
     Index();
     void insert_document(std::string& url, std::string& newpage);
+    uint32_t get_doclength(unsigned int docID);
 
 private:
     template<typename T>
     void insert_posting(std::vector<T>& postinglist, T posting);
 
+    //Data structures
     GlobalType::PosIndex positional_index;
     GlobalType::NonPosIndex nonpositional_index;
+    //TODO: Can this be obtained from docstore?
+    std::unordered_map<uint64_t, uint32_t> doclength;
+
     //TODO: Is it possible to not use separate variables for these?
     unsigned long positional_size;
     unsigned long nonpositional_size;
