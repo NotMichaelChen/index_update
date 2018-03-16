@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 namespace Matcher {
     //Encodes two versions of a file into lists of integers.
@@ -20,6 +21,10 @@ namespace Matcher {
 
         //Get the count of a word in the new document
         int getNewCount(std::string word);
+
+        //Sees if a word is in the old document or new document
+        bool inOld(std::string& word);
+        bool inNew(std::string& word);
         
         //Iterators for accessing the encoded documents
         std::vector<int>::const_iterator getOldIter();
@@ -35,6 +40,9 @@ namespace Matcher {
         //old and new files in integer form
         std::vector<int> oldencoded;
         std::vector<int> newencoded;
+        //lists of terms that appear only in the old or new file
+        std::unordered_set<std::string> oldexclusive;
+        std::unordered_set<std::string> newexclusive;
         //list of terms that appear in the new document and their frequency
         std::unordered_map<std::string, int> newcount;
         //Maps words to numbers

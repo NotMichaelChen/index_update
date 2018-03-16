@@ -15,7 +15,8 @@ namespace Matcher {
         while(oldstream >> word) {
             transform(word.begin(), word.end(), word.begin(), ::tolower);
             
-            if(dictionary.find(word) == dictionary.end()) {
+            if(oldmap.find(word) == oldmap.end()) {
+                oldmap[word] = nextcode;
                 dictionary[word] = nextcode;
                 lookup.push_back(word);
                 ++nextcode;
@@ -31,16 +32,28 @@ namespace Matcher {
             transform(word.begin(), word.end(), word.begin(), ::tolower);
             
             if(dictionary.find(word) == dictionary.end()) {
+                newmap[word] = nextcode;
                 dictionary[word] = nextcode;
                 newcount[word] = 1;
                 lookup.push_back(word);
                 ++nextcode;
             }
             else {
+                oldmap.erase(word);
                 newcount[word] += 1;
             }
             
             newencoded.push_back(dictionary[word]);
+        }
+
+        oldexclusive.reserve(oldmap.size());
+        newexclusive.reserve(newmap.size());
+        
+        for(auto kv : oldmap) {
+            oldexclusive.insert(kv.first);
+        }
+        for(auto kv : newmap) {
+            newexclusive.insert(kv.first);
         }
     }
     
@@ -64,6 +77,14 @@ namespace Matcher {
         if(num < lookup.size())
             return lookup[num];
         else return "??";
+    }
+
+    bool StringEncoder::inOld(string& word) {
+        return oldexclusive.find(word) != oldexclusive.end();
+    }
+    
+    bool StringEncoder::inNew(string& word) {
+        return newexclusive.find(word) != newexclusive.end();
     }
 
     int StringEncoder::getNewCount(string word) {

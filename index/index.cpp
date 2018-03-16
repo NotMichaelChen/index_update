@@ -47,12 +47,27 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
     std::cerr << "Got P:" << results.Ppostings.size() << " NP:" << results.NPpostings.size() << " Postings" << std::endl;
 
+    bool isFirstDoc = (results.se.getOldSize() == 0);
     //Insert NP postings
     for(auto np_iter = results.NPpostings.begin(); np_iter != results.NPpostings.end(); np_iter++) {
         Lex_data entry = lex.getEntry(np_iter->term);
 
         //Update entry freq
-        lex.updateFreq(np_iter->term, np_iter->freq);
+        //TODO: Refactor updatefreq method to be more convenient to use
+        if(isFirstDoc) {
+            lex.updateFreq(np_iter->term, entry.f_t+1);
+        }
+        else {
+            //In old, not in new
+            if(results.se.inOld(np_iter->term) && !results.se.inNew(np_iter->term)) {
+                lex.updateFreq(np_iter->term, entry.f_t-1);
+            }
+            //In new, not in old
+            else if(!results.se.inOld(np_iter->term) && results.se.inNew(np_iter->term)) {
+                lex.updateFreq(np_iter->term, entry.f_t+1);
+            }
+            //Don't change in other cases
+        }
 
         nPosting posting(entry.termid, np_iter->docID, np_iter->freq);
         insert_posting<nPosting>(nonpositional_index[entry.termid], posting);
