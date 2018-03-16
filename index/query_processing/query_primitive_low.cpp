@@ -45,10 +45,10 @@ unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
         while(postingindex < postinglist.size() && postinglist[postingindex].docID < pos) {
             ++postingindex;
         }
-        //Never go out of bounds, but notify upon return
+        //Notify failure upon return
         if(postingindex == postinglist.size()) {
-            --postingindex;
             failure = true;
+            return GlobalConst::UIntMax;
         }
         return postinglist[postingindex].docID;
     }
@@ -61,6 +61,11 @@ unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
 
             ++docIDindex;
         }
+        if(docIDindex == last_docID.size()) {
+            failure = true;
+            return GlobalConst::UIntMax;
+        }
+
         //If it's different than our current block then decompress new block
         if(oldindex != docIDindex) {
             //Move the filestream to the new position
@@ -76,14 +81,16 @@ unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
             ++blockindex;
 
         if(blockindex == docblock.size()) {
-            --blockindex;
             failure = true;
+            return GlobalConst::UIntMax;
         }
         
         return docblock[blockindex];
     }
 }
 
+//Assumes query primitive is in valid state
+//Undefined if nextGEQ returned invalid
 unsigned int query_primitive_low::getFreq() {
     if(inmemory) {
         return postinglist[postingindex].second;
