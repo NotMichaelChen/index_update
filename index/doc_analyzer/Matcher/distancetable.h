@@ -25,11 +25,6 @@ namespace Matcher {
         
         DistanceTable(int blocklimit, BlockGraph& graph, std::vector<std::shared_ptr<Block>>& toporder);
         
-        //Gets a list of every best path in the graph
-        //index of vector refers to number of steps through graph (see assumption below)
-        //Each entry is a pair of totalweight, endingblock.
-        //TODO: Consider making private?
-        std::vector<TableEntry> findAllBestPaths();
         
         //Finds an optimal path through the graph that balances block count vs common text
         //The parameter is the constant of the cost function, which takes the form ax+y
@@ -53,6 +48,10 @@ namespace Matcher {
         void mergeIntoNext(std::shared_ptr<Block> prev, std::shared_ptr<Block> next);
         //Gets the previous table entry given a current table entry
         TableEntry getPreviousEntry(TableEntry te);
+        //Gets a list of every best path in the graph
+        //index of vector refers to number of steps through graph (see assumption below)
+        //Each entry is a pair of totalweight, endingblock.
+        std::vector<TableEntry> findAllBestPaths();
         
         //Each block is associated with a table describing its distance from S
         //Each table is a list of distance and previous_block pairs, with the position

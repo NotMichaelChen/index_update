@@ -15,7 +15,6 @@ GlobalType::DoubleMinHeap DAAT(std::vector<unsigned int> docIDs, GlobalType::Non
 
     unsigned int did = 0;
 
-    //TODO: Replace condition here with something reasonable
     while(did < GlobalConst::UIntMax) {
         did = listpointers[0].nextGEQ(did);
 

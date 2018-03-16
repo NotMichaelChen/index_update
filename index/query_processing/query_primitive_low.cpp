@@ -46,9 +46,10 @@ unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
             ++postingindex;
         }
         //Never go out of bounds, but notify upon return
-        if(postingindex == postinglist.size())
+        if(postingindex == postinglist.size()) {
             --postingindex;
-        failure = true;
+            failure = true;
+        }
         return postinglist[postingindex].docID;
     }
     else {
@@ -73,10 +74,11 @@ unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
         //Perform standard docID searching
         while(blockindex < docblock.size() && docblock[blockindex] < pos)
             ++blockindex;
-        //TODO: determine what to return if out of bounds
-        if(blockindex == docblock.size())
+
+        if(blockindex == docblock.size()) {
             --blockindex;
-        failure = true;
+            failure = true;
+        }
         
         return docblock[blockindex];
     }
