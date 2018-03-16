@@ -10,6 +10,8 @@
 #define PDIR "./disk_index/positional/"//path to static positional index
 #define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 
+#define DAAT_SIZE 10
+
 #include <vector>
 #include <map>
 #include <queue>

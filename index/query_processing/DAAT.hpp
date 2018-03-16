@@ -10,6 +10,6 @@
 #include "extended_lexicon.hpp"
 #include "global_parameters.hpp"
 
-GlobalType::DoubleMinHeap DAAT(std::vector<unsigned int> docIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex);
+std::vector<unsigned int> DAAT(std::vector<unsigned int> docIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex);
 
 #endif
