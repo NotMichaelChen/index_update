@@ -2,10 +2,9 @@
 #include <fstream>
 #include <random>
 
-void generateVersion(std::ifstream& afile, std::ifstream& bfile, double aswitch, double bswitch)
+void generateVersion(std::ifstream& afile, std::ifstream& bfile, std::string& ofilename, double aswitch, double bswitch)
 {
-    //TODO: replace output name
-    std::ofstream ofile("output.txt", std::ios::out);
+    std::ofstream ofile(ofilename, std::ios::out);
 
     //http://en.cppreference.com/w/cpp/numeric/random/uniform_real_distribution 
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
@@ -21,26 +20,25 @@ void generateVersion(std::ifstream& afile, std::ifstream& bfile, double aswitch,
         //State change
         if(in_state_a)
         {
-            if(outcome >= aswitch)
+            if(outcome <= aswitch)
                 in_state_a = false;
         }
         else
         {
-            if(outcome >= bswitch)
+            if(outcome <= bswitch)
                 in_state_a = true;
         }
 
-        ofile << (in_state_a ? a : b);
+        ofile << (in_state_a ? a : b) << " ";
     }
 }
 
-//args: file1 file2 numversions
 int main(int argc, char** argv)
 {
     if(argc != 4)
     {
         std::cout << "Error, invalid number of arguments" << std::endl;
-        std::cout << "Arguments are \"file1 file2 numversions\"" << std::endl;
+        std::cout << "Arguments are \"file1 file2 steps\"" << std::endl;
         return 1;
     }
 
@@ -58,7 +56,23 @@ int main(int argc, char** argv)
         return 3;
     }
     
-    generateVersion(afile, bfile, 0.5, 0.5);
+    int steps = std::stoi(argv[3]);
+    double stepsize = 1.0 / (steps+1);
+    double prob = stepsize;
+
+    for(int i = 0; i < steps; ++i)
+    {
+        std::string base = "v" + std::to_string(i);
+        generateVersion(afile, bfile, base, prob, 1-prob);
+
+        //Rewind files
+        afile.clear();
+        bfile.clear();
+        afile.seekg(0);
+        bfile.seekg(0);
+
+        prob += stepsize;
+    }
 
     return 0;
 }
