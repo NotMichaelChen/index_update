@@ -6,6 +6,7 @@
 #include "doc_analyzer/analyzer.h"
 #include "global_parameters.hpp"
 #include "util.hpp"
+#include "query_processing/DAAT.hpp"
 
 //Get timestamp, https://stackoverflow.com/a/16358111
 std::string getTimestamp() {
@@ -15,6 +16,11 @@ std::string getTimestamp() {
     oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
     return oss.str();
 }
+
+std::vector<unsigned int> query(std::vector<std::string> words) {
+    
+}
+
 
 Index::Index() : docstore(), transtable(), lex(), staticwriter() {
     //https://stackoverflow.com/a/4980833

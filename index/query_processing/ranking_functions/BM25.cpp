@@ -4,21 +4,14 @@
 #include <stdexcept>
 #include <string>
 
-/*  Needs:
-    *term frequency in document
-    length of document in words
-    average document length
-    total number of documents in index
-    number of documents containing term
-*/
 
-double IDF(double totaldocs, unsigned int docscontaining) {
+double IDF(unsigned int totaldocs, unsigned int docscontaining) {
     double numerator = totaldocs - docscontaining + 0.5;
     double denominator = docscontaining + 0.5;
     return log10(numerator / denominator);
 }
 
-double BM25(std::vector<unsigned int>& freq, std::vector<unsigned int>& docscontaining, double doclength, double avgdoclength, double totaldocs) {
+double BM25(std::vector<unsigned int>& freq, std::vector<unsigned int>& docscontaining, unsigned int doclength, double avgdoclength, unsigned int totaldocs) {
 
     //free parameters
     double k = 1.2;

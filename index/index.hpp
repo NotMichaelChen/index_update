@@ -19,6 +19,7 @@ class Index {
 public:
     Index();
     void insert_document(std::string& url, std::string& newpage);
+    //Temporary return type: returns docIDs for now
     std::vector<unsigned int> query(std::vector<std::string> words);
 
 private:

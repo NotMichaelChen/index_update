@@ -1,5 +1,7 @@
 #include "DAAT.hpp"
 
+#include "ranking_functions/BM25.hpp"
+
 struct ScorePair {
     ScorePair() {}
     ScorePair(unsigned int d, double s) : docID(d), score(s) {}
@@ -15,8 +17,7 @@ public:
     }
 };
 
-std::vector<unsigned int> DAAT(std::vector<unsigned int> termIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex)
-{
+std::vector<unsigned int> DAAT(std::vector<unsigned int> termIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex, DAATStatData statistics) {
     if(termIDs.empty()) {
         return std::vector<unsigned int>();
     }
@@ -46,8 +47,11 @@ std::vector<unsigned int> DAAT(std::vector<unsigned int> termIDs, GlobalType::No
             /* docID is in intersection; now get all frequencies */
             for(size_t i = 0; i < listpointers.size(); i++)
                 freqs.push_back(listpointers[i].getFreq());
+
             /* compute BM25 score from frequencies and other data */
-            double score = 1; //TODO: Use BM25 here
+            //TODO: Allow other ranking functions here
+            double score = BM25(freqs, statistics.docscontaining, statistics.doclength, statistics.avgdoclength, statistics.totaldocs); 
+
             if(minheap.size() < DAAT_SIZE) {
                 minheap.emplace(did, score);
             }
