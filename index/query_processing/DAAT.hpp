@@ -3,7 +3,7 @@
 
 #include <queue>
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 #include "query_primitive.hpp"
 #include "posting.hpp"
@@ -14,15 +14,15 @@
 struct DAATStatData {
     unsigned int totaldocs;
     //Docs containing term t
-    std::vector<unsigned int>& docscontaining;
+    std::vector<unsigned int>* docscontaining;
     //Frequency of term t in document d found during DAAT
     //Length of doc d
-    unsigned int doclength;
+    std::unordered_map<unsigned int, unsigned int>* doclengths;
     //Average length of documents in index
     double avgdoclength;
 };
 
 //Returns the vector of docIDs that were found, from low-high
-std::vector<unsigned int> DAAT(std::vector<unsigned int> docIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex, DAATStatData statistics);
+std::vector<unsigned int> DAAT(std::vector<unsigned int>& termIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex, DAATStatData statistics);
 
 #endif

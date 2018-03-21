@@ -17,7 +17,7 @@ public:
     }
 };
 
-std::vector<unsigned int> DAAT(std::vector<unsigned int> termIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex, DAATStatData statistics) {
+std::vector<unsigned int> DAAT(std::vector<unsigned int>& termIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex, DAATStatData statistics) {
     if(termIDs.empty()) {
         return std::vector<unsigned int>();
     }
@@ -35,6 +35,8 @@ std::vector<unsigned int> DAAT(std::vector<unsigned int> termIDs, GlobalType::No
 
     while(did < GlobalConst::UIntMax) {
         did = listpointers[0].nextGEQ(did);
+        if(did == GlobalConst::UIntMax)
+            break;
 
         unsigned int d = 0;
         for(size_t i = 1; i < listpointers.size() && (d = listpointers[i].nextGEQ(did)) == did; i++)
@@ -50,7 +52,7 @@ std::vector<unsigned int> DAAT(std::vector<unsigned int> termIDs, GlobalType::No
 
             /* compute BM25 score from frequencies and other data */
             //TODO: Allow other ranking functions here
-            double score = BM25(freqs, statistics.docscontaining, statistics.doclength, statistics.avgdoclength, statistics.totaldocs); 
+            double score = BM25(freqs, *statistics.docscontaining, (*statistics.doclengths)[did], statistics.avgdoclength, statistics.totaldocs); 
 
             if(minheap.size() < DAAT_SIZE) {
                 minheap.emplace(did, score);
@@ -63,7 +65,8 @@ std::vector<unsigned int> DAAT(std::vector<unsigned int> termIDs, GlobalType::No
         }
     }
 
-    std::vector<unsigned int> docs(DAAT_SIZE);
+    std::vector<unsigned int> docs;
+    docs.reserve(DAAT_SIZE);
     while(!minheap.empty()) {
         docs.push_back(minheap.top().docID);
         minheap.pop();

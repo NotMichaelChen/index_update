@@ -30,7 +30,7 @@ private:
     GlobalType::PosIndex positional_index;
     GlobalType::NonPosIndex nonpositional_index;
     //TODO: Can this be obtained from docstore?
-    std::unordered_map<uint64_t, uint32_t> doclength;
+    std::unordered_map<unsigned int, unsigned int> doclength;
     double avgdoclength;
 
     //TODO: Is it possible to not use separate variables for these?

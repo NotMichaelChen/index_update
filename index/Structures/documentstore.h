@@ -22,9 +22,12 @@ namespace Structures {
     class DocumentStore {
     public:
         DocumentStore();
+
         DocumentTuple getDocument(std::string url);
         void insertDocument(std::string url, std::string doc, unsigned int maxfragID, std::string timestamp);
         void dump();
+
+        int getDocumentCount();
         int getNextDocID();
     private:
         //key: url

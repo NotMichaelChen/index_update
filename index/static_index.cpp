@@ -28,6 +28,10 @@ std::vector<std::string> read_directory( std::string path ){
     return result;
 }
 
+ExtendedLexicon* StaticIndex::getExlexPointer() {
+    return &exlex;
+}
+
 //Writes the positional index to disk, which means it is saved either in file Z0 or I0.
 void StaticIndex::write_p_disk(GlobalType::PosMapIter indexbegin, GlobalType::PosMapIter indexend) {
     std::string filename = PDIR;

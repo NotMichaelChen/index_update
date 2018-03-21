@@ -21,6 +21,8 @@ public:
     void write_p_disk(GlobalType::PosMapIter indexbegin, GlobalType::PosMapIter indexend);
     void write_np_disk(GlobalType::NonPosMapIter indexbegin, GlobalType::NonPosMapIter indexend);
 
+    ExtendedLexicon* getExlexPointer();
+
 private:
 
     ExtendedLexicon exlex;

@@ -91,6 +91,17 @@ namespace Structures {
         client.sync_commit();
     }
     
+    int DocumentStore::getDocumentCount() {
+        int dbsize;
+        client.dbsize([&dbsize](cpp_redis::reply& reply) {
+            dbsize = reply.as_integer();
+        });
+
+        client.sync_commit();
+
+        return dbsize;
+    }
+
     int DocumentStore::getNextDocID() {
         string nextid;
         client.get("nextid", [&nextid](cpp_redis::reply& reply) {
