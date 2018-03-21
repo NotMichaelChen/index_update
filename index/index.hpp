@@ -19,7 +19,7 @@ class Index {
 public:
     Index();
     void insert_document(std::string& url, std::string& newpage);
-    uint32_t get_doclength(unsigned int docID);
+    std::vector<unsigned int> query(std::vector<std::string> words);
 
 private:
     template<typename T>

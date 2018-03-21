@@ -10,6 +10,7 @@
 #include "extended_lexicon.hpp"
 #include "global_parameters.hpp"
 
+//Returns the vector of docIDs that were found, from low-high
 std::vector<unsigned int> DAAT(std::vector<unsigned int> docIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex);
 
 #endif

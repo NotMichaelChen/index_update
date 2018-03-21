@@ -15,9 +15,9 @@ public:
     }
 };
 
-std::vector<unsigned int> DAAT(std::vector<unsigned int> docIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex)
+std::vector<unsigned int> DAAT(std::vector<unsigned int> termIDs, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex)
 {
-    if(docIDs.empty()) {
+    if(termIDs.empty()) {
         return std::vector<unsigned int>();
     }
 
@@ -25,8 +25,8 @@ std::vector<unsigned int> DAAT(std::vector<unsigned int> docIDs, GlobalType::Non
 
     std::vector<query_primitive> listpointers;
 
-    //Construct listpointers for each docID
-    for(unsigned int i : docIDs) {
+    //Construct listpointers for each termID
+    for(unsigned int i : termIDs) {
         listpointers.emplace_back(i, index, exlex);
     }
 
