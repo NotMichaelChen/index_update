@@ -31,6 +31,8 @@ void generateVersion(std::ifstream& afile, std::ifstream& bfile, std::string& of
 
         ofile << (in_state_a ? a : b) << " ";
     }
+
+    ofile.close();
 }
 
 int main(int argc, char** argv)
@@ -56,22 +58,28 @@ int main(int argc, char** argv)
         return 3;
     }
     
+    //Number of versions to produce
     int steps = std::stoi(argv[3]);
-    double stepsize = 1.0 / (steps+1);
-    double prob = stepsize;
+    //Probability to switch off of state A
+    double prob = 1.0 / (steps+1);
 
     for(int i = 0; i < steps; ++i)
     {
         std::string base = "v" + std::to_string(i);
         generateVersion(afile, bfile, base, prob, 1-prob);
 
-        //Rewind files
         afile.clear();
         bfile.clear();
-        afile.seekg(0);
+
+        //Rewind file b
         bfile.seekg(0);
 
-        prob += stepsize;
+        //Open the latest created file with a
+        afile.close();
+        afile.open("v" + std::to_string(i));
+
+        //Compute new probability
+        prob = 1.0 / (steps-i);
     }
 
     return 0;
