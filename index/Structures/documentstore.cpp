@@ -99,7 +99,8 @@ namespace Structures {
 
         client.sync_commit();
 
-        return dbsize;
+        //Remove the nextID entry
+        return dbsize-1;
     }
 
     int DocumentStore::getNextDocID() {

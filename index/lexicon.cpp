@@ -32,6 +32,7 @@ void Lexicon::initEntry(string& term) {
     if(iter == lex.end()) {
         Lex_data entry;
         entry.termid = nextID;
+        entry.f_t = 0;
         nextID++;
         lex[term] = entry;
     }

@@ -35,7 +35,6 @@ std::vector<unsigned int> Index::query(std::vector<std::string> words) {
     return DAAT(termIDs, nonpositional_index, *(staticwriter.getExlexPointer()), statistics);
 }
 
-
 Index::Index() : docstore(), transtable(), lex(), staticwriter() {
     //https://stackoverflow.com/a/4980833
     struct stat st;

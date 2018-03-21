@@ -11,11 +11,8 @@ namespace Matcher {
     vector<shared_ptr<Block>> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
         //Find common blocks between the two files
         vector<shared_ptr<Block>> commonblocks = getCommonBlocks(minblocksize, se);
-        std::cout << commonblocks.size() << " commonblocks\n";
         extendBlocks(commonblocks, se);
-        std::cout << commonblocks.size() << " extended\n";
         resolveIntersections(commonblocks);
-        std::cout << commonblocks.size() << " resolved intersections\n";
 
         //Create a graph of the common blocks
         BlockGraph G(commonblocks);

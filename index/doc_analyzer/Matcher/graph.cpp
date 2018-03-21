@@ -29,7 +29,6 @@ namespace Matcher {
         }
         
         vertices = commonblocks;
-        cout << vertices.size() << " vertices; " << edges << " edges\n";
     }
     
     vector<shared_ptr<Block>> BlockGraph::getAdjacencyList(shared_ptr<Block> V) {
