@@ -40,12 +40,15 @@ void Lexicon::initEntry(string& term) {
 
 void Lexicon::dump() {
     ofstream dumpfile;
-    dumpfile.open("lexdump");
+    dumpfile.open("lexdump", ios::out | ios::trunc);
+
+    dumpfile << nextID << endl;
 
     for(auto iter = lex.begin(); iter != lex.end(); ++iter) {
         dumpfile << iter->first << " ";
         dumpfile << iter->second.termid << " ";
         dumpfile << iter->second.f_t << " ";
+        dumpfile << endl;
     }
 
     dumpfile.close();
@@ -60,8 +63,10 @@ bool Lexicon::restore() {
 
     string line;
 
-    stringstream linebuf;
+    getline(dumpfile, line);
+    nextID = stoul(line);
 
+    stringstream linebuf;
     while(getline(dumpfile, line)) {
         linebuf = stringstream(line);
         string key;

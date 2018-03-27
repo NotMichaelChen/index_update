@@ -18,23 +18,6 @@ std::string getTimestamp() {
     return oss.str();
 }
 
-std::vector<unsigned int> Index::query(std::vector<std::string> words) {
-    std::vector<unsigned int> termIDs;
-    std::vector<unsigned int> docscontaining;
-    for(size_t i = 0; i < words.size(); ++i) {
-        std::transform(words[i].begin(), words[i].end(), words[i].begin(), ::tolower);
-        Lex_data entry = lex.getEntry(words[i]);
-        termIDs.push_back(entry.termid);
-        docscontaining.push_back(entry.f_t);
-    }
-
-    int doccount = docstore.getDocumentCount();
-
-    DAATStatData statistics = {doccount, &docscontaining, &doclength, avgdoclength};
-
-    return DAAT(termIDs, nonpositional_index, *(staticwriter.getExlexPointer()), statistics);
-}
-
 Index::Index() : docstore(), transtable(), lex(), staticwriter() {
     //https://stackoverflow.com/a/4980833
     struct stat st;
@@ -51,6 +34,23 @@ Index::Index() : docstore(), transtable(), lex(), staticwriter() {
     positional_size = 0;
     nonpositional_size = 0;
     avgdoclength = 0;
+}
+
+std::vector<unsigned int> Index::query(std::vector<std::string> words) {
+    std::vector<unsigned int> termIDs;
+    std::vector<unsigned int> docscontaining;
+    for(size_t i = 0; i < words.size(); ++i) {
+        std::transform(words[i].begin(), words[i].end(), words[i].begin(), ::tolower);
+        Lex_data entry = lex.getEntry(words[i]);
+        termIDs.push_back(entry.termid);
+        docscontaining.push_back(entry.f_t);
+    }
+
+    int doccount = docstore.getDocumentCount();
+
+    DAATStatData statistics = {doccount, &docscontaining, &doclength, avgdoclength};
+
+    return DAAT(termIDs, nonpositional_index, *(staticwriter.getExlexPointer()), statistics);
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {
@@ -119,4 +119,8 @@ void Index::insert_document(std::string& url, std::string& newpage) {
             positional_size = 0;
         }
     }
+}
+
+void Index::dumplex() {
+    lex.dump();
 }
