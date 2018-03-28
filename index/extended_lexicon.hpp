@@ -12,6 +12,9 @@ public:
     void addPositional(unsigned int term, mData& entry);
     void addNonPositional(unsigned int term, mData& entry);
 
+    void dump();
+    bool restore();
+
     //Removes the given entry from the lexicon
     std::vector<mData>::iterator deletePositional(unsigned int term, std::vector<mData>::iterator entry);
     std::vector<mData>::iterator deleteNonPositional(unsigned int term, std::vector<mData>::iterator entry);

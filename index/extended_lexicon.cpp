@@ -1,4 +1,8 @@
 #include <iostream>
+#include <fstream>
+
+#include <sstream>
+
 #include "extended_lexicon.hpp"
 
 void ExtendedLexicon::addNonPositional( unsigned int term, mData& entry ){
@@ -7,6 +11,106 @@ void ExtendedLexicon::addNonPositional( unsigned int term, mData& entry ){
 
 void ExtendedLexicon::addPositional( unsigned int term, mData& entry ){
     exlexp[term].push_back(entry);
+}
+
+void ExtendedLexicon::dump() {
+    std::ofstream dumpfile;
+
+    dumpfile.open("pexlexdump");
+    for(auto iter = exlexp.begin(); iter != exlexp.end(); ++iter) {
+        dumpfile << iter->first << std::endl;
+        for(auto metaiter = iter->second.begin(); metaiter != iter->second.end(); ++metaiter) {
+            dumpfile << "\t";
+            dumpfile << metaiter->filename << " ";
+            dumpfile << metaiter->start_pos << " ";
+            dumpfile << metaiter->last_docID << " ";
+            dumpfile << metaiter->blocksizes << " ";
+            dumpfile << metaiter->postings_blocks << " ";
+            dumpfile << metaiter->end_offset << std::endl;
+        }
+    }
+    dumpfile.close();
+
+    dumpfile.open("npexlexdump");
+    for(auto iter = exlexnp.begin(); iter != exlexnp.end(); ++iter) {
+        dumpfile << iter->first << std::endl;
+        for(auto metaiter = iter->second.begin(); metaiter != iter->second.end(); ++metaiter) {
+            dumpfile << "\t";
+            dumpfile << metaiter->filename << " ";
+            dumpfile << metaiter->start_pos << " ";
+            dumpfile << metaiter->last_docID << " ";
+            dumpfile << metaiter->blocksizes << " ";
+            dumpfile << metaiter->postings_blocks << " ";
+            dumpfile << metaiter->end_offset << std::endl;
+        }
+    }
+    dumpfile.close();
+}
+
+bool ExtendedLexicon::restore() {
+    std::ifstream dumpfile;
+    dumpfile.open("plexdump");
+
+    if(!dumpfile)
+        return false;
+
+    std::string line;
+    std::stringstream linebuf;
+    while(std::getline(dumpfile, line)) {
+        unsigned int term = stoul(line);
+
+        std::vector<mData> metavec;
+        while(dumpfile.peek() == '\t') {
+            mData metadata;
+            std::getline(dumpfile, line);
+            linebuf = std::stringstream(line);
+
+            dumpfile >> metadata.filename;
+            dumpfile >> metadata.start_pos;
+            dumpfile >> metadata.last_docID;
+            dumpfile >> metadata.blocksizes;
+            dumpfile >> metadata.postings_blocks;
+            dumpfile >> metadata.end_offset;
+
+            metavec.push_back(metadata);
+        }
+
+        exlexp[term] = metavec;
+    }
+
+    dumpfile.close();
+    dumpfile.clear();
+
+    dumpfile.open("nplexdump");
+
+    if(!dumpfile)
+        return false;
+
+    while(std::getline(dumpfile, line)) {
+        unsigned int term = stoul(line);
+
+        std::vector<mData> metavec;
+        while(dumpfile.peek() == '\t') {
+            mData metadata;
+            std::getline(dumpfile, line);
+            linebuf = std::stringstream(line);
+
+            dumpfile >> metadata.filename;
+            dumpfile >> metadata.start_pos;
+            dumpfile >> metadata.last_docID;
+            dumpfile >> metadata.blocksizes;
+            dumpfile >> metadata.postings_blocks;
+            dumpfile >> metadata.end_offset;
+
+            metavec.push_back(metadata);
+        }
+
+        exlexnp[term] = metavec;
+    }
+
+    dumpfile.close();
+
+    return true;
 }
 
 std::vector<mData>::iterator ExtendedLexicon::deleteNonPositional(unsigned int term, std::vector<mData>::iterator entry) {
