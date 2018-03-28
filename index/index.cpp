@@ -121,6 +121,55 @@ void Index::insert_document(std::string& url, std::string& newpage) {
     }
 }
 
+void Index::dump() {
+    std::ofstream dumpfile;
+
+    //Write all single vars first
+    dumpfile.open("indexvarsdump", std::ios::out | std::ios::trunc);
+
+    dumpfile << avgdoclength << ' ' << positional_size << ' ' << nonpositional_size;
+    
+    dumpfile.close();
+
+    //Write out positional index
+    dumpfile.open("pindexdump", std::ios::out | std::ios::trunc);
+    for(auto iter = positional_index.begin(); iter != positional_index.end(); ++iter) {
+        dumpfile << iter->first << std::endl;
+        for(auto postiter = iter->second.begin(); postiter != iter->second.end(); ++postiter) {
+            dumpfile << "\t";
+            dumpfile << postiter->termID << " ";
+            dumpfile << postiter->docID << " ";
+            dumpfile << postiter->second << " ";
+            dumpfile << postiter->third << std::endl;
+        }
+    }
+    dumpfile.close();
+
+    //Write out nonpositional index
+    dumpfile.open("npindexdump", std::ios::out | std::ios::trunc);
+    for(auto iter = nonpositional_index.begin(); iter != nonpositional_index.end(); ++iter) {
+        dumpfile << iter->first << std::endl;
+        for(auto postiter = iter->second.begin(); postiter != iter->second.end(); ++postiter) {
+            dumpfile << "\t";
+            dumpfile << postiter->termID << " ";
+            dumpfile << postiter->docID << " ";
+            dumpfile << postiter->second << std::endl;
+        }
+    }
+    dumpfile.close();
+
+    //Write out doclength map
+    dumpfile.open("indexdoclendump", std::ios::out | std::ios::trunc);
+    for(auto iter = doclength.begin(); iter != doclength.end(); ++iter) {
+        dumpfile << iter->first << " ";
+        dumpfile << iter->second << std::endl;
+    }
+    dumpfile.close();
+
+    dumplex();
+}
+
 void Index::dumplex() {
     lex.dump();
+    staticwriter.getExlexPointer()->dump();
 }

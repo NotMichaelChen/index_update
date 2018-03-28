@@ -22,7 +22,10 @@ public:
     //Temporary return type: returns docIDs for now
     std::vector<unsigned int> query(std::vector<std::string> words);
 
+    //Dumps lexicon and extended lexicon to disk
     void dumplex();
+
+    void dump();
 
 private:
     template<typename T>

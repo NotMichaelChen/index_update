@@ -16,7 +16,7 @@ void ExtendedLexicon::addPositional( unsigned int term, mData& entry ){
 void ExtendedLexicon::dump() {
     std::ofstream dumpfile;
 
-    dumpfile.open("pexlexdump");
+    dumpfile.open("pexlexdump", std::ios::out | std::ios::trunc);
     for(auto iter = exlexp.begin(); iter != exlexp.end(); ++iter) {
         dumpfile << iter->first << std::endl;
         for(auto metaiter = iter->second.begin(); metaiter != iter->second.end(); ++metaiter) {
@@ -31,7 +31,7 @@ void ExtendedLexicon::dump() {
     }
     dumpfile.close();
 
-    dumpfile.open("npexlexdump");
+    dumpfile.open("npexlexdump", std::ios::out | std::ios::trunc);
     for(auto iter = exlexnp.begin(); iter != exlexnp.end(); ++iter) {
         dumpfile << iter->first << std::endl;
         for(auto metaiter = iter->second.begin(); metaiter != iter->second.end(); ++metaiter) {

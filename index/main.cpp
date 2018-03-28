@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
         ++docs;
     }
 
-    index.dumplex();
+    index.dump();
 
     auto end = chrono::high_resolution_clock::now();
     auto dur = end - begin;
