@@ -61,7 +61,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
     //Update document length info + average document length
     //https://math.stackexchange.com/a/1567342
-    if(doclength.find(results.docID) == doclength.end()) {
+    if(doclength.find(results.docID) != doclength.end()) {
         //Remove old value
         avgdoclength = ((avgdoclength * doclength.size()) - newpage.length()) / (doclength.size() - 1);
     }
