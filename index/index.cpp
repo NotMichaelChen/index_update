@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <sys/stat.h>
 #include <algorithm>
+#include <iostream>
 
 #include "doc_analyzer/analyzer.h"
 #include "global_parameters.hpp"
@@ -169,7 +170,53 @@ void Index::dump() {
     dumplex();
 }
 
+bool Index::restore() {
+    std::ifstream dumpfile;
+
+    //Read all single vars first
+    dumpfile.open("indexvarsdump");
+    if(!dumpfile)
+        return false;
+
+    std::string line;
+    std::stringstream linebuf;
+    std::getline(dumpfile, line);
+
+    dumpfile >> avgdoclength;
+    dumpfile >> positional_size;
+    dumpfile >> nonpositional_size;
+
+    dumpfile.close();
+    dumpfile.clear();
+
+    //Read positional index
+    dumpfile.open("pindexdump");
+    if(!dumpfile)
+        return false;
+    while(std::getline(dumpfile, line)) {
+
+    }
+    // for(auto iter = positional_index.begin(); iter != positional_index.end(); ++iter) {
+    //     dumpfile << iter->first << std::endl;
+    //     for(auto postiter = iter->second.begin(); postiter != iter->second.end(); ++postiter) {
+    //         dumpfile << "\t";
+    //         dumpfile << postiter->termID << " ";
+    //         dumpfile << postiter->docID << " ";
+    //         dumpfile << postiter->second << " ";
+    //         dumpfile << postiter->third << std::endl;
+    //     }
+    // }
+    dumpfile.close();
+}
+
 void Index::dumplex() {
     lex.dump();
     staticwriter.getExlexPointer()->dump();
+}
+
+bool Index::restorelex() {
+    bool lexresult = lex.restore();
+    bool exlexresult = staticwriter.getExlexPointer()->restore();
+    std::cout << lexresult << ' ' << exlexresult << std::endl;
+    return lexresult && exlexresult;
 }

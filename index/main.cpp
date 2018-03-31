@@ -38,6 +38,8 @@ int main(int argc, char **argv) {
     client.disconnect();
 
     Index index;
+    index.restorelex();
+    cin.ignore();
     vector<string> filelist = openInDir("./dataset-format/");
 
     auto begin = chrono::high_resolution_clock::now();

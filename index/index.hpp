@@ -24,8 +24,10 @@ public:
 
     //Dumps lexicon and extended lexicon to disk
     void dumplex();
+    bool restorelex();
 
     void dump();
+    bool restore();
 
 private:
     template<typename T>

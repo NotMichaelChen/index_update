@@ -49,7 +49,7 @@ void ExtendedLexicon::dump() {
 
 bool ExtendedLexicon::restore() {
     std::ifstream dumpfile;
-    dumpfile.open("plexdump");
+    dumpfile.open("pexlexdump");
 
     if(!dumpfile)
         return false;
@@ -81,7 +81,7 @@ bool ExtendedLexicon::restore() {
     dumpfile.close();
     dumpfile.clear();
 
-    dumpfile.open("nplexdump");
+    dumpfile.open("npexlexdump");
 
     if(!dumpfile)
         return false;
