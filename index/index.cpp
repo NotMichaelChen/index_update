@@ -8,6 +8,7 @@
 #include "global_parameters.hpp"
 #include "util.hpp"
 #include "query_processing/DAAT.hpp"
+#include "json.hpp"
 
 //Get timestamp, https://stackoverflow.com/a/16358111
 std::string getTimestamp() {
@@ -119,4 +120,26 @@ void Index::insert_document(std::string& url, std::string& newpage) {
             positional_size = 0;
         }
     }
+}
+
+void Index::dump() {
+    nlohmann::json jobject;
+    lex.dump(jobject);
+
+    std::string jstring = jobject.dump();
+    std::ofstream ofile("indexdump", std::ios::out | std::ios::trunc);
+    ofile.write(jstring.c_str(), jstring.size());
+
+}
+
+void Index::restore() {
+    std::ifstream ifile("indexdump");
+    if(!ifile) {
+        return;
+    }
+
+    nlohmann::json jobject;
+    ifile >> jobject;
+
+    lex.restore(jobject);
 }

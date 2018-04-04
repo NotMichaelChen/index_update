@@ -11,7 +11,10 @@
 #include <vector>
 #include <sstream>
 
+#include "json.hpp"
+
 struct Lex_data {
+    Lex_data(unsigned int t, int f) : termid(t), f_t(f) {}
     unsigned int termid;
     int f_t; //How many documents the term appeared in
 };
@@ -24,11 +27,10 @@ public:
     void updateFreq(std::string& term, int new_freq);
     void display();
 
-    //Dumps contents of lexicon into file called "lexdump"
-    void dump();
-    //Restores the lexicon from a file called "lexdump" on disk
-    //Returns true if restored from file
-    bool restore();
+    //Dumps contents of lexicon into given json, under the object "lexicon"
+    void dump(nlohmann::json& jobject);
+    //Restores the lexicon from a given json object
+    void restore(nlohmann::json& jobject);
 
 private:
     void initEntry(std::string& term);

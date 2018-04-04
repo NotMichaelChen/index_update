@@ -22,6 +22,9 @@ public:
     //Temporary return type: returns docIDs for now
     std::vector<unsigned int> query(std::vector<std::string> words);
 
+    void dump();
+    void restore();
+
 private:
     template<typename T>
     void insert_posting(std::vector<T>& postinglist, T posting);

@@ -64,16 +64,12 @@ int main(int argc, char **argv) {
         ++docs;
     }
 
+    index.dump();
+
     auto end = chrono::high_resolution_clock::now();
     auto dur = end - begin;
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
     std::cout << "Inserted " << docs << " documents in " << ms << "ms for an average of " << ms / (double)docs << " ms/doc\n";
-
-    std::vector<std::string> words = {"first", "call"};
-    std::vector<unsigned int> results = index.query(words);
-    std::cout << "size: " << results.size() << std::endl;
-    for(unsigned int i : results)
-        std::cout << i << std::endl;
 
     return 0;
 }
