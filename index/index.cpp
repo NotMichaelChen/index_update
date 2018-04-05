@@ -125,6 +125,7 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 void Index::dump() {
     nlohmann::json jobject;
     lex.dump(jobject);
+    staticwriter.getExlexPointer()->dump(jobject);
 
     std::string jstring = jobject.dump();
     std::ofstream ofile("indexdump", std::ios::out | std::ios::trunc);
@@ -142,4 +143,5 @@ void Index::restore() {
     ifile >> jobject;
 
     lex.restore(jobject);
+    staticwriter.getExlexPointer()->restore(jobject);
 }

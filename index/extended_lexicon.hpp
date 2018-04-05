@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "json.hpp"
 #include "meta.hpp"
 
 class ExtendedLexicon {
@@ -23,6 +25,9 @@ public:
     std::vector<mData>::iterator getPositionalEnd(unsigned int term);
     std::vector<mData>::iterator getNonPositionalBegin(unsigned int term);
     std::vector<mData>::iterator getNonPositionalEnd(unsigned int term);
+
+    void dump(nlohmann::json& jobject);
+    void restore(nlohmann::json& jobject);
 
 private:
     //Each term is associated with a list of metadata structs.
