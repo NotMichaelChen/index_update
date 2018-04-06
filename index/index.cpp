@@ -124,8 +124,43 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
 void Index::dump() {
     nlohmann::json jobject;
+
+    //Write lexicons
     lex.dump(jobject);
     staticwriter.getExlexPointer()->dump(jobject);
+
+    //Write individual variables
+    jobject["positional_size"] = positional_size;
+    jobject["nonpositional_size"] = nonpositional_size;
+    jobject["avgdoclength"] = avgdoclength;
+    for(auto iter = doclength.begin(); iter != doclength.end(); iter++) {
+        std::string key = std::to_string(iter->first);
+        jobject["doclength"][key] = iter->second;
+    }
+
+    //Write in-memory indexes
+    for(auto inditer = nonpositional_index.begin(); inditer != nonpositional_index.end(); inditer++) {
+        std::string key = std::to_string(inditer->first);
+        for(auto postiter = inditer->second.begin(); postiter != inditer->second.end(); postiter++) {
+            jobject["nonposindex"][key].push_back(nlohmann::json::object({
+                {"termID", postiter->termID},
+                {"docID", postiter->docID},
+                {"frequency", postiter->second},
+            }));
+        }
+    }
+
+    for(auto inditer = positional_index.begin(); inditer != positional_index.end(); inditer++) {
+        std::string key = std::to_string(inditer->first);
+        for(auto postiter = inditer->second.begin(); postiter != inditer->second.end(); postiter++) {
+            jobject["posindex"][key].push_back(nlohmann::json::object({
+                {"termID", postiter->termID},
+                {"docID", postiter->docID},
+                {"fragmentID", postiter->second},
+                {"position", postiter->third}
+            }));
+        }
+    }
 
     std::string jstring = jobject.dump();
     std::ofstream ofile("indexdump", std::ios::out | std::ios::trunc);
@@ -142,6 +177,49 @@ void Index::restore() {
     nlohmann::json jobject;
     ifile >> jobject;
 
+    //Read Lexicons
     lex.restore(jobject);
     staticwriter.getExlexPointer()->restore(jobject);
+
+    //Read individual variables
+    positional_size = jobject["positional_size"];
+    nonpositional_size = jobject["nonpositional_size"];
+    avgdoclength = jobject["avgdoclength"];
+    for(auto dociter = jobject["doclength"].begin(); dociter != jobject["doclength"].end(); dociter++) {
+        unsigned int key = std::stoul(dociter.key());
+        doclength[key] = dociter.value();
+    }
+
+    //Read in-memory indexes
+    auto jiter = jobject.find("nonposindex");
+    if(jiter != jobject.end()) {
+        for(auto inditer = jiter->begin(); inditer != jiter->end(); inditer++) {
+            unsigned int key = std::stoul(inditer.key());
+            std::vector<nPosting> data;
+
+            for(auto dataiter = inditer->begin(); dataiter != inditer->end; dataiter++) {
+                data.emplace_back(dataiter->at("termID"), dataiter->at("docID"), dataiter->at("frequency"));
+            }
+
+            nonpositional_index[key] = data;
+        }
+    }
+
+    jiter = jobject.find("posindex");
+    if(jiter != jobject.end()) {
+        for(auto inditer = jiter->begin(); inditer != jiter->end(); inditer++) {
+            unsigned int key = std::stoul(inditer.key());
+            std::vector<Posting> data;
+
+            for(auto dataiter = inditer->begin(); dataiter != inditer->end; dataiter++) {
+                data.emplace_back(
+                    dataiter->at("termID"),
+                    dataiter->at("docID"),
+                    dataiter->at("fragmentID"),
+                    dataiter->at("position"));
+            }
+
+            positional_index[key] = data;
+        }
+    }
 }
