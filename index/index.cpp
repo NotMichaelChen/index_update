@@ -197,7 +197,7 @@ void Index::restore() {
             unsigned int key = std::stoul(inditer.key());
             std::vector<nPosting> data;
 
-            for(auto dataiter = inditer->begin(); dataiter != inditer->end; dataiter++) {
+            for(auto dataiter = inditer->begin(); dataiter != inditer->end(); dataiter++) {
                 data.emplace_back(dataiter->at("termID"), dataiter->at("docID"), dataiter->at("frequency"));
             }
 
@@ -211,7 +211,7 @@ void Index::restore() {
             unsigned int key = std::stoul(inditer.key());
             std::vector<Posting> data;
 
-            for(auto dataiter = inditer->begin(); dataiter != inditer->end; dataiter++) {
+            for(auto dataiter = inditer->begin(); dataiter != inditer->end(); dataiter++) {
                 data.emplace_back(
                     dataiter->at("termID"),
                     dataiter->at("docID"),
