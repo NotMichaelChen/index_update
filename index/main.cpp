@@ -8,6 +8,7 @@
 using namespace std;
 
 //http://forum.codecall.net/topic/60157-read-all-files-in-a-folder/
+//TODO: Move to util
 vector<string> openInDir(string path = ".") {
     DIR*    dir;
     dirent* pdir;
@@ -64,12 +65,12 @@ int main(int argc, char **argv) {
         ++docs;
     }
 
-    index.dump();
-
     auto end = chrono::high_resolution_clock::now();
     auto dur = end - begin;
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
     std::cout << "Inserted " << docs << " documents in " << ms << "ms for an average of " << ms / (double)docs << " ms/doc\n";
+
+    index.dump();
 
     return 0;
 }
