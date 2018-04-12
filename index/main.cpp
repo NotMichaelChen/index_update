@@ -4,6 +4,7 @@
 #include <chrono>
 
 #include "index.hpp"
+#include "redis.hpp"
 
 using namespace std;
 
@@ -32,11 +33,7 @@ vector<string> openInDir(string path = ".") {
 
 int main(int argc, char **argv) {
     //Reset the redis database before testing
-    cpp_redis::client client;
-    client.connect("127.0.0.1", 6379);
-    client.flushall();
-    client.sync_commit();
-    client.disconnect();
+    redisFlushDatabase();
 
     Index index;
     vector<string> filelist = openInDir("./dataset-format/");

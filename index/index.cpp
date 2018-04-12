@@ -9,6 +9,7 @@
 #include "util.hpp"
 #include "query_processing/DAAT.hpp"
 #include "json.hpp"
+#include "redis.hpp"
 
 //Get timestamp, https://stackoverflow.com/a/16358111
 std::string getTimestamp() {
@@ -166,6 +167,7 @@ void Index::dump() {
     std::ofstream ofile("indexdump", std::ios::out | std::ios::trunc);
     ofile.write(jstring.c_str(), jstring.size());
 
+    redisDumpDatabase("dump.rdb");
 }
 
 void Index::restore() {
