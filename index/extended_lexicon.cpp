@@ -111,7 +111,7 @@ void ExtendedLexicon::restore(nlohmann::json& jobject) {
                 mData tempdata;
                 tempdata.filename = metaiter->at("filename");
                 tempdata.start_pos = metaiter->at("start_pos");
-                tempdata.last_docID = metaiter->at("lastdocID");
+                tempdata.last_docID = metaiter->at("last_docID");
                 tempdata.blocksizes = metaiter->at("blocksizes");
                 tempdata.postings_blocks = metaiter->at("postings_blocks");
                 tempdata.end_offset = metaiter->at("end_offset");

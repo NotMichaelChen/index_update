@@ -45,7 +45,7 @@ void redisDumpDatabase(std::string name) {
     std::string path;
     client.config_get("dir", [&path](cpp_redis::reply& reply) {
         if(reply.ok()) {
-            std::vector<cpp_redis::reply> response;
+            std::vector<cpp_redis::reply> response = reply.as_array();
             if(response.size() >= 2)
                 path = reply.as_array()[1].as_string();
         }
@@ -54,7 +54,7 @@ void redisDumpDatabase(std::string name) {
     std::string filename;
     client.config_get("dbfilename", [&filename](cpp_redis::reply& reply) {
         if(reply.ok()) {
-            std::vector<cpp_redis::reply> response;
+            std::vector<cpp_redis::reply> response = reply.as_array();
             if(response.size() >= 2)
                 filename = reply.as_array()[1].as_string();
         }
@@ -79,7 +79,7 @@ void redisRestoreDatabase(std::string filepath) {
     std::string path;
     client.config_get("dir", [&path](cpp_redis::reply& reply) {
         if(reply.ok()) {
-            std::vector<cpp_redis::reply> response;
+            std::vector<cpp_redis::reply> response = reply.as_array();
             if(response.size() >= 2)
                 path = reply.as_array()[1].as_string();
         }
@@ -88,7 +88,7 @@ void redisRestoreDatabase(std::string filepath) {
     std::string filename;
     client.config_get("dbfilename", [&filename](cpp_redis::reply& reply) {
         if(reply.ok()) {
-            std::vector<cpp_redis::reply> response;
+            std::vector<cpp_redis::reply> response = reply.as_array();
             if(response.size() >= 2)
                 filename = reply.as_array()[1].as_string();
         }

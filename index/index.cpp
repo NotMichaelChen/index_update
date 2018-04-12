@@ -224,4 +224,6 @@ void Index::restore() {
             positional_index[key] = data;
         }
     }
+
+    redisRestoreDatabase("dump.rdb");
 }
