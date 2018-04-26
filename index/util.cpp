@@ -1,6 +1,6 @@
 #include "util.hpp"
 
-#include "dirent.hpp"
+#include "dirent.h"
 #include <ctime>
 #include <sstream>
 #include <iomanip>
@@ -34,7 +34,7 @@ std::vector<std::string> readDirectory(std::string path = ".") {
       	}
     	closedir( dir );
     }
-    else throw "Directory not opened.";
+    else throw std::runtime_error("Directory not opened.");
 
     return files;
 }
