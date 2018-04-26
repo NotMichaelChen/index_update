@@ -2,31 +2,10 @@
 
 #include <iostream>
 #include <functional>
-#include <dirent.h>
 #include <algorithm>
 
 #include "static_functions/postingIO.hpp"
-
-//List all the files in a directory
-//Defined locally only for the static_index methods
-std::vector<std::string> read_directory( std::string path ){
-    std::vector <std::string> result;
-    dirent* de;
-    DIR* dp;
-    errno = 0;
-    dp = opendir( path.empty() ? "." : path.c_str() );
-    if (dp){
-            while (true){
-                errno = 0;
-                de = readdir( dp );
-                if (de == NULL) break;
-                std::string d_n(de->d_name);
-                result.push_back( d_n );
-            }
-            closedir( dp );
-        }
-    return result;
-}
+#include "util.hpp"
 
 ExtendedLexicon* StaticIndex::getExlexPointer() {
     return &exlex;
@@ -99,7 +78,7 @@ void StaticIndex::merge_test(bool isPositional) {
     //Assign directory the correct string based on the parameter
     std::string directory = isPositional ? PDIR : NPDIR;
 
-    std::vector<std::string> files = read_directory(directory);
+    std::vector<std::string> files = Utility::readDirectory(directory);
     auto dir_iter = files.begin();
 
     while(dir_iter != files.end()) {
@@ -110,7 +89,7 @@ void StaticIndex::merge_test(bool isPositional) {
             merge(indexnum, isPositional);
 
             files.clear();
-            files = read_directory(directory);
+            files = Utility::readDirectory(directory);
             dir_iter = files.begin();
         }
         else {

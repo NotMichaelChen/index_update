@@ -5,38 +5,16 @@
 
 #include "index.hpp"
 #include "redis.hpp"
+#include "util.hpp"
 
 using namespace std;
-
-//http://forum.codecall.net/topic/60157-read-all-files-in-a-folder/
-//TODO: Move to util
-vector<string> openInDir(string path = ".") {
-    DIR*    dir;
-    dirent* pdir;
-    vector<string> files;
-
-    dir = opendir( path.empty() ? "." : path.c_str() );
-
-    if( dir ){
-        while (true){
-  			pdir = readdir( dir );
-  			if (pdir == NULL) break;
-            string d_n(pdir->d_name);
-  			files.push_back( d_n );
-      	}
-    	closedir( dir );
-    }
-    else cout << "Directory not opened." << endl;
-
-    return files;
-}
 
 int main(int argc, char **argv) {
     //Reset the redis database before testing
     redisFlushDatabase();
 
     Index index;
-    vector<string> filelist = openInDir("./dataset-format/");
+    vector<string> filelist = Utility::readDirectory("./dataset-format/");
 
     auto begin = chrono::high_resolution_clock::now();
     int docs = 0;
@@ -66,8 +44,6 @@ int main(int argc, char **argv) {
     auto dur = end - begin;
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
     std::cout << "Inserted " << docs << " documents in " << ms << "ms for an average of " << ms / (double)docs << " ms/doc\n";
-
-    index.dump();
 
     return 0;
 }
