@@ -12,6 +12,9 @@ namespace Utility {
     //Gets a list of files in a given directory
     std::vector<std::string> readDirectory(std::string path);
 
+    std::vector<std::string> splitString(std::string& str, char c);
+
+    //Insert the given element into the vector using binary search to find its location
     template<typename T>
     void binaryInsert(std::vector<T>& array, T element);
 

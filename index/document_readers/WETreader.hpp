@@ -9,6 +9,7 @@
 
 class WETReader : public ReaderInterface {
 public:
+    //Can only read directories in the same directory as the executable TODO: Make directory support better
     WETReader(std::string dir);
     std::string getCurrentDocument();
     void nextDocument();
@@ -18,6 +19,10 @@ private:
     size_t doc_index;
 
     std::ifstream file;
+
+    std::string docbuffer;
+    //Header is always 9 lines
+    std::vector<std::string> header;
 };
 
 #endif

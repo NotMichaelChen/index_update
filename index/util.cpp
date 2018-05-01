@@ -30,6 +30,9 @@ std::vector<std::string> readDirectory(std::string path = ".") {
   			pdir = readdir( dir );
   			if (pdir == NULL) break;
             std::string d_n(pdir->d_name);
+            //ignore ". and .."
+            if(d_n == "." || d_n == "..")
+                continue;
   			files.push_back( d_n );
       	}
     	closedir( dir );
@@ -37,6 +40,18 @@ std::vector<std::string> readDirectory(std::string path = ".") {
     else throw std::runtime_error("Directory not opened.");
 
     return files;
+}
+
+//https://stackoverflow.com/a/10058725
+std::vector<std::string> splitString(std::string& str, char c) {
+    std::stringstream stream(str);
+    std::string segment;
+    std::vector<std::string> seglist;
+
+    while(std::getline(stream, segment, c))
+        seglist.push_back(segment);
+    
+    return seglist;
 }
 
 }
