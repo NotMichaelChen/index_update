@@ -12,9 +12,10 @@ public:
     //Can only read directories in the same directory as the executable TODO: Make directory support better
     WETReader(std::string dir);
     std::string getCurrentDocument();
-    void nextDocument();
+    bool nextDocument();
 
 private:
+    std::string docdir;
     std::vector<std::string> doc_collection;
     size_t doc_index;
 

@@ -6,7 +6,7 @@
 class ReaderInterface {
 public:
     virtual std::string getCurrentDocument() = 0;
-    virtual void nextDocument() = 0;
+    virtual bool nextDocument() = 0;
 };
 
 #endif
