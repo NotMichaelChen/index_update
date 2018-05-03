@@ -24,8 +24,22 @@ std::string WETReader::getCurrentDocument() {
     return docbuffer;
 }
 
+std::string WETReader::getURL() {
+    if(doc_index >= doc_collection.size())
+        return "";
+
+    size_t splitloc = header[2].find_first_of(':', 0);
+    if(splitloc == std::string::npos)
+        throw std::runtime_error("Error parsing WET header");
+
+    //Advance beyond the first colon
+    splitloc++;
+
+    return Utility::trim(header[2].substr(splitloc, header[2].size()-splitloc));
+}
+
 bool WETReader::nextDocument() {
-    if(doc_index > doc_collection.size())
+    if(doc_index >= doc_collection.size())
         return false;
 
     header.clear();
@@ -34,7 +48,7 @@ bool WETReader::nextDocument() {
     //Read header
     while(header.size() < 9) {
         if(!std::getline(file, line))
-            throw std::runtime_error("Error getting header in document");
+            throw std::runtime_error("Error getting header in nextDocument");
 
         header.push_back(line);
     }
@@ -58,18 +72,21 @@ bool WETReader::nextDocument() {
     //Throw away two lines after document
     std::getline(file, line);
     std::getline(file, line);
+    //Read extra newline
+    file.get();
 
-    //If file is invalid, begin reading next file
-    if(!file) {
+    //If next char is invalid, begin reading next file
+    if(file.peek() < 0) {
+        file.close();
         file.clear();
 
         doc_index++;
-        if(doc_index > doc_collection.size())
+        if(doc_index >= doc_collection.size())
             return false;
         
         file.open("./" + docdir + "/" + doc_collection[doc_index]);
         if(!file)
-            throw std::runtime_error("Error opening file in document collection");
+            throw std::runtime_error("Error opening file in document collection, " + doc_collection[doc_index]);
         
         //Skip first 18 lines
         std::string line;

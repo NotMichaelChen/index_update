@@ -11,6 +11,8 @@ class WETReader : public ReaderInterface {
 public:
     //Can only read directories in the same directory as the executable TODO: Make directory support better
     WETReader(std::string dir);
+
+    std::string getURL();
     std::string getCurrentDocument();
     bool nextDocument();
 

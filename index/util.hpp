@@ -14,6 +14,8 @@ namespace Utility {
 
     std::vector<std::string> splitString(std::string& str, char c);
 
+    std::string trim(std::string const& str);
+
     //Insert the given element into the vector using binary search to find its location
     template<typename T>
     void binaryInsert(std::vector<T>& array, T element);

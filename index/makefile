@@ -9,7 +9,7 @@ DEPS = $(call rwildcard,, *.h)
 SRC = $(call rwildcard,, *.cpp)
 OBJ = $(SRC:.cpp=.o)
 DEBUG = -g -O0
-OPTIMIZE = -g -O2
+OPTIMIZE = -O3
 
 %.o: %.cpp $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS) $(LIBS)
@@ -25,6 +25,6 @@ clean:
 debug: CFLAGS+=$(DEBUG)
 debug: index
 
-.PHONY: debug-o
-debug-o: CFLAGS+=$(OPTIMIZE)
-debug-o: index
+.PHONY: optimize
+optimize: CFLAGS+=$(OPTIMIZE)
+optimize: index
