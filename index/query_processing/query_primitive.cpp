@@ -16,8 +16,10 @@ query_primitive::query_primitive(unsigned int termID, GlobalType::NonPosIndex& i
 }
 
 unsigned int query_primitive::nextGEQ(unsigned int x) {
+    //Finds the QP with the smallest docID greater than x
     unsigned int min = GlobalConst::UIntMax;
 
+    //Loop through every low level QP and call nextGEQ on it
     for(size_t i = 0; i < lists.size(); ++i) {
         bool failure = false;
         unsigned int next = lists[i].nextGEQ(x, failure);
@@ -38,6 +40,7 @@ unsigned int query_primitive::getFreq() {
     int minindexnum = lists.size();
     unsigned int freq = 0;
 
+    //Loop through all the QP, find the pointer to the smallest index number, and get its frequency
     for(size_t i = 0; i < lists.size(); ++i) {
         if(curdocIDs[i] == docID) {
             int newindexnum = lists[i].getIndexNumber();

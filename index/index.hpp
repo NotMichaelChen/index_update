@@ -30,6 +30,8 @@ private:
     void insert_posting(std::vector<T>& postinglist, T posting);
 
     //Data structures
+    //Note: Posting lists are *lazily sorted*, that is, docIDs are stored randomly until they need to be sorted.
+    //Indexes on disk are guaranteed to be sorted (due to delta compression)
     GlobalType::PosIndex positional_index;
     GlobalType::NonPosIndex nonpositional_index;
     //TODO: Can this be obtained from docstore?

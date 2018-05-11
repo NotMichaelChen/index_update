@@ -12,7 +12,9 @@ class query_primitive {
 public:
     query_primitive(unsigned int termID, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex);
 
+    //Advances QP to next docID greater than x
     unsigned int nextGEQ(unsigned int x);
+    //Return frequency of the docID that the QP is pointing to
     unsigned int getFreq();
 private:
     std::vector<query_primitive_low> lists;

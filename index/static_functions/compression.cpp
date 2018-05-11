@@ -2,6 +2,7 @@
 
 #include <string>
 #include <stdexcept>
+#include <algorithm>
 
 //Pads the given vector of bytes to the boundary of a given word length
 void pad(std::vector<uint8_t>& data, int len) {
@@ -11,11 +12,12 @@ void pad(std::vector<uint8_t>& data, int len) {
 }
 
 //Compresses a vector of posting data using the given compression method
-//When delta encoding, assume field is already sorted
+//When delta encoding, do *not* assume field is already sorted
 //TODO: Determine how to figure out padding length
 std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, std::vector<uint8_t> encoder(unsigned int), bool delta) {
     std::vector<uint8_t> compressed;
     if(delta) {
+        std::sort(field.begin(), field.end());
         std::vector<unsigned int> deltaencode;
         deltaencode.push_back(field[0]);
 

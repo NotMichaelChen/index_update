@@ -7,6 +7,8 @@
 
 query_primitive_low::query_primitive_low(unsigned int termID, GlobalType::NonPosIndex& index) {
     inmemory = true;
+    //Do *not* assume that in-memory posting lists are sorted
+    std::sort(index[termID].begin(), index[termID].end());
     postinglist = index[termID];
     postingindex = 0;
 }
@@ -14,6 +16,8 @@ query_primitive_low::query_primitive_low(unsigned int termID, GlobalType::NonPos
 query_primitive_low::query_primitive_low(unsigned int termID, std::vector<mData>::iterator mdata) {
     inmemory = false;
     metadata = mdata;
+
+    //Can assume that static posting lists are sorted
 
     ifile.open(metadata->filename);
     //TODO: Read static metadata and use it
