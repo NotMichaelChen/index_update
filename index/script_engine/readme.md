@@ -6,6 +6,7 @@
 * One command per line
 * Arguments are separated by spaces
 * No whitespace allowed around each line apart from newlines
+* Only one index object can be loaded in
 
 ## Commands
 

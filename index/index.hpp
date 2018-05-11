@@ -24,6 +24,7 @@ public:
 
     void dump();
     void restore();
+    void clear();
 
 private:
     template<typename T>

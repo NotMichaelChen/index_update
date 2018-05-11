@@ -219,3 +219,12 @@ void Index::restore() {
 
     redisRestoreDatabase("dump.rdb");
 }
+
+void Index::clear() {
+    positional_index.clear();
+    nonpositional_index.clear();
+    doclength.clear();
+    avgdoclength = positional_size = nonpositional_size = 0;
+    
+    //Clear docstore,transtable, lex, exlex
+}
