@@ -86,6 +86,7 @@ void StaticIndex::merge_test(bool isPositional) {
         if(dir_iter->size() > 1 && (*dir_iter)[0] == 'I') {
             //Get the number of the index
             int indexnum = std::stoi(dir_iter->substr(1));
+            std::cerr << "Merging positional: " << isPositional << ", index number " << indexnum << std::endl;
             merge(indexnum, isPositional);
 
             files.clear();

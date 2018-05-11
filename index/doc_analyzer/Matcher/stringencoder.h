@@ -45,6 +45,7 @@ namespace Matcher {
         std::unordered_set<std::string> newexclusive;
         //list of terms that appear in the new document and their frequency
         std::unordered_map<std::string, int> newcount;
+        
         //Maps words to numbers
         std::unordered_map<std::string, int> dictionary;
         //Maps numbers (index) to words

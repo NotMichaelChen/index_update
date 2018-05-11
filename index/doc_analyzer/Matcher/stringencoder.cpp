@@ -7,53 +7,55 @@ using namespace std;
 
 namespace Matcher {
     StringEncoder::StringEncoder(string& oldfile, string& newfile) : nextcode(0) {
-        //All terms found in the old map
-        unordered_map<string, int> oldmap;
-        stringstream oldstream(oldfile);
-        
         string word;
+        stringstream oldstream(oldfile);
         while(oldstream >> word) {
             transform(word.begin(), word.end(), word.begin(), ::tolower);
             
-            if(oldmap.find(word) == oldmap.end()) {
-                oldmap[word] = nextcode;
+            if(dictionary.find(word) == dictionary.end()) {
                 dictionary[word] = nextcode;
                 lookup.push_back(word);
                 ++nextcode;
             }
             
             oldencoded.push_back(dictionary[word]);
+            oldexclusive.insert(word);
         }
         
-        //Terms found only in the new file
-        unordered_map<string, int> newmap;
         stringstream newstream(newfile);
         while(newstream >> word) {
             transform(word.begin(), word.end(), word.begin(), ::tolower);
             
             if(dictionary.find(word) == dictionary.end()) {
-                newmap[word] = nextcode;
                 dictionary[word] = nextcode;
                 newcount[word] = 1;
                 lookup.push_back(word);
                 ++nextcode;
             }
             else {
-                oldmap.erase(word);
                 newcount[word] += 1;
             }
             
             newencoded.push_back(dictionary[word]);
+            newexclusive.insert(word);
         }
 
-        oldexclusive.reserve(oldmap.size());
-        newexclusive.reserve(newmap.size());
-        
-        for(auto kv : oldmap) {
-            oldexclusive.insert(kv.first);
+        //Create a pointer to the smaller set so we don't have to iterate through as many elements
+        unordered_set<string>* iterateset;
+        unordered_set<string>* compareset;
+        if(oldexclusive.size() > newexclusive.size()) {
+            iterateset = &newexclusive;
+            compareset = &oldexclusive;
         }
-        for(auto kv : newmap) {
-            newexclusive.insert(kv.first);
+        else {
+            iterateset = &newexclusive;
+            compareset = &oldexclusive;
+        }
+
+        for(string key : *iterateset) {
+            if(compareset->find(key) != compareset->end()) {
+                compareset->erase(key);
+            }
         }
     }
     
