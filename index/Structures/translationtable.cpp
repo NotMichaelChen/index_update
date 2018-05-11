@@ -66,18 +66,23 @@ namespace Structures {
         client.rpush(to_string(docID), val);
         client.commit();
     }
-
-    void TranslationTable::dump() {
-        //Ensure database is saved
-        client.save();
-        client.sync_commit();
-    }
     
     void TranslationTable::erase(int docID) {
         client.del( {to_string(docID)} );
         client.commit();
     }
     
+    void TranslationTable::dump() {
+        //Ensure database is saved
+        client.save();
+        client.sync_commit();
+    }
+    
+    void TranslationTable::clear() {
+        client.flushdb();
+        client.sync_commit();
+    }
+
     string transToString(Matcher::Translation& t) {
         stringstream result;
         result << t.loc << "-" << t.oldlen << "-" << t.newlen;

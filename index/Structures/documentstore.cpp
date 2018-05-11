@@ -113,4 +113,9 @@ namespace Structures {
         
         return stoi(nextid);
     }
+
+    void DocumentStore::clear() {
+        client.flushdb();
+        client.sync_commit();
+    }
 }

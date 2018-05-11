@@ -28,6 +28,7 @@ public:
 
     void dump(nlohmann::json& jobject);
     void restore(nlohmann::json& jobject);
+    void clear();
 
 private:
     //Each term is associated with a list of metadata structs.

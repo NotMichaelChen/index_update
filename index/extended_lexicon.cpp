@@ -122,3 +122,8 @@ void ExtendedLexicon::restore(nlohmann::json& jobject) {
         }
     }
 }
+
+void ExtendedLexicon::clear() {
+    exlexnp.clear();
+    exlexp.clear();
+}

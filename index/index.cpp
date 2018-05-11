@@ -226,5 +226,8 @@ void Index::clear() {
     doclength.clear();
     avgdoclength = positional_size = nonpositional_size = 0;
     
-    //Clear docstore,transtable, lex, exlex
+    docstore.clear();
+    transtable.clear();
+    lex.clear();
+    staticwriter.getExlexPointer()->clear();
 }

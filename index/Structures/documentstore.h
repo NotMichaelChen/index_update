@@ -29,6 +29,8 @@ namespace Structures {
 
         int getDocumentCount();
         int getNextDocID();
+
+        void clear();
     private:
         //key: url
         //val: docID, doc, maxfragID, timestamp

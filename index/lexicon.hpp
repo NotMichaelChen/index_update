@@ -31,6 +31,8 @@ public:
     //Restores the lexicon from a given json object
     void restore(nlohmann::json& jobject);
 
+    void clear();
+
 private:
     void initEntry(std::string& term);
     std::unordered_map<std::string, Lex_data> lex;

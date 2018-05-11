@@ -51,3 +51,8 @@ void Lexicon::restore(nlohmann::json& jobject) {
         }
     }
 }
+
+void Lexicon::clear() {
+    lex.clear();
+    nextID = 0;
+}
