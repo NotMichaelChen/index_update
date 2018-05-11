@@ -5,11 +5,12 @@ CC=g++
 CFLAGS+=-I. -Wall -std=c++14
 LIBS = -lcpp_redis -ltacopie -lpthread
 VPATH = %.cpp %.o Matcher
-DEPS = $(call rwildcard,, *.h)
+DEPS = $(call rwildcard,, *.hpp)
 SRC = $(call rwildcard,, *.cpp)
 OBJ = $(SRC:.cpp=.o)
-DEBUG = -g -O0
+DEBUG = -g -O0 -pg
 OPTIMIZE = -O3
+DEBUG-OPTIMIZE = -pg -O3
 
 %.o: %.cpp $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS) $(LIBS)
@@ -28,3 +29,7 @@ debug: index
 .PHONY: optimize
 optimize: CFLAGS+=$(OPTIMIZE)
 optimize: index
+
+.PHONY: debug-optimize
+debug-optimize: CFLAGS+=$(DEBUG-OPTIMIZE)
+debug-optimize: index

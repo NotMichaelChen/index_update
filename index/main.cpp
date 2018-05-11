@@ -21,7 +21,6 @@ int main(int argc, char **argv) {
     
     uintmax_t doccount = 0;
 
-    std::cerr << "begin loop\n";
     do
     {
         std::string url = reader.getURL();

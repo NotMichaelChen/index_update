@@ -6,7 +6,7 @@
 #ifndef LEXICON_HPP
 #define LEXICON_HPP
 
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -25,7 +25,6 @@ public:
 
     Lex_data getEntry(std::string& term);
     void updateFreq(std::string& term, int new_freq);
-    void display();
 
     //Dumps contents of lexicon into given json, under the object "lexicon"
     void dump(nlohmann::json& jobject);
@@ -34,7 +33,7 @@ public:
 
 private:
     void initEntry(std::string& term);
-    std::map<std::string, Lex_data> lex;
+    std::unordered_map<std::string, Lex_data> lex;
     unsigned int nextID;
 };
 
