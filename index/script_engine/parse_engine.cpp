@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <chrono>
 
 #include "index.hpp"
 #include "document_readers/reader_interface.hpp"
@@ -61,6 +62,8 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
             
             int doccount = stoi(arguments[1]);
 
+            auto begin = std::chrono::high_resolution_clock::now();
+
             for(int i = 0; i < doccount && docreader->isValid(); i++) {
                 std::string url = docreader->getURL();
                 std::string contents = docreader->getCurrentDocument();
@@ -71,6 +74,12 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
 
                 docreader->nextDocument();
             }
+
+            auto end = std::chrono::high_resolution_clock::now();
+            auto dur = end - begin;
+            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+            std::cout << "Inserted " << doccount << " documents in " << ms << "ms for an average of " << ms / (double)doccount
+                << " ms/doc\n";
 
             linenum++;
         }
