@@ -5,6 +5,7 @@
 
 void redisDumpDatabase(std::string name);
 void redisRestoreDatabase(std::string filepath);
+void redisSetConfigDir(std::string path);
 void redisFlushDatabase();
 
 #endif

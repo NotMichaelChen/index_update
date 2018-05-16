@@ -18,9 +18,10 @@ void writeIndex(std::string name, Index& index) {
     index.dump();
 
     //TODO: Somehow write static indexes here?
+
+    chdir("..");
 }
 
-//Can be relative or absolute
 void readIndex(std::string name, Index& index) {
     struct stat st;
     if(!(stat(name.c_str(),&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
@@ -33,4 +34,5 @@ void readIndex(std::string name, Index& index) {
 
     //TODO: Set static index directory here?
 
+    chdir("..");
 }

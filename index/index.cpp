@@ -29,7 +29,6 @@ std::vector<unsigned int> Index::query(std::vector<std::string> words) {
 }
 
 Index::Index() : docstore(), transtable(), lex(), staticwriter() {
-    //TODO: make disk_index folder public
     //https://stackoverflow.com/a/4980833
     struct stat st;
     if(!(stat(INDEXDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {

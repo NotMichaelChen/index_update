@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <fstream>
 #include <vector>
+#include <sys/stat.h>
 
 void do_chown(const char *file_path, const char *user_name, const char *group_name) {
     uid_t          uid;
@@ -109,6 +110,23 @@ void redisRestoreDatabase(std::string filepath) {
     //Assume database is running with daemon, and will restart when shutdown
     client.shutdown("nosave");
     client.sync_commit();
+
+    client.disconnect();
+}
+
+void redisSetConfigDir(std::string path) {
+    struct stat st;
+    if(!(stat(path.c_str(),&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
+        int errnum = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if(errnum != 0)
+            throw std::runtime_error("Error creating redis config directory: " + path);
+    }
+
+    cpp_redis::client client;
+    client.connect("127.0.0.1", 6379);
+    client.config_set("dir", path);
+    client.sync_commit();
+    client.disconnect();
 }
 
 void redisFlushDatabase() {

@@ -2,6 +2,9 @@
 
 #include <fstream>
 #include <chrono>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include "index.hpp"
 #include "redis.hpp"
@@ -11,6 +14,9 @@
 using namespace std;
 
 int main(int argc, char **argv) {
+    struct passwd *pw = getpwuid(getuid());
+    std::string homedir = pw->pw_dir;
+    redisSetConfigDir(homedir + "/redis");
     //Reset the redis database before testing
     redisFlushDatabase();
 
