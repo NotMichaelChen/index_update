@@ -6,6 +6,8 @@
 #include <algorithm>
 
 #include "index.hpp"
+#include "document_readers/reader_interface.hpp"
+#include "document_readers/WETreader.hpp"
 
 std::vector<std::string> splitLine(std::string& line) {
     std::stringstream linestream(line);
@@ -35,7 +37,9 @@ size_t findEndLoop(std::vector<std::string>& code, size_t start) {
 }
 
 //begin inclusive, end exclusive
-void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& index) {
+void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& index,
+    std::shared_ptr<ReaderInterface> docreader)
+{
     size_t linenum = begin;
     while(linenum < code.size()) {
         //Split the command into space-separated tokens
@@ -60,6 +64,21 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
         else if(command == "dump") {
 
         }
+        else if(command == "docinput") {
+            if(arguments.size() != 3)
+                throw std::invalid_argument("Error: invalid number of arguments to docinput");
+            
+            std::string path = arguments[1];
+            std::string reader = arguments[2];
+            std::transform(reader.begin(), reader.end(), reader.begin(), ::tolower);
+
+            if(reader == "wet") {
+                docreader = std::make_shared<WETReader>(path);
+            }
+            else {
+                throw std::invalid_argument("Error: invalid document reader specified");
+            }
+        }
         else if(command == "loop") {
             //Get how many times to loop, then find end of loop
             size_t times = stoi(arguments[1]);
@@ -67,7 +86,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
 
             //Run the segment of code multiple times
             for(size_t i = 0; i < times; ++i) {
-                parseCode(code, linenum+1, end, index);
+                parseCode(code, linenum+1, end, index, docreader);
             }
 
             //Go past the end of the loop
@@ -93,9 +112,10 @@ void parseFile(std::string filename, std::vector<std::string>& filenames) {
         script.push_back(command);
     }
 
-    //Create index object
+    //Create index object and reader interface
     Index index;
+    std::shared_ptr<ReaderInterface> docreader;
 
     //Parse the script
-    parseCode(script, 0, script.size(), index);
+    parseCode(script, 0, script.size(), index, docreader);
 }

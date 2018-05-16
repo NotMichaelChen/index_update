@@ -10,6 +10,9 @@
 
 ## Commands
 
+DOCINPUT *path reader*
+>Specify where to read documents, and which documentreader to use
+
 RESET
 >Resets the current index, clearing out all documents, static info, and other metadata
 
