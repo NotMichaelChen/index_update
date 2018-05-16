@@ -51,6 +51,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
 
         if(command == "reset") {
             index.clear();
+            linenum++;
         }
         else if(command == "insert") {
             if(docreader == nullptr)
@@ -70,15 +71,17 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
 
                 docreader->nextDocument();
             }
+
+            linenum++;
         }
         else if(command == "query") {
-
+            linenum++;
         }
         else if(command == "load") {
-
+            linenum++;
         }
         else if(command == "dump") {
-
+            linenum++;
         }
         else if(command == "docinput") {
             if(arguments.size() != 3)
@@ -94,6 +97,8 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
             else {
                 throw std::runtime_error("Error: invalid document reader specified");
             }
+
+            linenum++;
         }
         else if(command == "loop") {
             //Get how many times to loop, then find end of loop
@@ -111,10 +116,13 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
         else if(command == "endloop") {
             throw std::invalid_argument("Error: endloop found without matching loop");
         }
+        else {
+            throw std::runtime_error("Error: invalid command");
+        }
     }
 }
 
-void parseFile(std::string filename, std::vector<std::string>& filenames) {
+void parseFile(std::string filename) {
     //Read in the file
     std::ifstream ifile(filename);
     if(!ifile) {
