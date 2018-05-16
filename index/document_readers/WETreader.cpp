@@ -96,3 +96,7 @@ bool WETReader::nextDocument() {
 
     return true;
 }
+
+bool WETReader::isValid() {
+    return doc_index < doc_collection.size();
+}

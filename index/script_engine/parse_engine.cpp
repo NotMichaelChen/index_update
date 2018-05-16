@@ -53,7 +53,23 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
             index.clear();
         }
         else if(command == "insert") {
+            if(docreader == nullptr)
+                throw std::runtime_error("Error: no docreader specified");
+            if(arguments.size() != 2)
+                throw std::invalid_argument("Error: invalid number of arguments to insert");
+            
+            int doccount = stoi(arguments[1]);
 
+            for(int i = 0; i < doccount && docreader->isValid(); i++) {
+                std::string url = docreader->getURL();
+                std::string contents = docreader->getCurrentDocument();
+
+                std::cout << "Inserting file: " << url << std::endl;
+
+                index.insert_document(url, contents);
+
+                docreader->nextDocument();
+            }
         }
         else if(command == "query") {
 
@@ -76,7 +92,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
                 docreader = std::make_shared<WETReader>(path);
             }
             else {
-                throw std::invalid_argument("Error: invalid document reader specified");
+                throw std::runtime_error("Error: invalid document reader specified");
             }
         }
         else if(command == "loop") {
@@ -114,7 +130,7 @@ void parseFile(std::string filename, std::vector<std::string>& filenames) {
 
     //Create index object and reader interface
     Index index;
-    std::shared_ptr<ReaderInterface> docreader;
+    std::shared_ptr<ReaderInterface> docreader = nullptr;
 
     //Parse the script
     parseCode(script, 0, script.size(), index, docreader);

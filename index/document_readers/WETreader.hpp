@@ -15,6 +15,7 @@ public:
     std::string getURL();
     std::string getCurrentDocument();
     bool nextDocument();
+    bool isValid();
 
 private:
     std::string docdir;
