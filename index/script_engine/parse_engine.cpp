@@ -7,6 +7,8 @@
 #include <chrono>
 
 #include "index.hpp"
+#include "indexwriter.hpp"
+#include "redis.hpp"
 #include "document_readers/reader_interface.hpp"
 #include "document_readers/WETreader.hpp"
 
@@ -90,6 +92,13 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
             linenum++;
         }
         else if(command == "dump") {
+            if(arguments.size() != 2)
+                throw std::invalid_argument("Error: invalid number of arguments to dump");
+            
+            std::string outputname = arguments[1];
+
+            writeIndex(outputname, index);
+
             linenum++;
         }
         else if(command == "docinput") {
