@@ -11,6 +11,7 @@
 #include "redis.hpp"
 #include "document_readers/reader_interface.hpp"
 #include "document_readers/WETreader.hpp"
+#include "document_readers/RAWreader.hpp"
 
 std::vector<std::string> splitLine(std::string& line) {
     std::stringstream linestream(line);
@@ -111,6 +112,9 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
 
             if(reader == "wet") {
                 docreader = std::make_shared<WETReader>(path);
+            }
+            else if(reader == "raw") {
+                docreader = std::make_shared<RAWReader>(path);
             }
             else {
                 throw std::runtime_error("Error: invalid document reader specified");
