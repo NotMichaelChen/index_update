@@ -13,6 +13,7 @@
 #include "Structures/translationtable.h"
 #include "static_index.hpp"
 #include "global_parameters.hpp"
+#include "doc_analyzer/analyzer.h"
 
 //This index does not use compression
 class Index {
@@ -28,8 +29,8 @@ public:
     void clear();
 
 private:
-    template<typename T>
-    void insert_posting(std::vector<T>& postinglist, T posting);
+    void insertNPPostings(MatcherInfo& results);
+    void insertPPostings(MatcherInfo& results);
 
     //Data structures
     //Note: Posting lists are *lazily sorted*, that is, docIDs are stored randomly until they need to be sorted.

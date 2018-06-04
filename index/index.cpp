@@ -4,7 +4,6 @@
 #include <sys/stat.h>
 #include <algorithm>
 
-#include "doc_analyzer/analyzer.h"
 #include "global_parameters.hpp"
 #include "util.hpp"
 #include "query_processing/DAAT.hpp"
@@ -69,6 +68,11 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
     std::cerr << "Got P:" << results.Ppostings.size() << " NP:" << results.NPpostings.size() << " Postings" << std::endl;
 
+    insertNPPostings(results);
+    insertPPostings(results);
+}
+
+void Index::insertNPPostings(MatcherInfo& results) {
     bool isFirstDoc = (results.se.getOldSize() == 0);
     //Insert NP postings
     for(auto np_iter = results.NPpostings.begin(); np_iter != results.NPpostings.end(); np_iter++) {
@@ -103,7 +107,9 @@ void Index::insert_document(std::string& url, std::string& newpage) {
             nonpositional_size = 0;
         }
     }
+}
 
+void Index::insertPPostings(MatcherInfo& results) {
     //Insert P postings
     for(auto p_iter = results.Ppostings.begin(); p_iter != results.Ppostings.end(); p_iter++) {
         Lex_data entry = lex.getEntry(p_iter->term);
