@@ -8,9 +8,9 @@ VPATH = %.cpp %.o Matcher
 DEPS = $(call rwildcard,, *.hpp)
 SRC = $(call rwildcard,, *.cpp)
 OBJ = $(SRC:.cpp=.o)
-DEBUG = -g -O0 -pg
+DEBUG = -g -O3
 OPTIMIZE = -O3
-DEBUG-OPTIMIZE = -pg -O3
+PROF = -pg -O3
 
 %.o: %.cpp $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS) $(LIBS)
@@ -30,6 +30,6 @@ debug: index
 optimize: CFLAGS+=$(OPTIMIZE)
 optimize: index
 
-.PHONY: debug-optimize
-debug-optimize: CFLAGS+=$(DEBUG-OPTIMIZE)
-debug-optimize: index
+.PHONY: prof
+prof: CFLAGS+=$(DEBUG-OPTIMIZE)
+prof: index
