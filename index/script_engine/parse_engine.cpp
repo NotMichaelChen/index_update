@@ -67,6 +67,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
 
             auto begin = std::chrono::high_resolution_clock::now();
 
+            int docsinserted = 0;
             for(int i = 0; i < doccount && docreader->isValid(); i++) {
                 std::string url = docreader->getURL();
                 std::string contents = docreader->getCurrentDocument();
@@ -74,6 +75,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
                 std::cout << "Inserting file: " << url << std::endl;
 
                 index.insert_document(url, contents);
+                docsinserted++;
 
                 docreader->nextDocument();
             }
@@ -81,7 +83,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
             auto end = std::chrono::high_resolution_clock::now();
             auto dur = end - begin;
             auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
-            std::cout << "Inserted " << doccount << " documents in " << ms << "ms for an average of " << ms / (double)doccount
+            std::cout << "Inserted " << docsinserted << " documents in " << ms << "ms for an average of " << ms / (double)doccount
                 << " ms/doc\n";
 
             linenum++;
