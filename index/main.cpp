@@ -19,10 +19,7 @@ int main(int argc, char **argv) {
         cout << "Usage: ./index scriptpath" << endl;
         return 1;
     }
-
-    struct passwd *pw = getpwuid(getuid());
-    std::string homedir = pw->pw_dir;
-    redisSetConfigDir(homedir + "/redis");
+    
     //Reset the redis database before testing
     redisFlushDatabase();
 

@@ -18,6 +18,8 @@
 class StaticIndex {
 
 public:
+    StaticIndex(std::string& workind_dir);
+
     void write_p_disk(GlobalType::PosMapIter indexbegin, GlobalType::PosMapIter indexend);
     void write_np_disk(GlobalType::NonPosMapIter indexbegin, GlobalType::NonPosMapIter indexend);
 
@@ -26,6 +28,10 @@ public:
 private:
 
     ExtendedLexicon exlex;
+
+    const std::string INDEXDIR;
+    const std::string PDIR;
+    const std::string NPDIR;
 
     //Writes an index (stored as a map of wordIDs to posting lists) to disk
     template <typename T>

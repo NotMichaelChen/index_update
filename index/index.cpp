@@ -28,17 +28,22 @@ std::vector<unsigned int> Index::query(std::vector<std::string> words) {
     return DAAT(termIDs, nonpositional_index, *(staticwriter.getExlexPointer()), statistics);
 }
 
-Index::Index() : docstore(), transtable(), lex(), staticwriter() {
+Index::Index(std::string directory) : docstore(), transtable(), lex(), staticwriter(directory) {
+    working_dir = "./" + directory;
+
     //https://stackoverflow.com/a/4980833
     struct stat st;
-    if(!(stat(INDEXDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
-        mkdir(INDEXDIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if(!(stat(working_dir.c_str(),&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
+        mkdir(working_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
-    if(!(stat(PDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
-        mkdir(PDIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if(!(stat((working_dir + GlobalConst::IndexPath).c_str(),&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
+        mkdir((working_dir + GlobalConst::IndexPath).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
-    if(!(stat(NPDIR,&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
-        mkdir(NPDIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if(!(stat((working_dir + GlobalConst::PosPath).c_str(),&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
+        mkdir((working_dir + GlobalConst::PosPath).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+    if(!(stat((working_dir + GlobalConst::NonPosPath).c_str(),&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
+        mkdir((working_dir + GlobalConst::NonPosPath).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
 
     positional_size = 0;
@@ -157,14 +162,14 @@ void Index::dump() {
     }
 
     std::string jstring = jobject.dump();
-    std::ofstream ofile("indexdump", std::ios::out | std::ios::trunc);
+    std::ofstream ofile(working_dir + "/indexdump", std::ios::out | std::ios::trunc);
     ofile.write(jstring.c_str(), jstring.size());
 
-    redisDumpDatabase("dump.rdb");
+    redisDumpDatabase(working_dir + "/dump.rdb");
 }
 
 void Index::restore() {
-    std::ifstream ifile("indexdump");
+    std::ifstream ifile(working_dir + "/indexdump");
     if(!ifile) {
         return;
     }
@@ -218,7 +223,7 @@ void Index::restore() {
         }
     }
 
-    redisRestoreDatabase("dump.rdb");
+    redisRestoreDatabase(working_dir + "/dump.rdb");
 }
 
 void Index::clear() {

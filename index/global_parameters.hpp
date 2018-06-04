@@ -6,9 +6,6 @@
 
 #define POSTING_LIMIT 10000000 //make sure doesn't exceed memory limit
 #define BLOCKSIZE 128
-#define INDEXDIR "./disk_index/"//path to static index folders
-#define PDIR "./disk_index/positional/"//path to static positional index
-#define NPDIR "./disk_index/non_positional/"//path to static non-positional index
 
 #define DAAT_SIZE 10
 
@@ -36,6 +33,11 @@ namespace GlobalType {
 
 namespace GlobalConst {
     const auto UIntMax = std::numeric_limits<unsigned int>::max();
+
+    //Partial paths to static indexes folders
+    const std::string IndexPath = "/disk_index/";
+    const std::string PosPath = "/disk_index/positional/";
+    const std::string NonPosPath = "/disk_index/non_positional/";
 }
 
 #endif

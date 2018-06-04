@@ -41,7 +41,7 @@ size_t findEndLoop(std::vector<std::string>& code, size_t start) {
 }
 
 //begin inclusive, end exclusive
-void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& index,
+void parseCode(std::vector<std::string>& code, size_t begin, size_t end, std::string& dir, std::unique_ptr<Index>& indexptr,
     std::shared_ptr<ReaderInterface> docreader)
 {
     size_t linenum = begin;
@@ -54,10 +54,12 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
         std::transform(command.begin(), command.end(), command.begin(), ::tolower);
 
         if(command == "reset") {
-            index.clear();
+            indexptr.reset();
             linenum++;
         }
         else if(command == "insert") {
+            if(indexptr == nullptr)
+                throw std::runtime_error("Error: index is not initialized");
             if(docreader == nullptr)
                 throw std::runtime_error("Error: no docreader specified");
             if(arguments.size() != 2)
@@ -74,7 +76,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
 
                 std::cout << "Inserting file: " << url << std::endl;
 
-                index.insert_document(url, contents);
+                indexptr->insert_document(url, contents);
                 docsinserted++;
 
                 docreader->nextDocument();
@@ -89,18 +91,35 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
             linenum++;
         }
         else if(command == "query") {
+            std::cout << "Query not implemented!" << std::endl;
             linenum++;
         }
-        else if(command == "load") {
+        else if(command == "setdir") {
+            if(arguments.size() != 2)
+                throw std::invalid_argument("Error: invalid number of arguments to setdir");
+
+            dir = arguments[1];
+            indexptr = std::make_unique<Index>(dir);
+
+            linenum++;
+        }
+        else if(command == "loadcurrentdir") {
+            if(indexptr == nullptr)
+                throw std::runtime_error("Error: index is not initialized");
+            if(dir.empty())
+                throw std::invalid_argument("Error: working directory not set");
+
+            indexptr->restore();
+
             linenum++;
         }
         else if(command == "dump") {
-            if(arguments.size() != 2)
-                throw std::invalid_argument("Error: invalid number of arguments to dump");
-            
-            std::string outputname = arguments[1];
+            if(indexptr == nullptr)
+                throw std::runtime_error("Error: index is not initialized");
+            if(dir.empty())
+                throw std::invalid_argument("Error: working directory not set");
 
-            writeIndex(outputname, index);
+            indexptr->dump();
 
             linenum++;
         }
@@ -131,7 +150,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, Index& 
 
             //Run the segment of code multiple times
             for(size_t i = 0; i < times; ++i) {
-                parseCode(code, linenum+1, end, index, docreader);
+                parseCode(code, linenum+1, end, dir, indexptr, docreader);
             }
 
             //Go past the end of the loop
@@ -161,9 +180,11 @@ void parseFile(std::string filename) {
     }
 
     //Create index object and reader interface
-    Index index;
+    std::unique_ptr<Index> indexptr = nullptr;
+    // Index index;
     std::shared_ptr<ReaderInterface> docreader = nullptr;
 
     //Parse the script
-    parseCode(script, 0, script.size(), index, docreader);
+    std::string dir;
+    parseCode(script, 0, script.size(), dir, indexptr, docreader);
 }

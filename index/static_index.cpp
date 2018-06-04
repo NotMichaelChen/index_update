@@ -7,6 +7,11 @@
 #include "static_functions/postingIO.hpp"
 #include "util.hpp"
 
+StaticIndex::StaticIndex(std::string& working_dir) : INDEXDIR("./" + working_dir + GlobalConst::IndexPath),
+    PDIR("./" + working_dir + GlobalConst::PosPath),
+    NPDIR("./" + working_dir + GlobalConst::NonPosPath)
+{}
+
 ExtendedLexicon* StaticIndex::getExlexPointer() {
     return &exlex;
 }

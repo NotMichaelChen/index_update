@@ -17,7 +17,8 @@
 //This index does not use compression
 class Index {
 public:
-    Index();
+    //Directory is simply a name that the index will save all of its files under
+    Index(std::string directory);
     void insert_document(std::string& url, std::string& newpage);
     //Temporary return type: returns docIDs for now
     std::vector<unsigned int> query(std::vector<std::string> words);
@@ -39,9 +40,10 @@ private:
     std::unordered_map<unsigned int, unsigned int> doclength;
     double avgdoclength;
 
-    //TODO: Is it possible to not use separate variables for these?
     unsigned long positional_size;
     unsigned long nonpositional_size;
+
+    std::string working_dir;
 
     Structures::DocumentStore docstore;
     Structures::TranslationTable transtable;
