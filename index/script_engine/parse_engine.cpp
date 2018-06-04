@@ -7,7 +7,6 @@
 #include <chrono>
 
 #include "index.hpp"
-#include "indexwriter.hpp"
 #include "redis.hpp"
 #include "document_readers/reader_interface.hpp"
 #include "document_readers/WETreader.hpp"
@@ -74,7 +73,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, std::st
                 std::string url = docreader->getURL();
                 std::string contents = docreader->getCurrentDocument();
 
-                std::cout << "Inserting file: " << url << std::endl;
+                std::cout << "Inserting file #" << docsinserted << ": " << url << std::endl;
 
                 indexptr->insert_document(url, contents);
                 docsinserted++;
