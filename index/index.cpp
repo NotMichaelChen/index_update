@@ -243,3 +243,15 @@ void Index::clear() {
     lex.clear();
     staticwriter.getExlexPointer()->clear();
 }
+
+void Index::printSize() {
+    std::cerr << "positional: " << positional_size << std::endl;
+    std::cerr << "non-positional: " << nonpositional_size << std::endl;
+    
+    std::cerr << "doclength: " << doclength.size() << std::endl;
+
+    std::cerr << "lex: " << lex.getSize() << std::endl;
+
+    std::cerr << "exlex p: " << staticwriter.getExlexPointer()->getPSize() << std::endl;
+    std::cerr << "exlex np: " << staticwriter.getExlexPointer()->getNPSize() << std::endl;
+}

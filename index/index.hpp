@@ -28,6 +28,8 @@ public:
     void restore();
     void clear();
 
+    void printSize();
+
 private:
     void insertNPPostings(MatcherInfo& results);
     void insertPPostings(MatcherInfo& results);

@@ -56,3 +56,7 @@ void Lexicon::clear() {
     lex.clear();
     nextID = 0;
 }
+
+size_t Lexicon::getSize() {
+    return lex.size();
+}

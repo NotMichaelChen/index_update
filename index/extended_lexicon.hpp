@@ -30,6 +30,9 @@ public:
     void restore(nlohmann::json& jobject);
     void clear();
 
+    size_t getPSize();
+    size_t getNPSize();
+
 private:
     //Each term is associated with a list of metadata structs.
     //Each struct corresponds to that term's entry in a certain file.

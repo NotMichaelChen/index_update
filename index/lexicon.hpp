@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include "json.hpp"
+#include "sparsepp/spp.h"
 
 struct Lex_data {
     Lex_data(unsigned int t, int f) : termid(t), f_t(f) {}
@@ -32,10 +33,12 @@ public:
     void restore(nlohmann::json& jobject);
 
     void clear();
+    size_t getSize();
 
 private:
     void initEntry(std::string& term);
-    std::unordered_map<std::string, Lex_data> lex;
+    spp::sparse_hash_map<std::string, Lex_data> lex;
+    //std::unordered_map<std::string, Lex_data> lex;
     unsigned int nextID;
 };
 

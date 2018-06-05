@@ -86,6 +86,8 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, std::st
             auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
             std::cout << "Inserted " << docsinserted << " documents in " << ms << "ms for an average of " << ms / (double)doccount
                 << " ms/doc\n";
+            
+            indexptr->printSize();
 
             linenum++;
         }

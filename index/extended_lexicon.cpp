@@ -127,3 +127,25 @@ void ExtendedLexicon::clear() {
     exlexnp.clear();
     exlexp.clear();
 }
+
+size_t ExtendedLexicon::getPSize() {
+    size_t counter = 0;
+    for(auto iter = exlexp.begin(); iter != exlexp.end(); iter++) {
+        for(auto veciter = iter->second.begin(); veciter != iter->second.end(); veciter++) {
+            ++counter;
+        }
+    }
+
+    return counter;
+}
+
+size_t ExtendedLexicon::getNPSize() {
+    size_t counter = 0;
+    for(auto iter = exlexnp.begin(); iter != exlexnp.end(); iter++) {
+        for(auto veciter = iter->second.begin(); veciter != iter->second.end(); veciter++) {
+            ++counter;
+        }
+    }
+
+    return counter;
+}
