@@ -31,5 +31,5 @@ optimize: CFLAGS+=$(OPTIMIZE)
 optimize: index
 
 .PHONY: prof
-prof: CFLAGS+=$(DEBUG-OPTIMIZE)
+prof: CFLAGS+=$(PROF)
 prof: index
