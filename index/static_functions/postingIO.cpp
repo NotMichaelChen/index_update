@@ -54,18 +54,8 @@ void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int
     metadata.filename = filepath;
     metadata.start_pos = ofile.tellp();
 
-    //Write out metadata
-    //TODO: Compress metadata
-    //required to get address of variable
-    size_t postinglistsize = postinglist.size();
-    ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
-    ofile.write(reinterpret_cast<const char *>(&(postinglistsize)), sizeof(postinglistsize));
-    ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
-    ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
-    if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
-
     //Construct compressed blocks of postings in memory
-    std::vector<std::vector<uint8_t>> compressedblocks;
+    std::vector<uint8_t> compressedblocks;
     std::vector<unsigned int> lastdocID;
     std::vector<unsigned int> compressedblocksizes;
 
@@ -92,9 +82,9 @@ void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int
         if(positional) compressedthird = compress_block(blockthird, VBEncode, false);
 
         //Store the three vectors into the compressedblocks vector
-        compressedblocks.push_back(compresseddocID);
-        compressedblocks.push_back(compressedsecond);
-        if(positional) compressedblocks.push_back(compressedthird);
+        compressedblocks.insert(compressedblocks.end(), compresseddocID.begin(), compresseddocID.end());
+        compressedblocks.insert(compressedblocks.end(), compressedsecond.begin(), compressedsecond.end());
+        if(positional) compressedblocks.insert(compressedblocks.end(), compressedthird.begin(), compressedthird.end());
 
         //Store metadata
         compressedblocksizes.push_back(compresseddocID.size());
@@ -125,9 +115,9 @@ void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int
         if(positional) compressedthird = compress_block(blockthird, VBEncode, false);
 
         //Store the three vectors into the compressedblocks vector
-        compressedblocks.push_back(compresseddocID);
-        compressedblocks.push_back(compressedsecond);
-        if(positional) compressedblocks.push_back(compressedthird);
+        compressedblocks.insert(compressedblocks.end(), compresseddocID.begin(), compresseddocID.end());
+        compressedblocks.insert(compressedblocks.end(), compressedsecond.begin(), compressedsecond.end());
+        if(positional) compressedblocks.insert(compressedblocks.end(), compressedthird.begin(), compressedthird.end());
 
         //Store metadata
         compressedblocksizes.push_back(compresseddocID.size());
@@ -136,16 +126,38 @@ void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int
         lastdocID.push_back(blockdocID.back());
     }
 
+    //Compress the lastdocID and blocksize vectors
+    std::vector<uint8_t> b_compressedblocksizes = compress_block(compressedblocksizes, VBEncode, false);
+    std::vector<uint8_t> b_lastdocID = compress_block(lastdocID, VBEncode, false);
+
+    //Compute total size of posting list in bytes
+    //4 bytes per int * 7 plain ints = 28
+    unsigned int lastdocIDlength = b_lastdocID.size();
+    unsigned int blocksizeslength = b_compressedblocksizes.size();
+    unsigned int blockslength = compressedblocks.size();
+    unsigned int postinglistsize = 28 + b_lastdocID.size() + b_compressedblocksizes.size() + compressedblocks.size();
+    //Add extra int for positional
+    if(positional) postinglistsize += 4;
+
+    //Write out metadata
+    //TODO: Compress metadata
+    ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
+    ofile.write(reinterpret_cast<const char *>(&postinglistsize), sizeof(postinglistsize));
+    ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
+    ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
+    if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
+
     //Write out metadata and compressed postings
     metadata.last_docID = ofile.tellp();
-    write_block(lastdocID, ofile, VBEncode, false);
+    ofile.write(reinterpret_cast<const char *>(&lastdocIDlength), sizeof(lastdocIDlength));
+    write_raw_block(b_lastdocID, ofile);
     metadata.blocksizes = ofile.tellp();
-    write_block(compressedblocksizes, ofile, VBEncode, false);
+    ofile.write(reinterpret_cast<const char *>(&blocksizeslength), sizeof(blocksizeslength));
+    write_raw_block(b_compressedblocksizes, ofile);
     metadata.postings_blocks = ofile.tellp();
 
-    for(auto iter = compressedblocks.begin(); iter != compressedblocks.end(); iter++) {
-        write_raw_block(*iter, ofile);
-    }
+    ofile.write(reinterpret_cast<const char *>(&blockslength), sizeof(blockslength));
+    write_raw_block(compressedblocks, ofile);
 
     metadata.end_offset = ofile.tellp();
     if(positional) exlex.addPositional(termID, metadata);
@@ -154,17 +166,18 @@ void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int
 
 //Given an ifstream, read the positional posting list indicated by the metadata
 std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
+    //Don't read termID since it is already read and is given to us
+    unsigned int postinglistsize;
+    ifile.read(reinterpret_cast<char *>(&postinglistsize), sizeof(postinglistsize));
+    if(postinglistsize <= 28)
+        throw std::runtime_error("Error, invalid posting list size in static block");
+
     std::vector<Posting> postinglist;
-    size_t postinglistlength;
     unsigned int doc_method, second_method, third_method;
     
-    //Don't read termID since it is already read and is given to us
-    ifile.read(reinterpret_cast<char *>(&postinglistlength), sizeof(postinglistlength));
     ifile.read(reinterpret_cast<char *>(&doc_method), sizeof(doc_method));
     ifile.read(reinterpret_cast<char *>(&second_method), sizeof(second_method));
     ifile.read(reinterpret_cast<char *>(&third_method), sizeof(third_method));
-
-    postinglist.reserve(postinglistlength);
 
     //Skip the lastdocID block since we don't need it for reading
     ifile.seekg(metadata->blocksizes);
@@ -175,6 +188,8 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mDat
     if(blocksizes.size() % 3 != 0) {
         throw std::invalid_argument("Error, blocksize array is not a multiple of 3: " + std::to_string(blocksizes.size()));
     }
+
+    ifile.seekg(metadata->postings_blocks);
 
     //For every three blocksize entries, read in three blocks of numbers and insert postings into the index
     for(size_t i = 0; i < blocksizes.size(); i += 3) {
@@ -206,26 +221,22 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mDat
             postinglist.push_back(newpost);
         }
     }
-
-    if(postinglist.size() != postinglistlength) {
-        throw std::invalid_argument("Error, posting list length not equal to specified length: " + std::to_string(postinglist.size()) + "," + std::to_string(postinglistlength));
-    }
-
     return postinglist;
 }
 
 //Given an ifstream, read the nonpositional posting list indicated by the metadata
 std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID) {
+    //Don't read termID since it is already read and is given to us
+    unsigned int postinglistsize;
+    ifile.read(reinterpret_cast<char *>(&postinglistsize), sizeof(postinglistsize));
+    if(postinglistsize <= 28)
+        throw std::runtime_error("Error, invalid posting list size in static block");
+
     std::vector<nPosting> postinglist;
-    size_t postinglistlength;
     unsigned int doc_method, second_method;
     
-    //Don't read termID since it is already read and is given to us
-    ifile.read(reinterpret_cast<char *>(&postinglistlength), sizeof(postinglistlength));
     ifile.read(reinterpret_cast<char *>(&doc_method), sizeof(doc_method));
     ifile.read(reinterpret_cast<char *>(&second_method), sizeof(second_method));
-
-    postinglist.reserve(postinglistlength);
 
     //Skip the lastdocID block since we don't need it for reading
     ifile.seekg(metadata->blocksizes);
@@ -236,6 +247,8 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, std::vector<
     if(blocksizes.size() % 2 != 0) {
         throw std::invalid_argument("Error, blocksize array is not a multiple of 2: " + std::to_string(blocksizes.size()));
     }
+
+    ifile.seekg(metadata->postings_blocks);
 
     //For every two blocksize entries, read in three blocks of numbers and insert postings into the index
     for(size_t i = 0; i < blocksizes.size(); i += 2) {
@@ -263,10 +276,6 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, std::vector<
 
             postinglist.push_back(newpost);
         }
-    }
-
-    if(postinglist.size() != postinglistlength) {
-        throw std::invalid_argument("Error, posting list length not equal to specified length: " + std::to_string(postinglist.size()) + "," + std::to_string(postinglistlength));
     }
 
     return postinglist;

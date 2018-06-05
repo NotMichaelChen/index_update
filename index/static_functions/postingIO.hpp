@@ -11,6 +11,10 @@
 
 // Contains functions related to reading and writing from static_indexes
 
+//STATIC INDEX LAYOUT (per posting list)
+//termID, length in bytes, compression methods (3 numbers), lennextblock (bytes), [lastdocID] (of each block),
+//lennextblock (bytes), [blocksizes] (in bytes), lennextblock (bytes), [blocks]
+
 //Compressed a block (vector) of ints and writes it to the file
 unsigned int write_block(std::vector<unsigned int>& block, std::ofstream& ofile, std::vector<uint8_t> encoder(unsigned int), bool delta);
 
