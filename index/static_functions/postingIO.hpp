@@ -12,7 +12,7 @@
 // Contains functions related to reading and writing from static_indexes
 
 //STATIC INDEX LAYOUT (per posting list)
-//termID, length in bytes, compression methods (3 numbers), lennextblock (bytes), [lastdocID] (of each block),
+//termID, length in bytes, compression methods (2 or 3 numbers), lennextblock (bytes), [lastdocID] (of each block),
 //lennextblock (bytes), [blocksizes] (in bytes), lennextblock (bytes), [blocks]
 
 //Compressed a block (vector) of ints and writes it to the file
@@ -29,10 +29,10 @@ std::vector<uint8_t> read_raw_block(size_t buffersize, std::ifstream& ifile);
 
 //Writes a posting list to disk with compression
 template <typename T>
-void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int termID, std::vector<T>& postinglist, ExtendedLexicon& exlex, bool positional);
+void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int termID, std::vector<T>& postinglist, bool positional);
 
 //Reads a posting list from disk
-std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID);
-std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, std::vector<mData>::iterator metadata, unsigned int termID);
+std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int termID);
+std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int termID);
 
 #endif
