@@ -12,7 +12,7 @@
 // Contains functions related to reading and writing from static_indexes
 
 //STATIC INDEX LAYOUT (per posting list)
-//termID, length in bytes, compression methods (2 or 3 numbers), lennextblock (bytes), [lastdocID] (of each block),
+//termID, length in bytes, length in postings, compression methods (2 or 3 numbers), lennextblock (bytes), [lastdocID] (of each block),
 //lennextblock (bytes), [blocksizes] (in bytes), lennextblock (bytes), [blocks]
 
 //Compressed a block (vector) of ints and writes it to the file

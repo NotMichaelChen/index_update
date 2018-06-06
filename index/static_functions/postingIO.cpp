@@ -127,18 +127,20 @@ void write_postinglist(std::ofstream& ofile, unsigned int termID, std::vector<T>
     std::vector<uint8_t> b_lastdocID = compress_block(lastdocID, VBEncode, false);
 
     //Compute total size of posting list in bytes
-    //4 bytes per int * 7 plain ints = 28
+    //4 bytes per int * 8 plain ints = 32
     unsigned int lastdocIDlength = b_lastdocID.size();
     unsigned int blocksizeslength = b_compressedblocksizes.size();
     unsigned int blockslength = compressedblocks.size();
-    unsigned int postinglistsize = 28 + b_lastdocID.size() + b_compressedblocksizes.size() + compressedblocks.size();
+    unsigned int postinglistlen = postinglist.size();
+    unsigned int totalbytes = 32 + b_lastdocID.size() + b_compressedblocksizes.size() + compressedblocks.size();
     //Add extra int for positional
-    if(positional) postinglistsize += 4;
+    if(positional) totalbytes += 4;
 
     //Write out metadata
     //TODO: Compress metadata
     ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
-    ofile.write(reinterpret_cast<const char *>(&postinglistsize), sizeof(postinglistsize));
+    ofile.write(reinterpret_cast<const char *>(&totalbytes), sizeof(totalbytes));
+    ofile.write(reinterpret_cast<const char *>(&postinglistlen), sizeof(postinglistlen));
     ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
     ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
     if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
@@ -155,19 +157,19 @@ void write_postinglist(std::ofstream& ofile, unsigned int termID, std::vector<T>
 //Given an ifstream, read the positional posting list indicated by the metadata
 std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int termID) {
     //Don't read termID since it is already read and is given to us
-    unsigned int postinglistsize;
-    ifile.read(reinterpret_cast<char *>(&postinglistsize), sizeof(postinglistsize));
-    if(postinglistsize <= 32)
+    unsigned int totalbytes;
+    ifile.read(reinterpret_cast<char *>(&totalbytes), sizeof(totalbytes));
+    if(totalbytes <= 36)
         throw std::runtime_error("Error, invalid posting list size in static block");
 
     std::vector<Posting> postinglist;
     
     //Read in posting list into memory
-    //Skip termID and postinglistsize ints
-    std::vector<uint8_t> byteslist = read_raw_block(postinglistsize-8, ifile);
+    //Skip termID and totalbytes ints
+    std::vector<uint8_t> byteslist = read_raw_block(totalbytes-8, ifile);
 
     //Skip beginning metadata
-    size_t blockptr = 12;
+    size_t blockptr = 16;
 
     //Skip lastdocID
     unsigned int lastdocIDlen;
@@ -182,12 +184,13 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int ter
 
     //Decompress block vector
     std::vector<unsigned int> blocksizes = decompress_block(b_blocksizes, VBDecode, false);
+    blockptr += blocksizeslength;
 
-    //Read block vector into postings
     if(blocksizes.size() % 3 != 0) {
         throw std::invalid_argument("Error, blocksize array is not a multiple of 3: " + std::to_string(blocksizes.size()));
     }
 
+    //Skip blocks int
     blockptr += 4;
 
     //For every three blocksize entries, read in three blocks of numbers and insert postings into the index
@@ -230,19 +233,19 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int ter
 //Given an ifstream, read the nonpositional posting list indicated by the metadata
 std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int termID) {
     //Don't read termID since it is already read and is given to us
-    unsigned int postinglistsize;
-    ifile.read(reinterpret_cast<char *>(&postinglistsize), sizeof(postinglistsize));
-    if(postinglistsize <= 28)
+    unsigned int totalbytes;
+    ifile.read(reinterpret_cast<char *>(&totalbytes), sizeof(totalbytes));
+    if(totalbytes <= 32)
         throw std::runtime_error("Error, invalid posting list size in static block");
 
     std::vector<nPosting> postinglist;
 
     //Read in posting list into memory
-    //Skip termID and postinglistsize ints
-    std::vector<uint8_t> byteslist = read_raw_block(postinglistsize-8, ifile);
+    //Skip termID and totalbytes ints
+    std::vector<uint8_t> byteslist = read_raw_block(totalbytes-8, ifile);
 
     //Skip beginning metadata
-    size_t blockptr = 8;
+    size_t blockptr = 12;
 
     //Skip lastdocID
     unsigned int lastdocIDlen;
@@ -257,12 +260,13 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int
 
     //Decompress block vector
     std::vector<unsigned int> blocksizes = decompress_block(b_blocksizes, VBDecode, false);
+    blockptr += blocksizeslength;
 
-    //Read block vector into postings
     if(blocksizes.size() % 2 != 0) {
         throw std::invalid_argument("Error, blocksize array is not a multiple of 2: " + std::to_string(blocksizes.size()));
     }
 
+    //Skip blocks int
     blockptr += 4;
 
     //For every two blocksize entries, read in three blocks of numbers and insert postings into the index
