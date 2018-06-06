@@ -17,6 +17,8 @@ void SparseExtendedLexicon::insertEntry(unsigned int termID, unsigned int indexn
             lex = inonposlex;
     }
 
+    if(indexnum >= lex.size())
+        lex.resize(indexnum+1);
     lex[indexnum].emplace(std::make_pair(termID, offset));
 }
 

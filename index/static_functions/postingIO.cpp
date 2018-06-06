@@ -202,8 +202,11 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int ter
         std::vector<unsigned int> docIDs, secondvec, thirdvec;
 
         std::vector<uint8_t> b_docIDs(byteslist.begin() + blockptr, byteslist.begin() + blockptr + doclength);
+        blockptr += doclength;
         std::vector<uint8_t> b_second(byteslist.begin() + blockptr, byteslist.begin() + blockptr + secondlength);
+        blockptr += secondlength;
         std::vector<uint8_t> b_third(byteslist.begin() + blockptr, byteslist.begin() + blockptr + thirdlength);
+        blockptr += thirdlength;
 
         docIDs = decompress_block(b_docIDs, VBDecode, true);
         secondvec = decompress_block(b_second, VBDecode, false);
@@ -211,10 +214,6 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int ter
 
         if(docIDs.size() != secondvec.size() || secondvec.size() != thirdvec.size()) {
             throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()) + "," + std::to_string(thirdvec.size()));
-        }
-
-        if(!std::is_sorted(docIDs.begin(), docIDs.end())) {
-            throw std::invalid_argument("Error, docID array not sorted");
         }
 
         for(size_t j = 0; j < docIDs.size(); j++) {
@@ -269,7 +268,7 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int
     //Skip blocks int
     blockptr += 4;
 
-    //For every two blocksize entries, read in three blocks of numbers and insert postings into the index
+    //For every two blocksize entries, read in two blocks of numbers and insert postings into the index
     for(size_t i = 0; i < blocksizes.size(); i += 2) {
         unsigned int doclength = blocksizes[i];
         unsigned int secondlength = blocksizes[i+1];
@@ -277,17 +276,15 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int
         std::vector<unsigned int> docIDs, secondvec;
 
         std::vector<uint8_t> b_docIDs(byteslist.begin() + blockptr, byteslist.begin() + blockptr + doclength);
+        blockptr += doclength;
         std::vector<uint8_t> b_second(byteslist.begin() + blockptr, byteslist.begin() + blockptr + secondlength);
+        blockptr += secondlength;
 
         docIDs = decompress_block(b_docIDs, VBDecode, true);
         secondvec = decompress_block(b_second, VBDecode, false);
 
         if(docIDs.size() != secondvec.size()) {
             throw std::invalid_argument("Error, vectors mismatched in size while reading index: " + std::to_string(docIDs.size()) + "," + std::to_string(secondvec.size()));
-        }
-
-        if(!std::is_sorted(docIDs.begin(), docIDs.end())) {
-            throw std::invalid_argument("Error, docID array not sorted");
         }
 
         for(size_t j = 0; j < docIDs.size(); j++) {

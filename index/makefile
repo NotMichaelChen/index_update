@@ -8,7 +8,8 @@ VPATH = %.cpp %.o Matcher
 DEPS = $(call rwildcard,, *.hpp)
 SRC = $(call rwildcard,, *.cpp)
 OBJ = $(SRC:.cpp=.o)
-DEBUG = -g -O3
+DEBUG = -g
+DEBUG-OPTIMIZE = -g -O3
 OPTIMIZE = -O3
 PROF = -pg -O3
 
