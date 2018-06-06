@@ -20,6 +20,23 @@ void SparseExtendedLexicon::insertEntry(unsigned int termID, unsigned int indexn
     lex[indexnum].emplace(std::make_pair(termID, offset));
 }
 
+void SparseExtendedLexicon::clearIndex(unsigned int indexnum, bool positional) {
+    if(positional) {
+        if(indexnum < zposlex.size())
+            zposlex[indexnum].clear();
+
+        if(indexnum < iposlex.size())
+            iposlex[indexnum].clear();
+    }
+    else {
+        if(indexnum < znonposlex.size())
+            znonposlex[indexnum].clear();
+            
+        if(indexnum < inonposlex.size())
+            inonposlex[indexnum].clear();
+    }
+}
+
 unsigned long SparseExtendedLexicon::getPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex) {
     std::vector<std::unordered_map<unsigned int, unsigned long>>& lex = zposlex;
 

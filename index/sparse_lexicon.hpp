@@ -9,6 +9,9 @@ class SparseExtendedLexicon {
 public:
     void insertEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset, bool positional);
 
+    //Clears all of the entries inside of the given index (both Z-indexes and I-indexes)
+    void clearIndex(unsigned int indexnum, bool positional);
+
     unsigned long getPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
     unsigned long getNonPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
 

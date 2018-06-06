@@ -47,6 +47,9 @@ private:
     //this method is called.
     void merge(int indexnum, bool positional);
 
+    void shouldGetLexEntry(unsigned int postinglistsize, unsigned int termID, unsigned int indexnum, bool isZindex,
+        size_t offset, bool positional, size_t& postingcount, bool& lastlisthadpointer);
+
     //Merges two posting lists into one posting list
     std::vector<Posting> merge_pos_postinglist(std::vector<Posting>& listz, std::vector<Posting>& listi);
     std::vector<nPosting> merge_nonpos_postinglist(std::vector<nPosting>& listz, std::vector<nPosting>& listi);

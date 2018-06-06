@@ -8,6 +8,7 @@
 #include "util.hpp"
 
 //Copies n bytes from the ifstream to the ofstream
+//Returns 0 on success
 int copyBytes(std::ifstream& ifile, std::ofstream& ofile, int n) {
     char* buffer = new char[n];
     ifile.read(buffer, n);
@@ -20,18 +21,27 @@ int copyBytes(std::ifstream& ifile, std::ofstream& ofile, int n) {
 }
 
 //Copies the static posting list block from ifile to ofile
+//Returns the number of postings in the static block
 //Assumes termID has already been read and that ifile/ofile are pointing to the correct positions
-void copyPostingList(unsigned int termID, std::ifstream& ifile, std::ofstream& ofile) {
+unsigned int copyPostingList(unsigned int termID, std::ifstream& ifile, std::ofstream& ofile) {
     //Read length of block
     unsigned int blocklen;
     ifile.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
-    //Don't copy over the length and the termid
-    blocklen -= 8;
+    //Read number of postings
+    unsigned int postinglistcount;
+    ifile.read(reinterpret_cast<char *>(&postinglistcount), sizeof(postinglistcount));
+    //Don't copy over termid, size, postingcount
+    blocklen -= 12;
 
+    //Copy the vars
     ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
     ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
+    ofile.write(reinterpret_cast<const char *>(&postinglistcount), sizeof(postinglistcount));
 
+    //Copy the rest of the block
     copyBytes(ifile, ofile, blocklen);
+
+    return postinglistcount;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,9 +109,9 @@ void StaticIndex::write_index(std::string& indexname, std::ofstream& ofile, bool
         throw std::invalid_argument("Error, index name is empty");
     
     bool isZindex;
-    if(indexname[0] = 'Z')
+    if(indexname[0] == 'Z')
         isZindex = true;
-    else if(indexname[0] = 'I')
+    else if(indexname[0] == 'I')
         isZindex = false;
     else
         throw std::invalid_argument("Error, index name " + indexname + " is invalid");
@@ -115,29 +125,8 @@ void StaticIndex::write_index(std::string& indexname, std::ofstream& ofile, bool
 
     //for each posting list in the index
     for(auto postinglistiter = indexbegin; postinglistiter != indexend; postinglistiter++) {
-        //Posting list is large enough to get an entry in the sparse lex
-        if(postinglistiter->second.size() > SPARSE_SIZE) {
-            spexlex.insertEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp(), positional);
-
-            postingcount = 0;
-            lastlisthadpointer = true;
-        }
-        //Last posting list had an entry in the sparse lex
-        else if(lastlisthadpointer) {
-            spexlex.insertEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp(), positional);
-            
-            postingcount += postinglistiter->second.size();
-            lastlisthadpointer = false;
-        }
-        //Enough postings accumulated to insert a pointer
-        else if(postingcount > SPARSE_BETWEEN_SIZE) {
-            spexlex.insertEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp(), positional);
-
-            postingcount = 0;
-        }
-        else {
-            postingcount += postinglistiter->second;
-        }
+        shouldGetLexEntry(postinglistiter->second.size(), postinglistiter->first, indexnum, isZindex, ofile.tellp(),
+            positional, postingcount, lastlisthadpointer);
 
         //Write out the posting list to disk
         write_postinglist(ofile, postinglistiter->first, postinglistiter->second, positional);
@@ -194,22 +183,41 @@ void StaticIndex::merge(int indexnum, bool positional) {
     if(std::ifstream(dir + "Z" + std::to_string(indexnum+1)))
         flag = 'I';
 
+    bool isZindex = (flag == 'Z');
+
     ofile.open(dir + flag + std::to_string(indexnum + 1));
+
+    //Counts how many postings have accumulated since the last pointer inserted in the extended lexicon
+    size_t postingcount = 0;
+    //Indicates whether the last list had a pointer due to size
+    bool lastlisthadpointer = false;
 
     unsigned int ZtermID, ItermID;
     zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
     ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
     while(true) {
         if(ItermID < ZtermID) {
-            copyPostingList(ItermID, ifilestream, ofile);
+            //Store the position of the block
+            unsigned long pos = ofile.tellp();
+            unsigned int postingsize = copyPostingList(ItermID, ifilestream, ofile);
+
+            shouldGetLexEntry(postingsize, ItermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
+
             if(!ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID))) break;
         }
         else if(ZtermID < ItermID) {
-            copyPostingList(ZtermID, zfilestream, ofile);
+            //Store the position of the block
+            unsigned long pos = ofile.tellp();
+            unsigned int postingsize = copyPostingList(ZtermID, zfilestream, ofile);
+
+            shouldGetLexEntry(postingsize, ZtermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
+
             if(!zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID))) break;
         }
         else {
-            
+            //Store the position of the block
+            unsigned long pos = ofile.tellp();
+
             if(positional) {
                 //read both posting lists from both files
                 std::vector<Posting> zpostinglist = read_pos_postinglist(zfilestream, ZtermID);
@@ -220,6 +228,8 @@ void StaticIndex::merge(int indexnum, bool positional) {
 
                 //write the final posting list to disk, creating a new metadata entry
                 write_postinglist<Posting>(ofile, ZtermID, merged, true);
+
+                shouldGetLexEntry(merged.size(), ZtermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
             }
             else {
                 //read both posting lists from both files
@@ -231,6 +241,8 @@ void StaticIndex::merge(int indexnum, bool positional) {
 
                 //write the final posting list to disk, creating a new metadata entry
                 write_postinglist<nPosting>(ofile, ZtermID, merged, false);
+
+                shouldGetLexEntry(merged.size(), ZtermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
             }
 
             zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
@@ -241,23 +253,64 @@ void StaticIndex::merge(int indexnum, bool positional) {
     }
     if(zfilestream) {
         do {
-            copyPostingList(ZtermID, zfilestream, ofile);
+            //Store the position of the block
+            unsigned long pos = ofile.tellp();
+            unsigned int postingsize = copyPostingList(ZtermID, zfilestream, ofile);
+
+            shouldGetLexEntry(postingsize, ZtermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
         } while (zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID)));
     }
     if(ifilestream) {
         do {
-            copyPostingList(ItermID, ifilestream, ofile);
+            //Store the position of the block
+            unsigned long pos = ofile.tellp();
+            unsigned int postingsize = copyPostingList(ItermID, ifilestream, ofile);
+
+            shouldGetLexEntry(postingsize, ItermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
         } while (ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID)));
     }
 
     zfilestream.close();
     ifilestream.close();
     ofile.close();
+
+    spexlex.clearIndex(indexnum, positional);
+
     std::string filename1 = dir + "Z" + std::to_string(indexnum);
     std::string filename2 = dir + "I" + std::to_string(indexnum);
     //deleting two files
     if( remove( filename1.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
     if( remove( filename2.c_str() ) != 0 ) std::cout << "Error deleting file" << std::endl;
+}
+
+//TODO: Refactor into class
+//Determines whether an extended lexicon entry should be made for the given posting list
+void StaticIndex::shouldGetLexEntry(unsigned int postinglistsize, unsigned int termID, unsigned int indexnum, bool isZindex,
+    size_t offset, bool positional, size_t& postingcount, bool& lastlisthadpointer)
+{
+    //Posting list is large enough to get an entry in the sparse lex
+    if(postinglistsize > SPARSE_SIZE) {
+        spexlex.insertEntry(termID, indexnum, isZindex, offset, positional);
+
+        postingcount = 0;
+        lastlisthadpointer = true;
+    }
+    //Last posting list had an entry in the sparse lex
+    else if(lastlisthadpointer) {
+        spexlex.insertEntry(termID, indexnum, isZindex, offset, positional);
+        
+        postingcount += postinglistsize;
+        lastlisthadpointer = false;
+    }
+    //Enough postings accumulated to insert a pointer
+    else if(postingcount > SPARSE_BETWEEN_SIZE) {
+        spexlex.insertEntry(termID, indexnum, isZindex, offset, positional);
+
+        postingcount = 0;
+    }
+    else {
+        postingcount += postinglistsize;
+    }
 }
 
 std::vector<Posting> StaticIndex::merge_pos_postinglist(std::vector<Posting>& listz, std::vector<Posting>& listi) {
