@@ -41,7 +41,7 @@ std::vector<uint8_t> read_raw_block(size_t buffersize, std::ifstream& ifile) {
 
 //Writes a posting list to disk with compression
 template <typename T>
-void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int termID, std::vector<T>& postinglist, bool positional) {
+void write_postinglist(std::ofstream& ofile, unsigned int termID, std::vector<T>& postinglist, bool positional) {
     //initialize compression method, 1: varbyte
     //compression method for docID
     unsigned int doc_method = 1;
@@ -300,5 +300,5 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int
 }
 
 //Explicitly instantiate templates for write_postinglist
-template void write_postinglist<Posting>(std::ofstream& ofile, std::string& filepath, unsigned int termID, std::vector<Posting>& postinglist, bool positional);
-template void write_postinglist<nPosting>(std::ofstream& ofile, std::string& filepath, unsigned int termID, std::vector<nPosting>& postinglist, bool positional);
+template void write_postinglist<Posting>(std::ofstream& ofile, unsigned int termID, std::vector<Posting>& postinglist, bool positional);
+template void write_postinglist<nPosting>(std::ofstream& ofile, unsigned int termID, std::vector<nPosting>& postinglist, bool positional);

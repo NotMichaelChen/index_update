@@ -37,7 +37,7 @@ private:
 
     //Writes an index (stored as a map of wordIDs to posting lists) to disk
     template <typename T>
-    void write_index(std::string& filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend);
+    void write_index(std::string& indexname, std::ofstream& ofile, bool positional, T indexbegin, T indexend);
 
     //Checks whether there are any indexes that need to be merged (which is indicated by I-indexes)
     //and merges them until there are no more indexes to merge (no more I-indexes)

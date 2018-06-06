@@ -29,7 +29,7 @@ std::vector<uint8_t> read_raw_block(size_t buffersize, std::ifstream& ifile);
 
 //Writes a posting list to disk with compression
 template <typename T>
-void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int termID, std::vector<T>& postinglist, bool positional);
+void write_postinglist(std::ofstream& ofile, unsigned int termID, std::vector<T>& postinglist, bool positional);
 
 //Reads a posting list from disk
 //Assumes file stream is pointing to the unsigned int after termID

@@ -9,6 +9,11 @@
 
 #define DAAT_SIZE 10
 
+//How many postings are required to get an entry into the extended lexicon
+#define SPARSE_SIZE 100
+//How many postings must be accumulated without a big entry to insert another pointer
+#define SPARSE_BETWEEN_SIZE 100
+
 #include <vector>
 #include <map>
 #include <queue>

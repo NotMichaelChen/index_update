@@ -31,16 +31,17 @@ ExtendedLexicon* StaticIndex::getExlexPointer() {
 //Writes the positional index to disk, which means it is saved either in file Z0 or I0.
 void StaticIndex::write_p_disk(GlobalType::PosMapIter indexbegin, GlobalType::PosMapIter indexend) {
     std::string filename = PDIR;
+    std::string indexname;
     //Z0 exists
     if(std::ifstream(filename + "Z0"))
-        filename += "I0";
+        indexname = "I0";
     else
-        filename += "Z0";
+        indexname = "Z0";
 
-    std::ofstream ofile(filename);
+    std::ofstream ofile(filename + indexname);
 
     if (ofile.is_open()){
-        write_index<GlobalType::PosMapIter>(filename, ofile, true, indexbegin, indexend);
+        write_index<GlobalType::PosMapIter>(indexname, ofile, true, indexbegin, indexend);
 
         ofile.close();
     }else{
@@ -53,16 +54,17 @@ void StaticIndex::write_p_disk(GlobalType::PosMapIter indexbegin, GlobalType::Po
 //Writes the non-positional index to disk, which is saved in either file Z0 or I0
 void StaticIndex::write_np_disk(GlobalType::NonPosMapIter indexbegin, GlobalType::NonPosMapIter indexend) {
     std::string filename = NPDIR;
+    std::string indexname;
     //Z0 exists
     if(std::ifstream(filename + "Z0"))
-        filename += "I0";
+        indexname = "I0";
     else
-        filename += "Z0";
+        indexname = "Z0";
 
-    std::ofstream ofile(filename);
+    std::ofstream ofile(filename + indexname);
 
     if (ofile.is_open()){
-        write_index<GlobalType::NonPosMapIter>(filename, ofile, false, indexbegin, indexend);
+        write_index<GlobalType::NonPosMapIter>(indexname, ofile, false, indexbegin, indexend);
 
         ofile.close();
     }else{
@@ -73,15 +75,64 @@ void StaticIndex::write_np_disk(GlobalType::NonPosMapIter indexbegin, GlobalType
 }
 
 //Writes an inverted index to disk using compressed postings
-//filepath: The filename of the file being written to
-//          INCLUDES THE PATH
-//TODO: Determine if this method should be removed
+//indexname: The name of the index being written to. Always follows the format (Z|I)(number)
 template <typename T>
-void StaticIndex::write_index(std::string& filepath, std::ofstream& ofile, bool positional, T indexbegin, T indexend) {
+void StaticIndex::write_index(std::string& indexname, std::ofstream& ofile, bool positional, T indexbegin, T indexend) {
+    if(indexname.empty())
+        throw std::invalid_argument("Error, index name is empty");
+    
+    bool isZindex;
+    if(indexname[0] = 'Z')
+        isZindex = true;
+    else if(indexname[0] = 'I')
+        isZindex = false;
+    else
+        throw std::invalid_argument("Error, index name " + indexname + " is invalid");
+
+    unsigned int indexnum = std::stoul(indexname.substr(1));
+
+    //Counts how many postings have accumulated since the last pointer inserted in the extended lexicon
+    size_t postingcount = 0;
+    //Indicates whether the last list had a pointer due to size
+    bool lastlisthadpointer = false;
+
     //for each posting list in the index
     for(auto postinglistiter = indexbegin; postinglistiter != indexend; postinglistiter++) {
+        //Posting list is large enough to get an entry in the sparse lex
+        if(postinglistiter->second.size() > SPARSE_SIZE) {
+            if(positional)
+                spexlex.insertPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
+            else
+                spexlex.insertNonPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
+
+            postingcount = 0;
+            lastlisthadpointer = true;
+        }
+        //Last posting list had an entry in the sparse lex
+        else if(lastlisthadpointer) {
+            if(positional)
+                spexlex.insertPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
+            else
+                spexlex.insertNonPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
+            
+            postingcount += postinglistiter->second.size();
+            lastlisthadpointer = false;
+        }
+        //Enough postings accumulated to insert a pointer
+        else if(postingcount > SPARSE_BETWEEN_SIZE) {
+            if(positional)
+                spexlex.insertPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
+            else
+                spexlex.insertNonPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
+
+            postingcount = 0;
+        }
+        else {
+            postingcount += postinglistiter->second;
+        }
+
         //Write out the posting list to disk
-        write_postinglist(ofile, filepath, postinglistiter->first, postinglistiter->second, positional);
+        write_postinglist(ofile, postinglistiter->first, postinglistiter->second, positional);
     }
 }
 
@@ -143,9 +194,6 @@ void StaticIndex::merge(int indexnum, bool positional) {
     namebaseo = flag + std::to_string(indexnum + 1);
     ofile.open(dir + namebaseo);
 
-    //declare variables for loop
-    std::vector<mData>::iterator metai, metaz;
-
     unsigned int ZtermID, ItermID;
     zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
     ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
@@ -190,7 +238,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
 
                 //write the final posting list to disk, creating a new metadata entry
                 std::string outputfilepath = dir+namebaseo;
-                write_postinglist<Posting>(ofile, outputfilepath, ZtermID, merged, true);
+                write_postinglist<Posting>(ofile, ZtermID, merged, true);
             }
             else {
                 //read both posting lists from both files
@@ -202,7 +250,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
 
                 //write the final posting list to disk, creating a new metadata entry
                 std::string outputfilepath = dir+namebaseo;
-                write_postinglist<nPosting>(ofile, outputfilepath, ZtermID, merged, false);
+                write_postinglist<nPosting>(ofile, ZtermID, merged, false);
             }
 
             zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
