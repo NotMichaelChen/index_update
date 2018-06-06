@@ -117,30 +117,21 @@ void StaticIndex::write_index(std::string& indexname, std::ofstream& ofile, bool
     for(auto postinglistiter = indexbegin; postinglistiter != indexend; postinglistiter++) {
         //Posting list is large enough to get an entry in the sparse lex
         if(postinglistiter->second.size() > SPARSE_SIZE) {
-            if(positional)
-                spexlex.insertPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
-            else
-                spexlex.insertNonPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
+            spexlex.insertEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp(), positional);
 
             postingcount = 0;
             lastlisthadpointer = true;
         }
         //Last posting list had an entry in the sparse lex
         else if(lastlisthadpointer) {
-            if(positional)
-                spexlex.insertPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
-            else
-                spexlex.insertNonPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
+            spexlex.insertEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp(), positional);
             
             postingcount += postinglistiter->second.size();
             lastlisthadpointer = false;
         }
         //Enough postings accumulated to insert a pointer
         else if(postingcount > SPARSE_BETWEEN_SIZE) {
-            if(positional)
-                spexlex.insertPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
-            else
-                spexlex.insertNonPosEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp());
+            spexlex.insertEntry(postinglistiter->first, indexnum, isZindex, ofile.tellp(), positional);
 
             postingcount = 0;
         }

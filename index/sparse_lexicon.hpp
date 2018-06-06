@@ -7,8 +7,7 @@
 class SparseExtendedLexicon {
 
 public:
-    void insertPosEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset);
-    void insertNonPosEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset);
+    void insertEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset, bool positional);
 
     unsigned long getPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
     unsigned long getNonPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex);

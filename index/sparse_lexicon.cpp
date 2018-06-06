@@ -1,26 +1,22 @@
 #include "sparse_lexicon.hpp"
 
-void SparseExtendedLexicon::insertPosEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset) {
+void SparseExtendedLexicon::insertEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset,
+    bool positional)
+{
     std::vector<std::unordered_map<unsigned int, unsigned long>>& lex = zposlex;
 
-    if(!isZindex)
-        lex = iposlex;
+    if(positional) {
+        //Don't need to check for positive case since default is zposlex
+        if(!isZindex)
+            lex = iposlex;
+    }
+    else {
+        if(isZindex)
+            lex = znonposlex;
+        else
+            lex = inonposlex;
+    }
 
-    if(indexnum >= lex.size())
-        lex.resize(indexnum);
-    
-    lex[indexnum].emplace(std::make_pair(termID, offset));
-}
-
-void SparseExtendedLexicon::insertNonPosEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset) {
-    std::vector<std::unordered_map<unsigned int, unsigned long>>& lex = znonposlex;
-
-    if(!isZindex)
-        lex = inonposlex;
-
-    if(indexnum >= lex.size())
-        lex.resize(indexnum);
-    
     lex[indexnum].emplace(std::make_pair(termID, offset));
 }
 
