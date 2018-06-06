@@ -9,6 +9,7 @@
 #include "posting.hpp"
 #include "extended_lexicon.hpp"
 #include "global_parameters.hpp"
+#include "sparse_lexicon.hpp"
 
 /**
  * Responsible for writing and managing the static indexes on disk
@@ -28,6 +29,7 @@ public:
 private:
 
     ExtendedLexicon exlex;
+    SparseExtendedLexicon spexlex;
 
     const std::string INDEXDIR;
     const std::string PDIR;

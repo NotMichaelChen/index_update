@@ -7,6 +7,18 @@
 #include "static_functions/postingIO.hpp"
 #include "util.hpp"
 
+//Copies n bytes from the ifstream to the ofstream
+int copyBytes(std::ifstream& ifile, std::ofstream& ofile, int n) {
+    char* buffer = new char[n];
+    ifile.read(buffer, n);
+    ofile.write(buffer, ifile.gcount());
+    delete[] buffer;
+    if(ifile.gcount() != n) {
+        return 1;
+    }
+    return 0;
+}
+
 StaticIndex::StaticIndex(std::string& working_dir) : INDEXDIR("./" + working_dir + GlobalConst::IndexPath),
     PDIR("./" + working_dir + GlobalConst::PosPath),
     NPDIR("./" + working_dir + GlobalConst::NonPosPath)
@@ -69,7 +81,7 @@ void StaticIndex::write_index(std::string& filepath, std::ofstream& ofile, bool 
     //for each posting list in the index
     for(auto postinglistiter = indexbegin; postinglistiter != indexend; postinglistiter++) {
         //Write out the posting list to disk
-        write_postinglist(ofile, filepath, postinglistiter->first, postinglistiter->second, exlex, positional);
+        write_postinglist(ofile, filepath, postinglistiter->first, postinglistiter->second, positional);
     }
 }
 
@@ -139,94 +151,58 @@ void StaticIndex::merge(int indexnum, bool positional) {
     ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
     while(true) {
         if(ItermID < ZtermID) {
-            if( positional ) metai = exlex.getPositional(ItermID, dir+namebase2);
-            else metai = exlex.getNonPositional(ItermID, dir+namebase2);
+            //Read length of block
+            unsigned int blocklen;
+            ifilestream.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
+            //Don't copy over the length and the termid
+            blocklen -= 8;
 
-            if(ifilestream.tellg() != metai->start_pos+4)
-                std::cerr << "filestream doesn't match metadata i " << ifilestream.tellg() << ' ' << metai->start_pos+4 << '\n';
-
-            //Calculate shift to use for updating the metadata
-            long shift = ofile.tellp() - metai->start_pos;
-            //Subtract four since we already read the termID
-            int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
-            char* buffer = new char [length];
-            ifilestream.read(buffer, length);
-            //Write termID then rest of posting list
             ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
-            ofile.write(buffer, length);
-            delete[] buffer;
+            ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
 
-            //Update metadata
-            *metai = shift_metadata(*metai, shift);
-            metai->filename = dir + namebaseo;
+            copyBytes(ifilestream, ofile, blocklen);
 
             if(!ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID))) break;
         }
         else if(ZtermID < ItermID) {
-            if( positional ) metaz = exlex.getPositional(ZtermID, dir+namebase1);
-            else metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
+            //Read length of block
+            unsigned int blocklen;
+            zfilestream.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
+            //Don't copy over the length and the termid
+            blocklen -= 8;
 
-            if(zfilestream.tellg() != metaz->start_pos+4)
-                std::cerr << "filestream doesn't match metadata z " << zfilestream.tellg() << ' ' << metaz->start_pos+4 << '\n';
-
-            //Calculate shift to use for updating the metadata
-            long shift = ofile.tellp() - metaz->start_pos;
-            //Subtract four since we already read the termID
-            int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
-            char* buffer = new char [length];
-            zfilestream.read(buffer, length);
-            //Write termID then rest of posting list
             ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
-            ofile.write(buffer, length);
-            delete[] buffer;
+            ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
 
-            //Update metadata
-            *metaz = shift_metadata(*metaz, shift);
-            metaz->filename = dir + namebaseo;
+            copyBytes(zfilestream, ofile, blocklen);
 
             if(!zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID))) break;
         }
         else {
-            if(positional) {
-                metaz = exlex.getPositional(ZtermID, dir+namebase1);
-                metai = exlex.getPositional(ItermID, dir+namebase2);
-            }
-            else {
-                metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
-                metai = exlex.getNonPositional(ItermID, dir+namebase2);
-            }
             
             if(positional) {
                 //read both posting lists from both files
-                std::vector<Posting> zpostinglist = read_pos_postinglist(zfilestream, metaz, ZtermID);
-                std::vector<Posting> ipostinglist = read_pos_postinglist(ifilestream, metai, ItermID);
+                std::vector<Posting> zpostinglist = read_pos_postinglist(zfilestream, ZtermID);
+                std::vector<Posting> ipostinglist = read_pos_postinglist(ifilestream, ItermID);
 
                 //merge the posting lists
                 std::vector<Posting> merged = merge_pos_postinglist(zpostinglist, ipostinglist);
 
                 //write the final posting list to disk, creating a new metadata entry
                 std::string outputfilepath = dir+namebaseo;
-                write_postinglist<Posting>(ofile, outputfilepath, ZtermID, merged, exlex, true);
-
-                //delete old metadata from both files
-                exlex.deletePositional(ZtermID, exlex.getPositional(ZtermID, dir+namebase1));
-                exlex.deletePositional(ItermID, exlex.getPositional(ItermID, dir+namebase2));
+                write_postinglist<Posting>(ofile, outputfilepath, ZtermID, merged, true);
             }
             else {
                 //read both posting lists from both files
-                std::vector<nPosting> zpostinglist = read_nonpos_postinglist(zfilestream, metaz, ZtermID);
-                std::vector<nPosting> ipostinglist = read_nonpos_postinglist(ifilestream, metai, ItermID);
+                std::vector<nPosting> zpostinglist = read_nonpos_postinglist(zfilestream, ZtermID);
+                std::vector<nPosting> ipostinglist = read_nonpos_postinglist(ifilestream, ItermID);
                 
                 //merge the posting lists
                 std::vector<nPosting> merged = merge_nonpos_postinglist(zpostinglist, ipostinglist);
 
                 //write the final posting list to disk, creating a new metadata entry
                 std::string outputfilepath = dir+namebaseo;
-                write_postinglist<nPosting>(ofile, outputfilepath, ZtermID, merged, exlex, false);
-
-                //delete old metadata from both files
-                exlex.deleteNonPositional(ZtermID, exlex.getNonPositional(ZtermID, dir+namebase1));
-                exlex.deleteNonPositional(ItermID, exlex.getNonPositional(ItermID, dir+namebase2));
+                write_postinglist<nPosting>(ofile, outputfilepath, ZtermID, merged, false);
             }
 
             zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
@@ -237,42 +213,30 @@ void StaticIndex::merge(int indexnum, bool positional) {
     }
     if(zfilestream) {
         do {
-            if( positional ) metaz = exlex.getPositional(ZtermID, dir+namebase1);
-            else metaz = exlex.getNonPositional(ZtermID, dir+namebase1);
-            //Calculate shift to use for updating the metadata
-            long shift = ofile.tellp() - metaz->start_pos;
-            //Subtract four since we already read the termID
-            int length = metaz->end_offset - metaz->start_pos - sizeof(unsigned int);
-            char* buffer = new char [length];
-            zfilestream.read(buffer, length);
-            //Write termID then rest of posting list
-            ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
-            ofile.write(buffer, length);
-            delete[] buffer;
+            //Read length of block
+            unsigned int blocklen;
+            zfilestream.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
+            //Don't copy over the length and the termid
+            blocklen -= 8;
 
-            //Update metadata
-            *metaz = shift_metadata(*metaz, shift);
-            metaz->filename = dir + namebaseo;
+            ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
+            ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
+
+            copyBytes(zfilestream, ofile, blocklen);
         } while (zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID)));
     }
     if(ifilestream) {
         do {
-            if( positional ) metai = exlex.getPositional(ItermID, dir+namebase2);
-            else metai = exlex.getNonPositional(ItermID, dir+namebase2);
-            //Calculate shift to use for updating the metadata
-            long shift = ofile.tellp() - metai->start_pos;
-            //Subtract four since we already read the termID
-            int length = metai->end_offset - metai->start_pos - sizeof(unsigned int);
-            char* buffer = new char [length];
-            ifilestream.read(buffer, length);
-            //Write termID then rest of posting list
-            ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
-            ofile.write(buffer, length);
-            delete[] buffer;
+            //Read length of block
+            unsigned int blocklen;
+            ifilestream.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
+            //Don't copy over the length and the termid
+            blocklen -= 8;
 
-            //Update metadata
-            *metai = shift_metadata(*metai, shift);
-            metai->filename = dir + namebaseo;
+            ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
+            ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
+
+            copyBytes(ifilestream, ofile, blocklen);
         } while (ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID)));
     }
 

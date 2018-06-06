@@ -32,6 +32,7 @@ template <typename T>
 void write_postinglist(std::ofstream& ofile, std::string& filepath, unsigned int termID, std::vector<T>& postinglist, bool positional);
 
 //Reads a posting list from disk
+//Assumes file stream is pointing to the unsigned int after termID
 std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int termID);
 std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int termID);
 
