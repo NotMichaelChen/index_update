@@ -19,6 +19,23 @@ int copyBytes(std::ifstream& ifile, std::ofstream& ofile, int n) {
     return 0;
 }
 
+//Copies the static posting list block from ifile to ofile
+//Assumes termID has already been read and that ifile/ofile are pointing to the correct positions
+void copyPostingList(unsigned int termID, std::ifstream& ifile, std::ofstream& ofile) {
+    //Read length of block
+    unsigned int blocklen;
+    ifile.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
+    //Don't copy over the length and the termid
+    blocklen -= 8;
+
+    ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
+    ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
+
+    copyBytes(ifile, ofile, blocklen);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 StaticIndex::StaticIndex(std::string& working_dir) : INDEXDIR("./" + working_dir + GlobalConst::IndexPath),
     PDIR("./" + working_dir + GlobalConst::PosPath),
     NPDIR("./" + working_dir + GlobalConst::NonPosPath)
@@ -181,49 +198,23 @@ void StaticIndex::merge(int indexnum, bool positional) {
     zfilestream.open(dir + "Z" + std::to_string(indexnum));
     ifilestream.open(dir + "I" + std::to_string(indexnum));
 
-    std::string namebase1 = "Z" + std::to_string(indexnum);
-    std::string namebase2 = "I" + std::to_string(indexnum);
-    std::string namebaseo;
-
     char flag = 'Z';
-    std::ifstream filetest(dir + "Z" + std::to_string(indexnum+1));
-    if(filetest.good())
+    //If z-index exists
+    if(std::ifstream(dir + "Z" + std::to_string(indexnum+1)))
         flag = 'I';
-    filetest.close();
 
-    namebaseo = flag + std::to_string(indexnum + 1);
-    ofile.open(dir + namebaseo);
+    ofile.open(dir + flag + std::to_string(indexnum + 1));
 
     unsigned int ZtermID, ItermID;
     zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
     ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
     while(true) {
         if(ItermID < ZtermID) {
-            //Read length of block
-            unsigned int blocklen;
-            ifilestream.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
-            //Don't copy over the length and the termid
-            blocklen -= 8;
-
-            ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
-            ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
-
-            copyBytes(ifilestream, ofile, blocklen);
-
+            copyPostingList(ItermID, ifilestream, ofile);
             if(!ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID))) break;
         }
         else if(ZtermID < ItermID) {
-            //Read length of block
-            unsigned int blocklen;
-            zfilestream.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
-            //Don't copy over the length and the termid
-            blocklen -= 8;
-
-            ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
-            ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
-
-            copyBytes(zfilestream, ofile, blocklen);
-
+            copyPostingList(ZtermID, zfilestream, ofile);
             if(!zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID))) break;
         }
         else {
@@ -237,7 +228,6 @@ void StaticIndex::merge(int indexnum, bool positional) {
                 std::vector<Posting> merged = merge_pos_postinglist(zpostinglist, ipostinglist);
 
                 //write the final posting list to disk, creating a new metadata entry
-                std::string outputfilepath = dir+namebaseo;
                 write_postinglist<Posting>(ofile, ZtermID, merged, true);
             }
             else {
@@ -249,7 +239,6 @@ void StaticIndex::merge(int indexnum, bool positional) {
                 std::vector<nPosting> merged = merge_nonpos_postinglist(zpostinglist, ipostinglist);
 
                 //write the final posting list to disk, creating a new metadata entry
-                std::string outputfilepath = dir+namebaseo;
                 write_postinglist<nPosting>(ofile, ZtermID, merged, false);
             }
 
@@ -261,30 +250,12 @@ void StaticIndex::merge(int indexnum, bool positional) {
     }
     if(zfilestream) {
         do {
-            //Read length of block
-            unsigned int blocklen;
-            zfilestream.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
-            //Don't copy over the length and the termid
-            blocklen -= 8;
-
-            ofile.write(reinterpret_cast<const char *>(&ZtermID), sizeof(ZtermID));
-            ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
-
-            copyBytes(zfilestream, ofile, blocklen);
+            copyPostingList(ZtermID, zfilestream, ofile);
         } while (zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID)));
     }
     if(ifilestream) {
         do {
-            //Read length of block
-            unsigned int blocklen;
-            ifilestream.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
-            //Don't copy over the length and the termid
-            blocklen -= 8;
-
-            ofile.write(reinterpret_cast<const char *>(&ItermID), sizeof(ItermID));
-            ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
-
-            copyBytes(ifilestream, ofile, blocklen);
+            copyPostingList(ItermID, ifilestream, ofile);
         } while (ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID)));
     }
 
