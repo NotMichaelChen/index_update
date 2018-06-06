@@ -9,7 +9,7 @@ void SparseExtendedLexicon::insertPosEntry(unsigned int termID, unsigned int ind
     if(indexnum >= lex.size())
         lex.resize(indexnum);
     
-    lex[indexnum].emplace(termID, offset, length);
+    lex[indexnum].emplace(std::piecewise_construct, std::forward_as_tuple(termID), std::forward_as_tuple(offset, length));
 }
 
 void SparseExtendedLexicon::insertNonPosEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset, unsigned int length) {
@@ -21,7 +21,7 @@ void SparseExtendedLexicon::insertNonPosEntry(unsigned int termID, unsigned int 
     if(indexnum >= lex.size())
         lex.resize(indexnum);
     
-    lex[indexnum].emplace(termID, offset, length);
+    lex[indexnum].emplace(std::piecewise_construct, std::forward_as_tuple(termID), std::forward_as_tuple(offset, length));
 }
 
 unsigned long SparseExtendedLexicon::getPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex) {
