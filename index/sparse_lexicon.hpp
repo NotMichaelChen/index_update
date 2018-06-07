@@ -15,6 +15,8 @@ public:
     unsigned long getPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
     unsigned long getNonPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
 
+    void printSize();
+
 private:
     //Each vector element represents an indexnum with its own lexicon, which maps termIDs to offsets
     std::vector<std::unordered_map<unsigned int, unsigned long>> zposlex;

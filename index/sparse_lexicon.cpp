@@ -1,5 +1,7 @@
 #include "sparse_lexicon.hpp"
 
+#include <iostream>
+
 void SparseExtendedLexicon::insertEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset,
     bool positional)
 {
@@ -61,4 +63,31 @@ unsigned long SparseExtendedLexicon::getNonPosOffset(unsigned int termID, unsign
         throw std::invalid_argument("Error, no entry exists for termID " + std::to_string(termID) + " in nonpos index " + std::to_string(indexnum));
     
     return lex[indexnum][termID];
+}
+
+void SparseExtendedLexicon::printSize() {
+    unsigned long counter;
+    for(auto& entry : zposlex) {
+        counter += entry.size();
+    }
+    std::cerr << "zposlex: " << counter << std::endl;
+    counter = 0;
+    for(auto& entry : zposlex) {
+        counter += entry.size();
+    }
+    std::cerr << "iposlex: " << counter << std::endl;
+    counter = 0;
+    for(auto& entry : iposlex) {
+        counter += entry.size();
+    }
+    std::cerr << "znonposlex: " << counter << std::endl;
+    counter = 0;
+    for(auto& entry : znonposlex) {
+        counter += entry.size();
+    }
+    std::cerr << "inonposlex: " << counter << std::endl;
+    counter = 0;
+    for(auto& entry : inonposlex) {
+        counter += entry.size();
+    }
 }

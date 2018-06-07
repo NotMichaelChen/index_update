@@ -160,7 +160,7 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int ter
     unsigned int totalbytes;
     ifile.read(reinterpret_cast<char *>(&totalbytes), sizeof(totalbytes));
     if(totalbytes <= 36)
-        throw std::runtime_error("Error, invalid posting list size in static block");
+        throw std::runtime_error("Error, invalid posting list size in static block: " + std::to_string(totalbytes));
 
     std::vector<Posting> postinglist;
     
@@ -235,7 +235,7 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int
     unsigned int totalbytes;
     ifile.read(reinterpret_cast<char *>(&totalbytes), sizeof(totalbytes));
     if(totalbytes <= 32)
-        throw std::runtime_error("Error, invalid posting list size in static block");
+        throw std::runtime_error("Error, invalid posting list size in static block: " + std::to_string(totalbytes));
 
     std::vector<nPosting> postinglist;
 

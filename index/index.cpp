@@ -252,6 +252,9 @@ void Index::printSize() {
 
     std::cerr << "lex: " << lex.getSize() << std::endl;
 
-    std::cerr << "exlex p: " << staticwriter.getExlexPointer()->getPSize() << std::endl;
-    std::cerr << "exlex np: " << staticwriter.getExlexPointer()->getNPSize() << std::endl;
+    std::cerr << "exlex:" << std::endl;
+    staticwriter.getSpExLexPointer()->printSize();
+
+    // std::cerr << "exlex p: " << staticwriter.getExlexPointer()->getPSize() << std::endl;
+    // std::cerr << "exlex np: " << staticwriter.getExlexPointer()->getNPSize() << std::endl;
 }

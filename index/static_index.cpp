@@ -14,6 +14,7 @@ int copyBytes(std::ifstream& ifile, std::ofstream& ofile, int n) {
     ifile.read(buffer, n);
     ofile.write(buffer, ifile.gcount());
     delete[] buffer;
+    //Copied less than n bytes
     if(ifile.gcount() != n) {
         return 1;
     }
@@ -27,16 +28,19 @@ unsigned int copyPostingList(unsigned int termID, std::ifstream& ifile, std::ofs
     //Read length of block
     unsigned int blocklen;
     ifile.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
+    if(blocklen < 32)
+        throw std::runtime_error("Error, invalid blocklen in copyPostingList: " + std::to_string(blocklen));
     //Read number of postings
     unsigned int postinglistcount;
     ifile.read(reinterpret_cast<char *>(&postinglistcount), sizeof(postinglistcount));
-    //Don't copy over termid, size, postingcount
-    blocklen -= 12;
 
     //Copy the vars
     ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
     ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
     ofile.write(reinterpret_cast<const char *>(&postinglistcount), sizeof(postinglistcount));
+    
+    //Don't copy over termid, size, postingcount
+    blocklen -= 12;
 
     //Copy the rest of the block
     copyBytes(ifile, ofile, blocklen);
@@ -53,6 +57,10 @@ StaticIndex::StaticIndex(std::string& working_dir) : INDEXDIR("./" + working_dir
 
 ExtendedLexicon* StaticIndex::getExlexPointer() {
     return &exlex;
+}
+
+SparseExtendedLexicon* StaticIndex::getSpExLexPointer() {
+    return &spexlex;
 }
 
 //Writes the positional index to disk, which means it is saved either in file Z0 or I0.
@@ -197,7 +205,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
     ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
     while(true) {
         if(ItermID < ZtermID) {
-            //Store the position of the block
+            //Store the position of the written block
             unsigned long pos = ofile.tellp();
             unsigned int postingsize = copyPostingList(ItermID, ifilestream, ofile);
 
@@ -206,7 +214,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
             if(!ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID))) break;
         }
         else if(ZtermID < ItermID) {
-            //Store the position of the block
+            //Store the position of the written block
             unsigned long pos = ofile.tellp();
             unsigned int postingsize = copyPostingList(ZtermID, zfilestream, ofile);
 
@@ -215,7 +223,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
             if(!zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID))) break;
         }
         else {
-            //Store the position of the block
+            //Store the position of the written block
             unsigned long pos = ofile.tellp();
 
             if(positional) {
@@ -253,7 +261,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
     }
     if(zfilestream) {
         do {
-            //Store the position of the block
+            //Store the position of the written block
             unsigned long pos = ofile.tellp();
             unsigned int postingsize = copyPostingList(ZtermID, zfilestream, ofile);
 
@@ -262,7 +270,7 @@ void StaticIndex::merge(int indexnum, bool positional) {
     }
     if(ifilestream) {
         do {
-            //Store the position of the block
+            //Store the position of the written block
             unsigned long pos = ofile.tellp();
             unsigned int postingsize = copyPostingList(ItermID, ifilestream, ofile);
 
