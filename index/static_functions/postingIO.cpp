@@ -5,38 +5,12 @@
 #include "global_parameters.hpp"
 #include "compression_functions/varbyte.hpp"
 #include "compression.hpp"
-
-//Compresses and writes the given vector to the file
-unsigned int write_block(std::vector<unsigned int>& block, std::ofstream& ofile, std::vector<uint8_t> encoder(unsigned int), bool delta) {
-    std::vector<uint8_t> compressedblock = compress_block(block, encoder, delta);
-    return write_raw_block(compressedblock, ofile);
-}
+#include "bytesIO.hpp"
 
 //Reads and decompressed the block in the file
 std::vector<unsigned int> read_block(size_t buffersize, std::ifstream& ifile, std::vector<unsigned int> decoder(std::vector<uint8_t>&), bool delta) {
-    std::vector<uint8_t> unsignedbuffer = read_raw_block(buffersize, ifile);
+    std::vector<uint8_t> unsignedbuffer = readBytesBlock(buffersize, ifile);
     return decompress_block(unsignedbuffer, decoder, delta);
-}
-
-// Writes a vector of numbers byte by byte to the given file stream
-// Returns how many bytes it wrote to the stream
-unsigned int write_raw_block(std::vector<uint8_t>& num, std::ofstream& ofile) {
-    /* Write the compressed posting to file byte by byte. */
-    unsigned int start = ofile.tellp();
-    for(auto it = num.begin(); it != num.end(); it++){
-        ofile.write(reinterpret_cast<const char*>(&(*it)), sizeof(*it));
-    }
-    unsigned int end = ofile.tellp();
-    return end - start;
-}
-
-// Reads a vector of unsigned chars from the given file stream
-// Assumes input stream is already at the correct place
-std::vector<uint8_t> read_raw_block(size_t buffersize, std::ifstream& ifile) {
-    std::vector<char> buffer(buffersize);
-    ifile.read(&buffer[0], buffersize);
-    std::vector<uint8_t> unsignedbuffer = std::vector<uint8_t>(buffer.begin(), buffer.end());
-    return unsignedbuffer;
 }
 
 //Writes a posting list to disk with compression
@@ -131,34 +105,34 @@ void write_postinglist(std::ofstream& ofile, unsigned int termID, std::vector<T>
     unsigned int lastdocIDlength = b_lastdocID.size();
     unsigned int blocksizeslength = b_compressedblocksizes.size();
     unsigned int blockslength = compressedblocks.size();
-    unsigned int postinglistlen = postinglist.size();
     unsigned int totalbytes = 32 + b_lastdocID.size() + b_compressedblocksizes.size() + compressedblocks.size();
     //Add extra int for positional
     if(positional) totalbytes += 4;
 
     //Write out metadata
     //TODO: Compress metadata
-    ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
-    ofile.write(reinterpret_cast<const char *>(&totalbytes), sizeof(totalbytes));
-    ofile.write(reinterpret_cast<const char *>(&postinglistlen), sizeof(postinglistlen));
-    ofile.write(reinterpret_cast<const char *>(&doc_method), sizeof(doc_method));
-    ofile.write(reinterpret_cast<const char *>(&second_method), sizeof(second_method));
-    if(positional) ofile.write(reinterpret_cast<const char *>(&third_method), sizeof(third_method));
+    writeAsBytes(termID, ofile);
+    writeAsBytes(totalbytes, ofile);
+    writeAsBytes(postinglist.size(), ofile);
+    writeAsBytes(doc_method, ofile);
+    writeAsBytes(second_method, ofile);
+    if(positional) writeAsBytes(third_method, ofile);
 
     //Write out metadata and compressed postings
-    ofile.write(reinterpret_cast<const char *>(&lastdocIDlength), sizeof(lastdocIDlength));
-    write_raw_block(b_lastdocID, ofile);
-    ofile.write(reinterpret_cast<const char *>(&blocksizeslength), sizeof(blocksizeslength));
-    write_raw_block(b_compressedblocksizes, ofile);
-    ofile.write(reinterpret_cast<const char *>(&blockslength), sizeof(blockslength));
-    write_raw_block(compressedblocks, ofile);
+    writeAsBytes(lastdocIDlength, ofile);
+    writeBytesBlock(b_lastdocID, ofile);
+    writeAsBytes(blocksizeslength, ofile);
+    writeBytesBlock(b_compressedblocksizes, ofile);
+    writeAsBytes(blockslength, ofile);
+    writeBytesBlock(compressedblocks, ofile);
 }
 
 //Given an ifstream, read the positional posting list indicated by the metadata
 std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int termID) {
     //Don't read termID since it is already read and is given to us
     unsigned int totalbytes;
-    ifile.read(reinterpret_cast<char *>(&totalbytes), sizeof(totalbytes));
+
+    readFromBytes(totalbytes, ifile);
     if(totalbytes <= 36)
         throw std::runtime_error("Error, invalid posting list size in static block: " + std::to_string(totalbytes));
 
@@ -166,7 +140,7 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int ter
     
     //Read in posting list into memory
     //Skip termID and totalbytes ints
-    std::vector<uint8_t> byteslist = read_raw_block(totalbytes-8, ifile);
+    std::vector<uint8_t> byteslist = readBytesBlock(totalbytes-8, ifile);
 
     //Skip beginning metadata
     size_t blockptr = 16;
@@ -233,7 +207,7 @@ std::vector<Posting> read_pos_postinglist(std::ifstream& ifile, unsigned int ter
 std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int termID) {
     //Don't read termID since it is already read and is given to us
     unsigned int totalbytes;
-    ifile.read(reinterpret_cast<char *>(&totalbytes), sizeof(totalbytes));
+    readFromBytes(totalbytes, ifile);
     if(totalbytes <= 32)
         throw std::runtime_error("Error, invalid posting list size in static block: " + std::to_string(totalbytes));
 
@@ -241,7 +215,7 @@ std::vector<nPosting> read_nonpos_postinglist(std::ifstream& ifile, unsigned int
 
     //Read in posting list into memory
     //Skip termID and totalbytes ints
-    std::vector<uint8_t> byteslist = read_raw_block(totalbytes-8, ifile);
+    std::vector<uint8_t> byteslist = readBytesBlock(totalbytes-8, ifile);
 
     //Skip beginning metadata
     size_t blockptr = 12;

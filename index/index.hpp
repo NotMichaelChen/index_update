@@ -7,8 +7,6 @@
 
 #include "lexicon.hpp"
 #include "posting.hpp"
-#include "meta.hpp"
-#include "extended_lexicon.hpp"
 #include "Structures/documentstore.h"
 #include "Structures/translationtable.h"
 #include "static_index.hpp"

@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "static_functions/postingIO.hpp"
+#include "static_functions/bytesIO.hpp"
 #include "util.hpp"
 
 //Copies n bytes from the ifstream to the ofstream
@@ -27,17 +28,17 @@ int copyBytes(std::ifstream& ifile, std::ofstream& ofile, int n) {
 unsigned int copyPostingList(unsigned int termID, std::ifstream& ifile, std::ofstream& ofile) {
     //Read length of block
     unsigned int blocklen;
-    ifile.read(reinterpret_cast<char *>(&blocklen), sizeof(blocklen));
+    readFromBytes(blocklen, ifile);
     if(blocklen < 32)
         throw std::runtime_error("Error, invalid blocklen in copyPostingList: " + std::to_string(blocklen));
     //Read number of postings
     unsigned int postinglistcount;
-    ifile.read(reinterpret_cast<char *>(&postinglistcount), sizeof(postinglistcount));
+    readFromBytes(postinglistcount, ifile);
 
     //Copy the vars
-    ofile.write(reinterpret_cast<const char *>(&termID), sizeof(termID));
-    ofile.write(reinterpret_cast<const char *>(&blocklen), sizeof(blocklen));
-    ofile.write(reinterpret_cast<const char *>(&postinglistcount), sizeof(postinglistcount));
+    writeAsBytes(termID, ofile);
+    writeAsBytes(blocklen, ofile);
+    writeAsBytes(postinglistcount, ofile);
     
     //Don't copy over termid, size, postingcount
     blocklen -= 12;
@@ -201,8 +202,8 @@ void StaticIndex::merge(int indexnum, bool positional) {
     bool lastlisthadpointer = false;
 
     unsigned int ZtermID, ItermID;
-    zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
-    ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
+    readFromBytes(ZtermID, zfilestream);
+    readFromBytes(ItermID, ifilestream);
     while(true) {
         if(ItermID < ZtermID) {
             //Store the position of the written block
@@ -211,7 +212,8 @@ void StaticIndex::merge(int indexnum, bool positional) {
 
             shouldGetLexEntry(postingsize, ItermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
 
-            if(!ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID))) break;
+            readFromBytes(ItermID, ifilestream);
+            if(!ifilestream) break;
         }
         else if(ZtermID < ItermID) {
             //Store the position of the written block
@@ -220,7 +222,8 @@ void StaticIndex::merge(int indexnum, bool positional) {
 
             shouldGetLexEntry(postingsize, ZtermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
 
-            if(!zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID))) break;
+            readFromBytes(ZtermID, zfilestream);
+            if(!zfilestream) break;
         }
         else {
             //Store the position of the written block
@@ -253,29 +256,26 @@ void StaticIndex::merge(int indexnum, bool positional) {
                 shouldGetLexEntry(merged.size(), ZtermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
             }
 
-            zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID));
-            ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID));
-
+            readFromBytes(ZtermID, zfilestream);
+            readFromBytes(ItermID, ifilestream);
             if(!zfilestream || !ifilestream) break;
         }
     }
-    if(zfilestream) {
-        do {
-            //Store the position of the written block
-            unsigned long pos = ofile.tellp();
-            unsigned int postingsize = copyPostingList(ZtermID, zfilestream, ofile);
+    while(zfilestream) {
+        //Store the position of the written block
+        unsigned long pos = ofile.tellp();
+        unsigned int postingsize = copyPostingList(ZtermID, zfilestream, ofile);
 
-            shouldGetLexEntry(postingsize, ZtermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
-        } while (zfilestream.read(reinterpret_cast<char *>(&ZtermID), sizeof(ZtermID)));
+        shouldGetLexEntry(postingsize, ZtermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
+        readFromBytes(ZtermID, zfilestream);
     }
-    if(ifilestream) {
-        do {
-            //Store the position of the written block
-            unsigned long pos = ofile.tellp();
-            unsigned int postingsize = copyPostingList(ItermID, ifilestream, ofile);
+    while(ifilestream) {
+        //Store the position of the written block
+        unsigned long pos = ofile.tellp();
+        unsigned int postingsize = copyPostingList(ItermID, ifilestream, ofile);
 
-            shouldGetLexEntry(postingsize, ItermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
-        } while (ifilestream.read(reinterpret_cast<char *>(&ItermID), sizeof(ItermID)));
+        shouldGetLexEntry(postingsize, ItermID, indexnum+1, isZindex, pos, positional, postingcount, lastlisthadpointer);
+        readFromBytes(ItermID, ifilestream);
     }
 
     zfilestream.close();

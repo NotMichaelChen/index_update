@@ -6,7 +6,6 @@
 #include <vector>
 #include <functional>
 
-#include "posting.hpp"
 #include "extended_lexicon.hpp"
 #include "global_parameters.hpp"
 #include "sparse_lexicon.hpp"
