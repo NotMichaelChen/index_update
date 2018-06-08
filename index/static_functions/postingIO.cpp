@@ -113,7 +113,7 @@ void write_postinglist(std::ofstream& ofile, unsigned int termID, std::vector<T>
     //TODO: Compress metadata
     writeAsBytes(termID, ofile);
     writeAsBytes(totalbytes, ofile);
-    writeAsBytes(postinglist.size(), ofile);
+    writeAsBytes((unsigned int)postinglist.size(), ofile);
     writeAsBytes(doc_method, ofile);
     writeAsBytes(second_method, ofile);
     if(positional) writeAsBytes(third_method, ofile);
