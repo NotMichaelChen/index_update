@@ -94,13 +94,11 @@ void Index::insertNPPostings(MatcherInfo& results) {
             }
             //Don't change in other cases
         }
-
-        nPosting posting(entry.termid, np_iter->docID, np_iter->freq);
-        nonpositional_index[entry.termid].push_back(posting);
+        
+        nonpositional_index[entry.termid].emplace_back(entry.termid, np_iter->docID, np_iter->freq);
         ++nonpositional_size;
         if(nonpositional_size > POSTING_LIMIT) {
             //when dynamic index cannot fit into memory, write to disk
-            //display_non_positional();
             std::cerr << "Writing non-positional index" << std::endl;
             staticwriter.write_np_disk(nonpositional_index.begin(), nonpositional_index.end());
             nonpositional_index.clear();
@@ -114,11 +112,9 @@ void Index::insertPPostings(MatcherInfo& results) {
     for(auto p_iter = results.Ppostings.begin(); p_iter != results.Ppostings.end(); p_iter++) {
         Lex_data entry = lex.getEntry(p_iter->term);
 
-        Posting posting(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
-        positional_index[entry.termid].push_back(posting);
+        positional_index[entry.termid].emplace_back(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
         ++positional_size;
         if(positional_size > POSTING_LIMIT) {
-            //display_positional();
             std::cerr << "Writing positional index" << std::endl;
             staticwriter.write_p_disk(positional_index.begin(), positional_index.end());
             positional_index.clear();
