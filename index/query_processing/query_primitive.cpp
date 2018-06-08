@@ -3,12 +3,25 @@
 #include <dirent.h>
 
 #include "global_parameters.hpp"
+#include "util.hpp"
 
-query_primitive::query_primitive(unsigned int termID, GlobalType::NonPosIndex& index, ExtendedLexicon& exlex) {
+query_primitive::query_primitive(unsigned int termID, GlobalType::NonPosIndex& index, SparseExtendedLexicon& exlex, std::string staticpath) {
     lists.emplace_back(termID, index);
 
-    for(auto iter = exlex.getNonPositionalBegin(termID); iter != exlex.getNonPositionalEnd(termID); iter++) {
-        lists.emplace_back(termID, iter);
+    std::vector<std::string> indexnames = Utility::readDirectory(staticpath);
+
+    for(std::string& name : indexnames) {
+        bool isZindex;
+        if(name[0] == 'Z')
+            isZindex = true;
+        else if(name[0] == 'I')
+            isZindex = false;
+        else
+            throw std::invalid_argument("Error, index name " + name + " is invalid");
+
+        unsigned int indexnum = std::stoul(name.substr(1));
+
+        lists.emplace_back(termID, staticpath + "/" + name, exlex.getNonPosLEQOffset(termID, indexnum, isZindex));
     }
 
     curdocIDs.resize(lists.size());

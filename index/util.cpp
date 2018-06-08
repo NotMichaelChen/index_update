@@ -17,6 +17,8 @@ std::string getTimestamp() {
     return oss.str();
 }
 
+//Gets all files inside the given directory
+//Returns a vector of *only* the file names
 //http://forum.codecall.net/topic/60157-read-all-files-in-a-folder/
 std::vector<std::string> readDirectory(std::string path = ".") {
     DIR*    dir;

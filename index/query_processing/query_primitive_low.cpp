@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "static_functions/postingIO.hpp"
+#include "static_functions/bytesIO.hpp"
 #include "static_functions/compression_functions/varbyte.hpp"
 
 query_primitive_low::query_primitive_low(unsigned int termID, GlobalType::NonPosIndex& index) {
@@ -13,33 +14,65 @@ query_primitive_low::query_primitive_low(unsigned int termID, GlobalType::NonPos
     postingindex = 0;
 }
 
-query_primitive_low::query_primitive_low(unsigned int termID, std::vector<mData>::iterator mdata) {
+//filepath: The path to the index that the QPL points to
+//LEQpos: Pointer to the closest termID that is less than or equal to the desired termID. May be greater than termID if termID
+//          is smaller than all termIDs in the block
+query_primitive_low::query_primitive_low(unsigned int termID, std::string path, size_t LEQpos) {
     inmemory = false;
-    metadata = mdata;
+    filepath = path;
 
     //Can assume that static posting lists are sorted
 
-    ifile.open(metadata->filename);
-    //TODO: Read static metadata and use it
-    ifile.seekg(metadata->last_docID);
+    //Determine if term exists in index
+    ifile.open(filepath);
+    if(!ifile)
+        throw std::invalid_argument("Error: invalid filepath in query_primitive_low: " + filepath);
 
-    //Save the last_docID array in memory
-    size_t buffersize = metadata->blocksizes - metadata->last_docID;
-    last_docID = read_block(buffersize, ifile, VBDecode, false);
+    ifile.seekg(LEQpos);
+
+    unsigned int disktermID;
+    readFromBytes(disktermID, ifile);
+    unsigned int postinglistlength;
+
+    while(ifile && disktermID < termID) {
+        readFromBytes(postinglistlength, ifile);
+        ifile.seekg(postinglistlength-8, std::ios_base::cur);
+
+        readFromBytes(disktermID, ifile);
+    }
+
+    if(disktermID != termID) {
+        //termID doesn't exist in this index
+    }
+
+    readFromBytes(postinglistlength, ifile);
+    //Skip postings count and compression methods
+    //WARNING: Assumed non-positional postings here
+    ifile.seekg(12, std::ios_base::cur);
+
+    //Save last_docID array in memory
+    unsigned int lastdocIDlen;
+    readFromBytes(lastdocIDlen, ifile);
+    last_docID = read_block(lastdocIDlen, ifile, VBDecode, false);
 
     //Get blocksizes array
-    buffersize = metadata->postings_blocks - metadata->blocksizes;
-    blocksizes = read_block(buffersize, ifile, VBDecode, false);
+    unsigned int blocksizeslen;
+    readFromBytes(blocksizeslen, ifile);
+    blocksizes = read_block(blocksizeslen, ifile, VBDecode, false);
+
+    //Skip postingblockssize var
+    ifile.seekg(4, std::ios_base::cur);
+
+    //Store some metadata
+    docIDindex = 0;
+    docblockpos = ifile.tellg();
+    blockindex = 0;
+    freqdecompressed = false;
 
     //Decompress and store the first docID
     //Only decompress frequency block if getFreq is called
-    buffersize = blocksizes[0];
+    size_t buffersize = blocksizes[0];
     docblock = read_block(buffersize, ifile, VBDecode, true);
-
-    docIDindex = 0;
-    docblockpos = metadata->postings_blocks;
-    blockindex = 0;
-    freqdecompressed = false;
 }
 
 unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
@@ -112,8 +145,6 @@ unsigned int query_primitive_low::getFreq() {
 int query_primitive_low::getIndexNumber() {
     if(inmemory)
         return -1;
-
-    std::string filepath = metadata->filename;
 
     //WARNING: Uses unix-specific file separators
     std::string filename = std::string(std::find( filepath.rbegin(), filepath.rend(), '/' ).base(), filepath.end());

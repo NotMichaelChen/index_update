@@ -5,7 +5,7 @@
 void SparseExtendedLexicon::insertEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset,
     bool positional)
 {
-    std::vector<std::unordered_map<unsigned int, unsigned long>>* lex = &zposlex;
+    std::vector<std::map<unsigned int, unsigned long>>* lex = &zposlex;
 
     if(positional) {
         //Don't need to check for positive case since default is zposlex
@@ -41,28 +41,44 @@ void SparseExtendedLexicon::clearIndex(unsigned int indexnum, bool positional) {
     }
 }
 
-unsigned long SparseExtendedLexicon::getPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex) {
-    std::vector<std::unordered_map<unsigned int, unsigned long>>* lex = &zposlex;
+//Get the offset of the nearest termID less than or equal to the given termID
+unsigned long SparseExtendedLexicon::getPosLEQOffset(unsigned int termID, unsigned int indexnum, bool isZindex) {
+    std::vector<std::map<unsigned int, unsigned long>>* lex = &zposlex;
 
     if(!isZindex)
         lex = &iposlex;
 
-    if(indexnum >= lex->size() || (*lex)[indexnum].find(termID) == (*lex)[indexnum].end())
-        throw std::invalid_argument("Error, no entry exists for termID " + std::to_string(termID) + " in pos index " + std::to_string(indexnum));
+    if(indexnum >= lex->size())
+        throw std::invalid_argument("Error, invalid pos index number: " + std::to_string(indexnum));
+    if((*lex)[indexnum].empty())
+        throw std::invalid_argument("Error, trying to query empty index: " + std::to_string(indexnum));
     
-    return (*lex)[indexnum][termID];
+    auto iter = (*lex)[indexnum].upper_bound(termID);
+    
+    //Subtract to get the actual closest LEQ entry
+    if(iter != (*lex)[indexnum].begin())
+        iter--;
+    return iter->second;
 }
 
-unsigned long SparseExtendedLexicon::getNonPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex) {
-    std::vector<std::unordered_map<unsigned int, unsigned long>>* lex = &znonposlex;
+//Get the offset of the nearest termID less than or equal to the given termID
+unsigned long SparseExtendedLexicon::getNonPosLEQOffset(unsigned int termID, unsigned int indexnum, bool isZindex) {
+    std::vector<std::map<unsigned int, unsigned long>>* lex = &znonposlex;
 
     if(!isZindex)
         lex = &inonposlex;
 
-    if(indexnum >= lex->size() || (*lex)[indexnum].find(termID) == (*lex)[indexnum].end())
-        throw std::invalid_argument("Error, no entry exists for termID " + std::to_string(termID) + " in nonpos index " + std::to_string(indexnum));
+    if(indexnum >= lex->size())
+        throw std::invalid_argument("Error, invalid pos index number: " + std::to_string(indexnum));
+    if((*lex)[indexnum].empty())
+        throw std::invalid_argument("Error, trying to query empty index: " + std::to_string(indexnum));
     
-    return (*lex)[indexnum][termID];
+    auto iter = (*lex)[indexnum].upper_bound(termID);
+    
+    //Subtract to get the actual closest LEQ entry
+    if(iter != (*lex)[indexnum].begin())
+        iter--;
+    return iter->second;
 }
 
 void SparseExtendedLexicon::printSize() {

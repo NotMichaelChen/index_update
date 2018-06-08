@@ -2,7 +2,7 @@
 #define SPARSE_LEXICON_HPP
 
 #include <vector>
-#include <unordered_map>
+#include <map>
 
 class SparseExtendedLexicon {
 
@@ -12,18 +12,18 @@ public:
     //Clears all of the entries inside of the given index (both Z-indexes and I-indexes)
     void clearIndex(unsigned int indexnum, bool positional);
 
-    unsigned long getPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
-    unsigned long getNonPosOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
+    unsigned long getPosLEQOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
+    unsigned long getNonPosLEQOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
 
     void printSize();
 
 private:
     //Each vector element represents an indexnum with its own lexicon, which maps termIDs to offsets
-    std::vector<std::unordered_map<unsigned int, unsigned long>> zposlex;
-    std::vector<std::unordered_map<unsigned int, unsigned long>> znonposlex;
+    std::vector<std::map<unsigned int, unsigned long>> zposlex;
+    std::vector<std::map<unsigned int, unsigned long>> znonposlex;
 
-    std::vector<std::unordered_map<unsigned int, unsigned long>> iposlex;
-    std::vector<std::unordered_map<unsigned int, unsigned long>> inonposlex;
+    std::vector<std::map<unsigned int, unsigned long>> iposlex;
+    std::vector<std::map<unsigned int, unsigned long>> inonposlex;
 };
 
 #endif

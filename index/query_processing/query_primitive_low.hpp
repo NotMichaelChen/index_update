@@ -12,21 +12,19 @@
 class query_primitive_low {
 public:
     query_primitive_low(unsigned int termID, GlobalType::NonPosIndex& index);
-    query_primitive_low(unsigned int termID, std::vector<mData>::iterator mdata);
+    query_primitive_low(unsigned int termID, std::string path, size_t LEQpos);
 
-    //advances the read pointer of lp to the posting with the smallest
-    //docID that is at least x, and then returns that docID. Note that read pointers only move
-    //forward; thus, if the pointer currently points to a posting with docID y > x, then the pointer
-    //will not be moved, and y will be returned
+    //Advances the read pointer of lp to the posting with the smallest docID that is at least x, and then returns that docID.
+    //Note that read pointers only move forward; thus, if the pointer currently points to a posting with docID y > x, then the
+    //pointer will not be moved, and y will be returned
     unsigned int nextGEQ(unsigned int pos, bool& failure);
 
-    //getFreq() decompresses the block of frequency values associated with the current
-    //posting, if it has not been decompressed yet, and returns the frequency value of the current
-    //posting
+    //getFreq() decompresses the block of frequency values associated with the current posting, if it has not been decompressed
+    //yet, and returns the frequency value of the current posting.
     //NOTE: undefined if nextGEQ returned invalid
     unsigned int getFreq();
 
-    //Gets the number of the index that qpl is pointing to
+    //Gets the number of the index that this QPL is pointing to
     //Returns -1 for inmemory index
     int getIndexNumber();
 
@@ -38,7 +36,7 @@ private:
     size_t postingindex;
 
     //Metadata
-    std::vector<mData>::iterator metadata;
+    std::string filepath;
     std::vector<unsigned int> last_docID;
     std::vector<unsigned int> blocksizes;
 

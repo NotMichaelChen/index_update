@@ -24,7 +24,7 @@ std::vector<unsigned int> Index::query(std::vector<std::string> words) {
 
     DAATStatData statistics = {doccount, &docscontaining, &doclength, avgdoclength};
 
-    return DAAT(termIDs, nonpositional_index, *(staticwriter.getExlexPointer()), statistics);
+    return DAAT(termIDs, nonpositional_index, *(staticwriter.getSpExLexPointer()), working_dir+GlobalConst::NonPosPath, statistics);
 }
 
 Index::Index(std::string directory) : docstore(), transtable(), lex(), staticwriter(directory) {
