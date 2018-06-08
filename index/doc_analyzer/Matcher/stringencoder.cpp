@@ -11,6 +11,14 @@ namespace Matcher {
         stringstream oldstream(oldfile);
         while(oldstream >> word) {
             transform(word.begin(), word.end(), word.begin(), ::tolower);
+            //Strip punctuation
+            auto from = find_if(word.begin(), word.end(), not1(ptr_fun<int, int>(ispunct)));
+            auto to = find_if(word.rbegin(), word.rend(), not1(ptr_fun<int, int>(ispunct))).base();
+            //Skip if word is just punctuation
+            if(to == word.begin())
+                continue;
+            
+            word = string(from, to);
             
             if(dictionary.find(word) == dictionary.end()) {
                 dictionary[word] = nextcode;
@@ -25,6 +33,14 @@ namespace Matcher {
         stringstream newstream(newfile);
         while(newstream >> word) {
             transform(word.begin(), word.end(), word.begin(), ::tolower);
+            //Strip punctuation
+            auto from = find_if(word.begin(), word.end(), not1(ptr_fun<int, int>(ispunct)));
+            auto to = find_if(word.rbegin(), word.rend(), not1(ptr_fun<int, int>(ispunct))).base();
+            //Skip if word is just punctuation
+            if(to == word.begin())
+                continue;
+            
+            word = string(from, to);
             
             if(dictionary.find(word) == dictionary.end()) {
                 dictionary[word] = nextcode;
