@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "posting.hpp"
-#include "extended_lexicon.hpp"
 #include "sparse_lexicon.hpp"
 #include "query_primitive_low.hpp"
 

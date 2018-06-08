@@ -1,6 +1,7 @@
 #include "postingIO.hpp"
 
 #include <algorithm>
+#include <cstring>
 
 #include "global_parameters.hpp"
 #include "compression_functions/varbyte.hpp"

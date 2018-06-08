@@ -7,7 +7,6 @@
 
 #include "query_primitive.hpp"
 #include "posting.hpp"
-#include "extended_lexicon.hpp"
 #include "global_parameters.hpp"
 
 //Statistical data from the index used during first-stage query processing
