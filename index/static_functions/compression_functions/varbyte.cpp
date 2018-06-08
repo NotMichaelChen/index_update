@@ -6,17 +6,16 @@
 
 //https://nlp.stanford.edu/IR-book/html/htmledition/variable-byte-codes-1.html
 
-std::vector<uint8_t> VBEncode(unsigned int num) {
-    std::vector<uint8_t> bytes;
+std::list<uint8_t> VBEncode(unsigned int num) {
+    std::list<uint8_t> bytes;
 
     while(true) {
-        bytes.push_back(num % 128);
+        bytes.push_front(num % 128);
         if(num < 128)
             break;
         num /= 128;
     }
-    std::reverse(bytes.begin(), bytes.end());
-    bytes[bytes.size() - 1] += 128;
+    bytes.back() += 128;
     return bytes;
 }
 

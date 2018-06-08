@@ -14,7 +14,7 @@ void pad(std::vector<uint8_t>& data, int len) {
 //Compresses a vector of posting data using the given compression method
 //When delta encoding, do *not* assume field is already sorted
 //TODO: Determine how to figure out padding length
-std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, std::vector<uint8_t> encoder(unsigned int), bool delta) {
+std::vector<uint8_t> compress_block(std::vector<unsigned int>& field, std::list<uint8_t> encoder(unsigned int), bool delta) {
     std::vector<uint8_t> compressed;
     if(delta) {
         std::sort(field.begin(), field.end());
@@ -54,14 +54,19 @@ std::vector<unsigned int> decompress_block(std::vector<uint8_t>& block, std::vec
 }
 
 //Encodes an array of numbers using the given encoder function
-std::vector<uint8_t> encode_array(std::vector<unsigned int>& nums, std::vector<uint8_t> encoder(unsigned int), int padding) {
-    std::vector<uint8_t> bytestream;
+std::vector<uint8_t> encode_array(std::vector<unsigned int>& nums, std::list<uint8_t> encoder(unsigned int), int padding) {
+    std::list<uint8_t> bytestream;
 
     for(const unsigned int &n : nums) {
-        std::vector<uint8_t> bytes = encoder(n);
-        pad(bytes,padding);
-        bytestream.insert(bytestream.end(), bytes.begin(), bytes.end());
+        std::list<uint8_t> bytes = encoder(n);
+        //pad(bytes,padding);
+
+        bytestream.splice(bytestream.end(), bytes);
     }
 
-    return bytestream;
+    std::vector<uint8_t> result;
+    result.reserve(bytestream.size());
+    std::copy(std::begin(bytestream), std::end(bytestream), std::back_inserter(result));
+    
+    return result;
 }
