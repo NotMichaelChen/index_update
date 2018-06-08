@@ -24,7 +24,7 @@ std::vector<unsigned int> Index::query(std::vector<std::string> words) {
 
     DAATStatData statistics = {doccount, &docscontaining, &doclength, avgdoclength};
 
-    return DAAT(termIDs, nonpositional_index, *(staticwriter.getSpExLexPointer()), working_dir+GlobalConst::NonPosPath, statistics);
+    return DAAT(termIDs, nonpositional_index, *(staticwriter.getExLexPointer()), working_dir+GlobalConst::NonPosPath, statistics);
 }
 
 Index::Index(std::string directory) : docstore(), transtable(), lex(), staticwriter(directory) {
@@ -94,7 +94,7 @@ void Index::insertNPPostings(MatcherInfo& results) {
             }
             //Don't change in other cases
         }
-        
+
         nonpositional_index[entry.termid].emplace_back(entry.termid, np_iter->docID, np_iter->freq);
         ++nonpositional_size;
         if(nonpositional_size > POSTING_LIMIT) {
@@ -128,7 +128,7 @@ void Index::dump() {
 
     //Write lexicons
     lex.dump(jobject);
-    staticwriter.getExlexPointer()->dump(jobject);
+    staticwriter.getExLexPointer()->dump(jobject);
 
     //Write individual variables
     jobject["positional_size"] = positional_size;
@@ -181,7 +181,7 @@ void Index::restore() {
 
     //Read Lexicons
     lex.restore(jobject);
-    staticwriter.getExlexPointer()->restore(jobject);
+    staticwriter.getExLexPointer()->restore(jobject);
 
     //Read individual variables
     positional_size = jobject["positional_size"];
@@ -237,7 +237,7 @@ void Index::clear() {
     docstore.clear();
     transtable.clear();
     lex.clear();
-    staticwriter.getExlexPointer()->clear();
+    staticwriter.getExLexPointer()->clear();
 }
 
 void Index::printSize() {
@@ -249,8 +249,5 @@ void Index::printSize() {
     std::cerr << "lex: " << lex.getSize() << std::endl;
 
     std::cerr << "exlex:" << std::endl;
-    staticwriter.getSpExLexPointer()->printSize();
-
-    // std::cerr << "exlex p: " << staticwriter.getExlexPointer()->getPSize() << std::endl;
-    // std::cerr << "exlex np: " << staticwriter.getExlexPointer()->getNPSize() << std::endl;
+    staticwriter.getExLexPointer()->printSize();
 }

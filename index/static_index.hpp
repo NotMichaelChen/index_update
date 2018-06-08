@@ -6,7 +6,6 @@
 #include <vector>
 #include <functional>
 
-#include "extended_lexicon.hpp"
 #include "global_parameters.hpp"
 #include "sparse_lexicon.hpp"
 
@@ -23,12 +22,10 @@ public:
     void write_p_disk(GlobalType::PosMapIter indexbegin, GlobalType::PosMapIter indexend);
     void write_np_disk(GlobalType::NonPosMapIter indexbegin, GlobalType::NonPosMapIter indexend);
 
-    ExtendedLexicon* getExlexPointer();
-    SparseExtendedLexicon* getSpExLexPointer();
+    SparseExtendedLexicon* getExLexPointer();
 
 private:
 
-    ExtendedLexicon exlex;
     SparseExtendedLexicon spexlex;
 
     const std::string INDEXDIR;

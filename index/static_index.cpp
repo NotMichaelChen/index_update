@@ -56,11 +56,7 @@ StaticIndex::StaticIndex(std::string& working_dir) : INDEXDIR("./" + working_dir
     NPDIR("./" + working_dir + GlobalConst::NonPosPath)
 {}
 
-ExtendedLexicon* StaticIndex::getExlexPointer() {
-    return &exlex;
-}
-
-SparseExtendedLexicon* StaticIndex::getSpExLexPointer() {
+SparseExtendedLexicon* StaticIndex::getExLexPointer() {
     return &spexlex;
 }
 

@@ -103,3 +103,82 @@ void SparseExtendedLexicon::printSize() {
     }
     std::cerr << "inonposlex: " << counter << std::endl;
 }
+
+void SparseExtendedLexicon::dump(nlohmann::json& jobject) {
+    for(size_t i = 0; i < zposlex.size(); i++) {
+        for(auto mapiter = zposlex[i].begin(); mapiter != zposlex[i].end(); mapiter++) {
+            jobject["zposlex"][i][std::to_string(mapiter->first)] = mapiter->second;
+        }
+    }
+
+    for(size_t i = 0; i < iposlex.size(); i++) {
+        for(auto mapiter = iposlex[i].begin(); mapiter != iposlex[i].end(); mapiter++) {
+            jobject["iposlex"][i][std::to_string(mapiter->first)] = mapiter->second;
+        }
+    }
+
+    for(size_t i = 0; i < znonposlex.size(); i++) {
+        for(auto mapiter = znonposlex[i].begin(); mapiter != znonposlex[i].end(); mapiter++) {
+            jobject["znonposlex"][i][std::to_string(mapiter->first)] = mapiter->second;
+        }
+    }
+
+    for(size_t i = 0; i < inonposlex.size(); i++) {
+        for(auto mapiter = inonposlex[i].begin(); mapiter != inonposlex[i].end(); mapiter++) {
+            jobject["inonposlex"][i][std::to_string(mapiter->first)] = mapiter->second;
+        }
+    }
+}
+
+void SparseExtendedLexicon::restore(nlohmann::json& jobject) {
+    auto jiter = jobject.find("zposlex");
+    if(jobject.find("zposlex") != jobject.end()) {
+        zposlex.resize(jiter->size());
+        for(size_t i = 0; i < jiter->size(); i++) {
+            for(auto mapiter = jiter->at(i).begin(); mapiter != jiter->at(i).end(); mapiter++) {
+                unsigned int key = std::stoul(mapiter.key());
+                zposlex[i].insert(std::make_pair(key, mapiter.value()));
+            }
+        }
+    }
+
+    jiter = jobject.find("iposlex");
+    if(jobject.find("iposlex") != jobject.end()) {
+        iposlex.resize(jiter->size());
+        for(size_t i = 0; i < jiter->size(); i++) {
+            for(auto mapiter = jiter->at(i).begin(); mapiter != jiter->at(i).end(); mapiter++) {
+                unsigned int key = std::stoul(mapiter.key());
+                iposlex[i].insert(std::make_pair(key, mapiter.value()));
+            }
+        }
+    }
+
+    jiter = jobject.find("znonposlex");
+    if(jobject.find("znonposlex") != jobject.end()) {
+        znonposlex.resize(jiter->size());
+        for(size_t i = 0; i < jiter->size(); i++) {
+            for(auto mapiter = jiter->at(i).begin(); mapiter != jiter->at(i).end(); mapiter++) {
+                unsigned int key = std::stoul(mapiter.key());
+                znonposlex[i].insert(std::make_pair(key, mapiter.value()));
+            }
+        }
+    }
+
+    jiter = jobject.find("inonposlex");
+    if(jobject.find("inonposlex") != jobject.end()) {
+        inonposlex.resize(jiter->size());
+        for(size_t i = 0; i < jiter->size(); i++) {
+            for(auto mapiter = jiter->at(i).begin(); mapiter != jiter->at(i).end(); mapiter++) {
+                unsigned int key = std::stoul(mapiter.key());
+                inonposlex[i].insert(std::make_pair(key, mapiter.value()));
+            }
+        }
+    }
+}
+
+void SparseExtendedLexicon::clear() {
+    zposlex.clear();
+    znonposlex.clear();
+    iposlex.clear();
+    inonposlex.clear();
+}
