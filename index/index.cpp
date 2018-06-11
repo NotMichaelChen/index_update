@@ -95,7 +95,22 @@ void Index::insertNPPostings(MatcherInfo& results) {
             //Don't change in other cases
         }
 
-        nonpositional_index[entry.termid].emplace_back(entry.termid, np_iter->docID, np_iter->freq);
+        GlobalType::NonPosIndex::iterator insertioniter;
+
+        //Lookup where the posting list is in the index for the given termID
+        auto iter_lookup = nonpositional_lookup.find(entry.termid);
+        if(iter_lookup == nonpositional_lookup.end()) {
+            //Construct posting list for the term since it doesn't exist
+            auto results = nonpositional_index.emplace(std::make_pair(entry.termid, std::vector<nPosting>{}));
+            nonpositional_lookup[entry.termid] = results.first;
+
+            insertioniter = results.first;
+        }
+        else {
+            insertioniter = iter_lookup->second;
+        }
+
+        insertioniter->second.emplace_back(entry.termid, np_iter->docID, np_iter->freq);
     }
 
     nonpositional_size += results.NPpostings.size();
@@ -103,6 +118,7 @@ void Index::insertNPPostings(MatcherInfo& results) {
         //when dynamic index cannot fit into memory, write to disk
         std::cerr << "Writing non-positional index" << std::endl;
         staticwriter.write_np_disk(nonpositional_index.begin(), nonpositional_index.end());
+        nonpositional_lookup.clear();
         nonpositional_index.clear();
         nonpositional_size = 0;
     }
@@ -113,13 +129,29 @@ void Index::insertPPostings(MatcherInfo& results) {
     for(auto p_iter = results.Ppostings.begin(); p_iter != results.Ppostings.end(); p_iter++) {
         Lex_data entry = lex.getEntry(p_iter->term);
 
-        positional_index[entry.termid].emplace_back(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
+        GlobalType::PosIndex::iterator insertioniter;
+
+        //Lookup where the posting list is in the index for the given termID
+        auto iter_lookup = positional_lookup.find(entry.termid);
+        if(iter_lookup == positional_lookup.end()) {
+            //Construct posting list for the term since it doesn't exist
+            auto results = positional_index.emplace(std::make_pair(entry.termid, std::vector<Posting>{}));
+            positional_lookup[entry.termid] = results.first;
+
+            insertioniter = results.first;
+        }
+        else {
+            insertioniter = iter_lookup->second;
+        }
+
+        insertioniter->second.emplace_back(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
     }
 
     positional_size += results.Ppostings.size();
     if(positional_size > POSTING_LIMIT) {
         std::cerr << "Writing positional index" << std::endl;
         staticwriter.write_p_disk(positional_index.begin(), positional_index.end());
+        positional_lookup.clear();
         positional_index.clear();
         positional_size = 0;
     }

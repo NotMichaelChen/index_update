@@ -5,6 +5,7 @@
 #include <map>
 #include <unordered_map>
 
+#include "sparsepp/spp.h"
 #include "lexicon.hpp"
 #include "posting.hpp"
 #include "Structures/documentstore.h"
@@ -39,6 +40,8 @@ private:
     GlobalType::NonPosIndex nonpositional_index;
     //TODO: Can this be obtained from docstore?
     std::unordered_map<unsigned int, unsigned int> doclength;
+    spp::sparse_hash_map<unsigned int, GlobalType::PosIndex::iterator> positional_lookup;
+    spp::sparse_hash_map<unsigned int, GlobalType::NonPosIndex::iterator> nonpositional_lookup;
     double avgdoclength;
 
     unsigned long positional_size;
