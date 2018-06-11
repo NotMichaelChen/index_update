@@ -27,6 +27,10 @@ clean:
 debug: CFLAGS+=$(DEBUG)
 debug: index
 
+.PHONY: debug-optimize
+debug-optimize: CFLAGS+=$(DEBUG-OPTIMIZE)
+debug-optimize: index
+
 .PHONY: optimize
 optimize: CFLAGS+=$(OPTIMIZE)
 optimize: index
