@@ -21,7 +21,10 @@ query_primitive::query_primitive(unsigned int termID, GlobalType::NonPosIndex& i
 
         unsigned int indexnum = std::stoul(name.substr(1));
 
-        lists.emplace_back(termID, staticpath + "/" + name, exlex.getNonPosLEQOffset(termID, indexnum, isZindex));
+        try {
+            lists.emplace_back(termID, staticpath + "/" + name, exlex.getNonPosLEQOffset(termID, indexnum, isZindex));
+        }
+        catch(const std::invalid_argument& e) {}
     }
 
     curdocIDs.resize(lists.size());

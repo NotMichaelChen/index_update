@@ -42,7 +42,7 @@ query_primitive_low::query_primitive_low(unsigned int termID, std::string path, 
     }
 
     if(disktermID != termID) {
-        //termID doesn't exist in this index
+        throw std::invalid_argument("Error, term does not exist in index");
     }
 
     readFromBytes(postinglistlength, ifile);
