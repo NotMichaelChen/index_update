@@ -9,11 +9,10 @@
 std::list<uint8_t> VBEncode(unsigned int num) {
     std::list<uint8_t> bytes;
 
-    while(true) {
-        bytes.push_front(num % 128);
-        if(num < 128)
-            break;
+    bytes.push_front(num % 128);
+    while(num >= 128) {
         num /= 128;
+        bytes.push_front(num % 128);
     }
     bytes.back() += 128;
     return bytes;

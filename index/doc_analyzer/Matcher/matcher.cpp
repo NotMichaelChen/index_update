@@ -28,7 +28,7 @@ namespace Matcher {
     //Helper functions to make block traversal more clean
     bool incrementIndex(int beginloc, size_t blocklength, int& index, int& blockindex);
 
-    pair<vector<ExternNPposting>, vector<ExternPposting>>
+    pair<unordered_map<string, ExternNPposting>, vector<ExternPposting>>
     getPostings(vector<shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int &fragID, StringEncoder& se) {
         //Which block to skip next
         int blockindex = 0;
@@ -49,7 +49,7 @@ namespace Matcher {
             //Word not yet indexed
             if(nppostingsmap.find(decodedword) == nppostingsmap.end()) {
                 ExternNPposting newposting(decodedword, doc_id, se.getNewCount(decodedword));
-                nppostingsmap.insert(make_pair(decodedword, newposting));
+                nppostingsmap.emplace(make_pair(decodedword, ExternNPposting{decodedword, doc_id, se.getNewCount(decodedword)}));
             }
 
             //Condition prevents attempting to access an empty vector
@@ -73,12 +73,10 @@ namespace Matcher {
             string decodedword = se.decodeNum(*(se.getNewIter()+index));
             //Word not yet indexed in nonpositional map
             if(nppostingsmap.find(decodedword) == nppostingsmap.end()) {
-                ExternNPposting newposting(decodedword, doc_id, se.getNewCount(decodedword));
-                nppostingsmap.insert(make_pair(decodedword, newposting));
+                nppostingsmap.emplace(make_pair(decodedword, ExternNPposting{decodedword, doc_id, se.getNewCount(decodedword)}));
             }
             //Always insert positional posting for a word
-            ExternPposting newposting(decodedword, doc_id, fragID, index);
-            ppostingslist.push_back(newposting);
+            ppostingslist.emplace_back(decodedword, doc_id, fragID, index);
 
             if(blockindex < commonblocks.size()) {
                 bool skip = incrementIndex(commonblocks[blockindex]->newloc, commonblocks[blockindex]->run.size(), index, blockindex);
@@ -90,14 +88,7 @@ namespace Matcher {
                 ++index;
         }
 
-        vector<ExternNPposting> nppostingslist;
-        nppostingslist.reserve(nppostingsmap.size());
-
-        for(auto kv : nppostingsmap) {
-            nppostingslist.push_back(kv.second);
-        }
-
-        return make_pair(nppostingslist, ppostingslist);
+        return make_pair(nppostingsmap, ppostingslist);
     }
 
     //Helper functions to make block traversal more clean

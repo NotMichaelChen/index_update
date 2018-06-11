@@ -76,21 +76,21 @@ void Index::insertNPPostings(MatcherInfo& results) {
     bool isFirstDoc = (results.se.getOldSize() == 0);
     //Insert NP postings
     for(auto np_iter = results.NPpostings.begin(); np_iter != results.NPpostings.end(); np_iter++) {
-        Lex_data entry = lex.getEntry(np_iter->term);
+        Lex_data entry = lex.getEntry(np_iter->second.term);
 
         //Update entry freq
         //TODO: Refactor updatefreq method to be more convenient to use
         if(isFirstDoc) {
-            lex.updateFreq(np_iter->term, entry.f_t+1);
+            lex.updateFreq(np_iter->second.term, entry.f_t+1);
         }
         else {
             //In old, not in new
-            if(results.se.inOld(np_iter->term) && !results.se.inNew(np_iter->term)) {
-                lex.updateFreq(np_iter->term, entry.f_t-1);
+            if(results.se.inOld(np_iter->second.term) && !results.se.inNew(np_iter->second.term)) {
+                lex.updateFreq(np_iter->second.term, entry.f_t-1);
             }
             //In new, not in old
-            else if(!results.se.inOld(np_iter->term) && results.se.inNew(np_iter->term)) {
-                lex.updateFreq(np_iter->term, entry.f_t+1);
+            else if(!results.se.inOld(np_iter->second.term) && results.se.inNew(np_iter->second.term)) {
+                lex.updateFreq(np_iter->second.term, entry.f_t+1);
             }
             //Don't change in other cases
         }
@@ -110,7 +110,7 @@ void Index::insertNPPostings(MatcherInfo& results) {
             insertioniter = iter_lookup->second;
         }
 
-        insertioniter->second.emplace_back(entry.termid, np_iter->docID, np_iter->freq);
+        insertioniter->second.emplace_back(entry.termid, np_iter->second.docID, np_iter->second.freq);
     }
 
     nonpositional_size += results.NPpostings.size();

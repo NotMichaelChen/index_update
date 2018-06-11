@@ -12,10 +12,10 @@
 
 //A collection of positional/nonpositional postings and translation vector
 struct MatcherInfo {
-    MatcherInfo(std::vector<ExternNPposting> n, std::vector<ExternPposting> p, std::vector<Matcher::Translation> t, Matcher::StringEncoder s, int m)
+    MatcherInfo(std::unordered_map<std::string, ExternNPposting> n, std::vector<ExternPposting> p, std::vector<Matcher::Translation> t, Matcher::StringEncoder s, int m)
         : NPpostings(n), Ppostings(p), translations(t), se(s), maxfragID(m) {}
 
-    std::vector<ExternNPposting> NPpostings;
+    std::unordered_map<std::string, ExternNPposting> NPpostings;
     std::vector<ExternPposting> Ppostings;
     std::vector<Matcher::Translation> translations;
     Matcher::StringEncoder se;
