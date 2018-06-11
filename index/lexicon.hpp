@@ -36,7 +36,8 @@ public:
     size_t getSize();
 
 private:
-    void initEntry(std::string& term);
+    spp::sparse_hash_map<std::string, Lex_data>::iterator initEntry(std::string& term);
+    
     spp::sparse_hash_map<std::string, Lex_data> lex;
     //std::unordered_map<std::string, Lex_data> lex;
     unsigned int nextID;

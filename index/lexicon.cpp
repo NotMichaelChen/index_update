@@ -9,9 +9,7 @@ Lexicon::Lexicon() : nextID(0) {}
 Lex_data Lexicon::getEntry(string& term) {
     auto iter = lex.find(term);
     if(iter == lex.end()) {
-        initEntry(term);
-        //Re-get iterator
-        iter = lex.find(term);
+        iter = initEntry(term);
     }
     return iter->second;
 }
@@ -19,20 +17,16 @@ Lex_data Lexicon::getEntry(string& term) {
 void Lexicon::updateFreq(string& term, int new_freq) {
     auto iter = lex.find(term);
     if(iter == lex.end()) {
-        initEntry(term);
-        //Re-get iterator
-        iter = lex.find(term);
+        iter = initEntry(term);
     }
     iter->second.f_t = new_freq;
 }
 
-void Lexicon::initEntry(string& term) {
-    auto iter = lex.find(term);
-    //Only init the entry if it does not exist
-    if(iter == lex.end()) {
-        lex.emplace(term, Lex_data{nextID, 0});
-        nextID++;
-    }
+//term must *NOT* exist inside of the lexicon already
+spp::sparse_hash_map<std::string, Lex_data>::iterator Lexicon::initEntry(string& term) {
+    auto results = lex.emplace(term, Lex_data{nextID, 0});
+    nextID++;
+    return results.first;
 }
 
 //Adds lexicon data to the json object for later dumping to disk
