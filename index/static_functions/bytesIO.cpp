@@ -1,13 +1,11 @@
 #include "bytesIO.hpp"
 
-// Writes a vector of numbers byte by byte to the given file stream
+// Writes a vector of bytes to the given file stream
 // Returns how many bytes it wrote to the stream
 unsigned int writeBytesBlock(std::vector<uint8_t>& num, std::ofstream& ofile) {
     /* Write the compressed posting to file byte by byte. */
     unsigned int start = ofile.tellp();
-    for(auto it = num.begin(); it != num.end(); it++){
-        writeAsBytes(*it, ofile);
-    }
+    ofile.write(reinterpret_cast<const char*>(num.data()), num.size());
     unsigned int end = ofile.tellp();
     return end - start;
 }
