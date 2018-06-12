@@ -59,7 +59,7 @@ namespace Matcher {
         //**We assume that index=0 means 1 hop from S
         std::unordered_map<std::shared_ptr<Block>, std::vector<TableEntry>> tablelist;
         //The maximum number of steps we're allowed to take through the graph
-        int maxsteps;
+        size_t maxsteps;
     };
 }
 

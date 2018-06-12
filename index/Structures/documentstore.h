@@ -27,7 +27,7 @@ namespace Structures {
         void insertDocument(std::string url, std::string doc, unsigned int maxfragID, std::string timestamp);
         void dump();
 
-        int getDocumentCount();
+        size_t getDocumentCount();
         int getNextDocID();
 
         void clear();

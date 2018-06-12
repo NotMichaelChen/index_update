@@ -77,9 +77,9 @@ namespace Matcher {
     
     //Decodes a stream of ints into a list of words
     //Unknown ints are replaced with ??
-    vector<string> StringEncoder::decodeStream(vector<int>& stream) {
+    vector<string> StringEncoder::decodeStream(vector<unsigned int>& stream) {
         vector<string> decodedlist;
-        for(int i : stream) {
+        for(unsigned int i : stream) {
             if(i < lookup.size())
                 decodedlist.push_back(lookup[i]);
             else
@@ -91,7 +91,7 @@ namespace Matcher {
     
     //Decode an individual int
     //An unknown int returns ??
-    string StringEncoder::decodeNum(int num) {
+    string StringEncoder::decodeNum(unsigned int num) {
         if(num < lookup.size())
             return lookup[num];
         else return "??";

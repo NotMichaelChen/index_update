@@ -54,8 +54,9 @@ namespace Matcher {
         for(size_t i = 0; i < bestlist.size(); ++i) {
             int curtotalweight = bestlist[i].distance;
             if(curtotalweight == 0) break;
+            if(curtotalweight - prevtotalweight < 0) break;
             
-            int margin = curtotalweight - prevtotalweight;
+            unsigned int margin = curtotalweight - prevtotalweight;
             //ax - y > 0?
             //If there isn't enough saved common text to take the next pair, then return the current one
             if(margin < a*(i+1)) {

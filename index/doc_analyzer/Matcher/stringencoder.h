@@ -15,9 +15,9 @@ namespace Matcher {
         
         //Decodes a stream of integers into a list of words
         //Unknown ints are replaced with ??
-        std::vector<std::string> decodeStream(std::vector<int>& stream);
+        std::vector<std::string> decodeStream(std::vector<unsigned int>& stream);
         //Decodes an individual integer into a single word
-        std::string decodeNum(int num);
+        std::string decodeNum(unsigned int num);
 
         //Get the count of a word in the new document
         int getNewCount(std::string word);
@@ -53,7 +53,7 @@ namespace Matcher {
         //Should be appended whenever nextcode is incremented
         std::vector<std::string> lookup;
         //Represents next unique identifier
-        int nextcode;
+        unsigned int nextcode;
     };
 }
 

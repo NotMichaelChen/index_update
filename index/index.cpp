@@ -17,7 +17,7 @@ std::vector<unsigned int> Index::query(std::vector<std::string> words) {
         docscontaining.push_back(entry.f_t);
     }
 
-    int doccount = docstore.getDocumentCount();
+    size_t doccount = docstore.getDocumentCount();
 
     DAATStatData statistics = {doccount, &docscontaining, &doclength, avgdoclength};
 

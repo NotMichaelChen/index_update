@@ -33,7 +33,7 @@ namespace Structures {
         client.select(1);
     }
     
-    int TranslationTable::apply(int docID, int fragID, int position) {
+    int TranslationTable::apply(int docID, size_t fragID, int position) {
         vector<cpp_redis::reply> response;
         
         client.lrange(to_string(docID), 0, -1, [&response](cpp_redis::reply& reply) {
@@ -47,7 +47,7 @@ namespace Structures {
             return -1;
         
         int finalposition = position;
-        for(int i = fragID; i < response.size(); ++i) {
+        for(size_t i = fragID; i < response.size(); ++i) {
             finalposition = Matcher::applyTranslation(finalposition, stringToTrans(response[i].as_string()));
             //return if position becomes invalidated
             //cannot keep running; position might accidentally become revalidated

@@ -25,12 +25,12 @@ namespace Matcher {
     }
 
     //Helper functions to make block traversal more clean
-    bool incrementIndex(int beginloc, size_t blocklength, int& index, int& blockindex);
+    bool incrementIndex(int beginloc, size_t blocklength, int& index, size_t& blockindex);
 
     pair<unordered_map<string, ExternNPposting>, vector<ExternPposting>>
     getPostings(vector<shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int &fragID, StringEncoder& se) {
         //Which block to skip next
-        int blockindex = 0;
+        size_t blockindex = 0;
         unordered_map<string, ExternNPposting> nppostingsmap;
         vector<ExternPposting> ppostingslist;
 
@@ -95,7 +95,7 @@ namespace Matcher {
     //Given an index and a block, either increment the index or skip the common block
     //Returns whether a skip was performed or not
     //To make the code reusable, pass only the block beginning and its length
-    bool incrementIndex(int beginloc, size_t blocklength, int& index, int& blockindex) {
+    bool incrementIndex(int beginloc, size_t blocklength, int& index, size_t& blockindex) {
         ++index;
         
         if(index >= beginloc) {

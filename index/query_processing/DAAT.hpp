@@ -9,7 +9,7 @@
 
 //Statistical data from the index used during first-stage query processing
 struct DAATStatData {
-    unsigned int totaldocs;
+    size_t totaldocs;
     //Docs containing term t
     std::vector<unsigned int>* docscontaining;
     //Frequency of term t in document d found during DAAT

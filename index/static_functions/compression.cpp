@@ -4,7 +4,7 @@
 #include <algorithm>
 
 //Pads the given vector of bytes to the boundary of a given word length
-void pad(std::vector<uint8_t>& data, int len) {
+void pad(std::vector<uint8_t>& data, unsigned int len) {
     size_t sizeincrease = len - (data.size() % len);
     if(sizeincrease != len)
         data.resize(data.size() + sizeincrease);
