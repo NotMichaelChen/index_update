@@ -2,7 +2,6 @@
 #define QUERY_PRIMITIVE_LOW_HPP
 
 #include <vector>
-#include <map>
 #include <fstream>
 
 #include "posting.hpp"

@@ -5,7 +5,6 @@
 #include <grp.h>
 #include <sys/types.h>
 #include <fstream>
-#include <vector>
 #include <sys/stat.h>
 
 void do_chown(const char *file_path, const char *user_name, const char *group_name) {

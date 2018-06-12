@@ -1,14 +1,6 @@
 #include "parse_engine.hpp"
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <chrono>
-
 #include "index.hpp"
-#include "redis.hpp"
-#include "document_readers/reader_interface.hpp"
 #include "document_readers/WETreader.hpp"
 #include "document_readers/RAWreader.hpp"
 

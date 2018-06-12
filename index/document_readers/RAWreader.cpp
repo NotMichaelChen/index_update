@@ -1,7 +1,6 @@
 #include "RAWreader.hpp"
 
 #include <algorithm>
-#include <iostream>
 
 #include "util.hpp"
 

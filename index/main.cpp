@@ -1,16 +1,5 @@
-#include "dirent.h"
-
-#include <fstream>
-#include <chrono>
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-
 #include "script_engine/parse_engine.hpp"
-#include "index.hpp"
 #include "redis.hpp"
-#include "util.hpp"
-#include "document_readers/WETreader.hpp"
 
 using namespace std;
 

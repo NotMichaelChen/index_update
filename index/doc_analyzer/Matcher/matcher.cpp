@@ -1,7 +1,6 @@
 #include "matcher.h"
 
 #include <algorithm>
-#include <iostream>
 
 #include "distancetable.h"
 

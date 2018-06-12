@@ -2,17 +2,16 @@
 #define INDEX_HPP
 
 #include <vector>
-#include <map>
 #include <unordered_map>
 
 #include "sparsepp/spp.h"
 #include "lexicon.hpp"
-#include "posting.hpp"
 #include "Structures/documentstore.h"
 #include "Structures/translationtable.h"
 #include "static_index.hpp"
 #include "global_parameters.hpp"
 #include "doc_analyzer/analyzer.h"
+#include "posting.hpp"
 
 //This index does not use compression
 class Index {

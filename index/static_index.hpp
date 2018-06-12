@@ -2,9 +2,7 @@
 #define STATIC_INDEX_HPP
 
 #include <string>
-#include <map>
 #include <vector>
-#include <functional>
 
 #include "global_parameters.hpp"
 #include "sparse_lexicon.hpp"

@@ -1,8 +1,6 @@
 #include "static_index.hpp"
 
 #include <iostream>
-#include <functional>
-#include <algorithm>
 
 #include "static_functions/postingIO.hpp"
 #include "static_functions/bytesIO.hpp"

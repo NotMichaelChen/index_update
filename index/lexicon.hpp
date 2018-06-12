@@ -6,10 +6,7 @@
 #ifndef LEXICON_HPP
 #define LEXICON_HPP
 
-#include <unordered_map>
 #include <string>
-#include <vector>
-#include <sstream>
 
 #include "json.hpp"
 #include "sparsepp/spp.h"
@@ -39,7 +36,6 @@ private:
     spp::sparse_hash_map<std::string, Lex_data>::iterator initEntry(std::string& term);
     
     spp::sparse_hash_map<std::string, Lex_data> lex;
-    //std::unordered_map<std::string, Lex_data> lex;
     unsigned int nextID;
 };
 

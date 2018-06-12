@@ -1,6 +1,5 @@
 #include "compression.hpp"
 
-#include <string>
 #include <stdexcept>
 #include <algorithm>
 

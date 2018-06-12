@@ -2,7 +2,6 @@
 #define TRANSLATIONTABLE_H
 
 #include <vector>
-#include <unordered_map>
 #include <cpp_redis/cpp_redis>
 
 #ifdef _WIN32

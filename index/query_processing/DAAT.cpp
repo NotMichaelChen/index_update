@@ -1,5 +1,6 @@
 #include "DAAT.hpp"
 
+#include "query_primitive.hpp"
 #include "ranking_functions/BM25.hpp"
 
 struct ScorePair {

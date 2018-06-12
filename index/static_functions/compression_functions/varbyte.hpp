@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <list>
-#include <fstream>
+#include <cstdint>
 
 std::list<uint8_t> VBEncode(unsigned int num);
 std::vector<unsigned int> VBDecode(std::vector<uint8_t>& bytestream);

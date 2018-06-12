@@ -1,12 +1,10 @@
 #ifndef DAAT_HPP
 #define DAAT_HPP
 
-#include <queue>
 #include <vector>
 #include <unordered_map>
 
-#include "query_primitive.hpp"
-#include "posting.hpp"
+#include "sparse_lexicon.hpp"
 #include "global_parameters.hpp"
 
 //Statistical data from the index used during first-stage query processing

@@ -1,6 +1,5 @@
 #include "postingIO.hpp"
 
-#include <algorithm>
 #include <cstring>
 
 #include "global_parameters.hpp"

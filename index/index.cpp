@@ -1,13 +1,10 @@
 #include "index.hpp"
 
-#include <iomanip>
 #include <sys/stat.h>
-#include <algorithm>
+#include <fstream>
 
-#include "global_parameters.hpp"
 #include "util.hpp"
 #include "query_processing/DAAT.hpp"
-#include "json.hpp"
 #include "redis.hpp"
 
 std::vector<unsigned int> Index::query(std::vector<std::string> words) {

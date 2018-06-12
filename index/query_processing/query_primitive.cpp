@@ -1,8 +1,5 @@
 #include "query_primitive.hpp"
 
-#include <dirent.h>
-
-#include "global_parameters.hpp"
 #include "util.hpp"
 
 query_primitive::query_primitive(unsigned int termID, GlobalType::NonPosIndex& index, SparseExtendedLexicon& exlex, std::string staticpath) {

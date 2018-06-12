@@ -1,9 +1,5 @@
 #include "varbyte.hpp"
 
-#include <bitset>
-#include <math.h>
-#include <algorithm>
-
 //https://nlp.stanford.edu/IR-book/html/htmledition/variable-byte-codes-1.html
 
 std::list<uint8_t> VBEncode(unsigned int num) {

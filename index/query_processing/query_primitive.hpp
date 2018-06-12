@@ -1,7 +1,6 @@
 #ifndef QUERY_PRIMITIVE_HPP
 #define QUERY_PRIMITIVE_HPP
 
-#include <map>
 #include <vector>
 
 #include "posting.hpp"

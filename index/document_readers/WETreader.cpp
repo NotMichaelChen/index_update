@@ -1,7 +1,6 @@
 #include "WETreader.hpp"
 
 #include <algorithm>
-#include <iostream>
 
 #include "util.hpp"
 

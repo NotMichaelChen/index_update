@@ -2,7 +2,6 @@
 #define POSTINGIO_HPP
 
 #include <vector>
-#include <string>
 #include <fstream>
 
 #include "posting.hpp"
