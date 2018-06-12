@@ -11,7 +11,7 @@ namespace Matcher {
     //Also stores information about terms exclusive to either version
     class StringEncoder {
     public:
-        StringEncoder(std::string& oldfile, std::string& newfile);
+        StringEncoder(std::string oldfile, std::string newfile);
         
         //Decodes a stream of integers into a list of words
         //Unknown ints are replaced with ??

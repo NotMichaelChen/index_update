@@ -6,19 +6,28 @@
 using namespace std;
 
 namespace Matcher {
-    StringEncoder::StringEncoder(string& oldfile, string& newfile) : nextcode(0) {
+    //Returns whether punctuation was stripped
+    bool stripPunctuation(string& s) {
+        auto from = find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(ispunct)));
+        auto to = find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(ispunct))).base();
+        //Skip if word is just punctuation
+        if(to == s.begin())
+            return false;
+        
+        s = string(from, to);
+        return true;
+    }
+
+    StringEncoder::StringEncoder(string oldfile, string newfile) : nextcode(0) {
+        transform(oldfile.begin(), oldfile.end(), oldfile.begin(), ::tolower);
+        transform(newfile.begin(), newfile.end(), newfile.begin(), ::tolower);
+
         string word;
         stringstream oldstream(oldfile);
         while(oldstream >> word) {
-            transform(word.begin(), word.end(), word.begin(), ::tolower);
             //Strip punctuation
-            auto from = find_if(word.begin(), word.end(), not1(ptr_fun<int, int>(ispunct)));
-            auto to = find_if(word.rbegin(), word.rend(), not1(ptr_fun<int, int>(ispunct))).base();
-            //Skip if word is just punctuation
-            if(to == word.begin())
+            if(!stripPunctuation(word))
                 continue;
-            
-            word = string(from, to);
 
             auto results = dictionary.insert(make_pair(word, nextcode));
             //If inserted
@@ -27,22 +36,16 @@ namespace Matcher {
                 ++nextcode;
             }
             //For clarity
-            auto iter = results.first;
-            oldencoded.push_back(iter->second);
+            auto dictiter = results.first;
+            oldencoded.push_back(dictiter->second);
             oldexclusive.insert(word);
         }
         
         stringstream newstream(newfile);
         while(newstream >> word) {
-            transform(word.begin(), word.end(), word.begin(), ::tolower);
             //Strip punctuation
-            auto from = find_if(word.begin(), word.end(), not1(ptr_fun<int, int>(ispunct)));
-            auto to = find_if(word.rbegin(), word.rend(), not1(ptr_fun<int, int>(ispunct))).base();
-            //Skip if word is just punctuation
-            if(to == word.begin())
+            if(!stripPunctuation(word))
                 continue;
-            
-            word = string(from, to);
 
             auto results = dictionary.insert(make_pair(word, nextcode));
             //If inserted
@@ -54,8 +57,8 @@ namespace Matcher {
                 newcount[word] += 1;
             }
             //For clarity
-            auto iter = results.first;
-            newencoded.push_back(iter->second);
+            auto dictiter = results.first;
+            newencoded.push_back(dictiter->second);
             newexclusive.insert(word);
         }
 
@@ -71,7 +74,7 @@ namespace Matcher {
             compareset = &oldexclusive;
         }
 
-        //Iteratre through the smaller set and see if any of its elements are in the other set
+        //Iterate through the smaller set and see if any of its elements are in the other set
         auto iter = iterateset->begin();
         while(iter != iterateset->end()) {
 
