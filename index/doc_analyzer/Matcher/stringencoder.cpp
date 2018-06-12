@@ -3,6 +3,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include "util.hpp"
+
 using namespace std;
 
 namespace Matcher {
@@ -22,44 +24,44 @@ namespace Matcher {
         transform(oldfile.begin(), oldfile.end(), oldfile.begin(), ::tolower);
         transform(newfile.begin(), newfile.end(), newfile.begin(), ::tolower);
 
-        string word;
-        stringstream oldstream(oldfile);
-        while(oldstream >> word) {
+        vector<string> oldtokens = Utility::splitString(oldfile, " \n\t\r\f");
+        vector<string> newtokens = Utility::splitString(newfile, " \n\t\r\f");
+
+        for(string& token : oldtokens) {
             //Strip punctuation
-            if(!stripPunctuation(word))
+            if(!stripPunctuation(token))
                 continue;
 
-            auto results = dictionary.insert(make_pair(word, nextcode));
+            auto results = dictionary.insert(make_pair(token, nextcode));
             //If inserted
             if(results.second) {
-                lookup.push_back(word);
+                lookup.push_back(token);
                 ++nextcode;
             }
             //For clarity
             auto dictiter = results.first;
             oldencoded.push_back(dictiter->second);
-            oldexclusive.insert(word);
+            oldexclusive.insert(token);
         }
         
-        stringstream newstream(newfile);
-        while(newstream >> word) {
+        for(string& token : newtokens) {
             //Strip punctuation
-            if(!stripPunctuation(word))
+            if(!stripPunctuation(token))
                 continue;
 
-            auto results = dictionary.insert(make_pair(word, nextcode));
+            auto results = dictionary.insert(make_pair(token, nextcode));
             //If inserted
             if(results.second) {
-                newcount[word] = 1;
-                lookup.push_back(word);
+                newcount[token] = 1;
+                lookup.push_back(token);
                 ++nextcode;
             } else {
-                newcount[word] += 1;
+                newcount[token] += 1;
             }
             //For clarity
             auto dictiter = results.first;
             newencoded.push_back(dictiter->second);
-            newexclusive.insert(word);
+            newexclusive.insert(token);
         }
 
         //Create a pointer to the smaller set so we don't have to iterate through as many elements

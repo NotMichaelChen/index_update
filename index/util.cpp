@@ -2,6 +2,7 @@
 
 #include "dirent.h"
 #include <iomanip>
+#include <cstring>
 
 namespace Utility
 {
@@ -52,6 +53,22 @@ std::vector<std::string> splitString(std::string& str, char c) {
         seglist.push_back(segment);
     
     return seglist;
+}
+
+std::vector<std::string> splitString(std::string& str, std::string delim) {
+    std::vector<std::string> tokens;
+    char* pMutableString = (char*) malloc( str.size()+1 );
+    strcpy( pMutableString, str.c_str() );
+
+    char* saveptr;
+    char *p = strtok_r(pMutableString, delim.data(), &saveptr);
+    while (p) {
+        tokens.emplace_back(p);
+        p = strtok_r(NULL, delim.data(), &saveptr);
+    }
+    free(pMutableString);
+
+    return tokens;
 }
 
 //https://codereview.stackexchange.com/a/40302

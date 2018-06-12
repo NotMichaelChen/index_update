@@ -13,6 +13,7 @@ namespace Utility {
     std::vector<std::string> readDirectory(std::string path);
 
     std::vector<std::string> splitString(std::string& str, char c);
+    std::vector<std::string> splitString(std::string& str, std::string delim);
 
     std::string trim(std::string const& str);
 
