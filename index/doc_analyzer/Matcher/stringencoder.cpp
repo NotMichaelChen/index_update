@@ -19,14 +19,16 @@ namespace Matcher {
                 continue;
             
             word = string(from, to);
-            
-            if(dictionary.find(word) == dictionary.end()) {
-                dictionary[word] = nextcode;
+
+            auto results = dictionary.insert(make_pair(word, nextcode));
+            //If inserted
+            if(results.second) {
                 lookup.push_back(word);
                 ++nextcode;
             }
-            
-            oldencoded.push_back(dictionary[word]);
+            //For clarity
+            auto iter = results.first;
+            oldencoded.push_back(iter->second);
             oldexclusive.insert(word);
         }
         
@@ -41,18 +43,19 @@ namespace Matcher {
                 continue;
             
             word = string(from, to);
-            
-            if(dictionary.find(word) == dictionary.end()) {
-                dictionary[word] = nextcode;
+
+            auto results = dictionary.insert(make_pair(word, nextcode));
+            //If inserted
+            if(results.second) {
                 newcount[word] = 1;
                 lookup.push_back(word);
                 ++nextcode;
-            }
-            else {
+            } else {
                 newcount[word] += 1;
             }
-            
-            newencoded.push_back(dictionary[word]);
+            //For clarity
+            auto iter = results.first;
+            newencoded.push_back(iter->second);
             newexclusive.insert(word);
         }
 
@@ -68,9 +71,24 @@ namespace Matcher {
             compareset = &oldexclusive;
         }
 
-        for(string key : *iterateset) {
-            if(compareset->find(key) != compareset->end()) {
-                compareset->erase(key);
+        //Iteratre through the smaller set and see if any of its elements are in the other set
+        auto iter = iterateset->begin();
+        while(iter != iterateset->end()) {
+
+            auto compareiter = compareset->find(*iter);
+            if(compareiter != compareset->end()) {
+                compareset->erase(*iter);
+
+                //Store the next position since this iterator will be invalidated
+                auto newiter = iter;
+                newiter++;
+
+                iterateset->erase(iter);
+                
+                iter = newiter;
+            }
+            else {
+                iter++;
             }
         }
     }
