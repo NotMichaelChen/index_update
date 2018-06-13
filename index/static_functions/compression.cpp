@@ -56,11 +56,13 @@ std::vector<unsigned int> decompress_block(std::vector<uint8_t>& block, std::vec
 std::vector<uint8_t> encode_array(std::vector<unsigned int>& nums, std::list<uint8_t> encoder(unsigned int), int padding) {
     std::list<uint8_t> bytestream;
 
+    std::list<uint8_t> numbytes;
     for(const unsigned int &n : nums) {
-        std::list<uint8_t> bytes = encoder(n);
+        numbytes = encoder(n);
         //pad(bytes,padding);
 
-        bytestream.splice(bytestream.end(), bytes);
+        //numbytes is empty after this splice
+        bytestream.splice(bytestream.end(), numbytes);
     }
 
     std::vector<uint8_t> result;
