@@ -21,8 +21,7 @@ class Lexicon {
 public:
     Lexicon();
 
-    Lex_data getEntry(std::string& term);
-    void updateFreq(std::string& term, int new_freq);
+    Lex_data& getEntry(std::string& term);
 
     //Dumps contents of lexicon into given json, under the object "lexicon"
     void dump(nlohmann::json& jobject);

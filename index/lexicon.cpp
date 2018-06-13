@@ -4,20 +4,12 @@ using namespace std;
 
 Lexicon::Lexicon() : nextID(0) {}
 
-Lex_data Lexicon::getEntry(string& term) {
+Lex_data& Lexicon::getEntry(string& term) {
     auto iter = lex.find(term);
     if(iter == lex.end()) {
         iter = initEntry(term);
     }
     return iter->second;
-}
-
-void Lexicon::updateFreq(string& term, int new_freq) {
-    auto iter = lex.find(term);
-    if(iter == lex.end()) {
-        iter = initEntry(term);
-    }
-    iter->second.f_t = new_freq;
 }
 
 //term must *NOT* exist inside of the lexicon already

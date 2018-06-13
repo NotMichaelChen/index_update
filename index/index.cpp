@@ -73,24 +73,19 @@ void Index::insertNPPostings(MatcherInfo& results) {
     bool isFirstDoc = (results.se.getOldSize() == 0);
     //Insert NP postings
     for(auto np_iter = results.NPpostings.begin(); np_iter != results.NPpostings.end(); np_iter++) {
-        Lex_data entry = lex.getEntry(np_iter->second.term);
+        Lex_data& entry = lex.getEntry(np_iter->second.term);
 
         //Update entry freq
-        //TODO: Refactor updatefreq method to be more convenient to use
-        if(isFirstDoc) {
-            lex.updateFreq(np_iter->second.term, entry.f_t+1);
-        }
-        else {
+        if(isFirstDoc)
+            entry.f_t++;
+        else
             //In old, not in new
-            if(results.se.inOld(np_iter->second.term) && !results.se.inNew(np_iter->second.term)) {
-                lex.updateFreq(np_iter->second.term, entry.f_t-1);
-            }
+            if(results.se.inOld(np_iter->second.term) && !results.se.inNew(np_iter->second.term))
+                entry.f_t--;
             //In new, not in old
-            else if(!results.se.inOld(np_iter->second.term) && results.se.inNew(np_iter->second.term)) {
-                lex.updateFreq(np_iter->second.term, entry.f_t+1);
-            }
+            else if(!results.se.inOld(np_iter->second.term) && results.se.inNew(np_iter->second.term))
+                entry.f_t++;
             //Don't change in other cases
-        }
 
         GlobalType::NonPosIndex::iterator insertioniter;
 
