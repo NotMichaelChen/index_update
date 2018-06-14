@@ -1,5 +1,12 @@
 exe/
 .vscode/
+
+# Output folders
+debug/
+debugoptimized/
+test/
+prof/
+
 todo
 
 # Prerequisites
