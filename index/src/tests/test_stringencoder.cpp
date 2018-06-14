@@ -26,6 +26,8 @@ TEST_CASE("Test stringencoder", "[stringencoder]") {
 
     std::string s = "a";
     REQUIRE(se.getNewCount(s) == 1);
+    s = "";
+    REQUIRE(se.getNewCount(s) == 0);
 
     s = "e";
     REQUIRE(se.inNew(s));

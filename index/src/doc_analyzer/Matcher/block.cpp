@@ -28,22 +28,27 @@ namespace Matcher {
         //Impossible to have common blocks if one doc is smaller than the minimum block size
         if(se.getOldSize() < minsize || se.getNewSize() < minsize || minsize < 1)
             return commonblocks;
-       
+        
         //Stores a "candidate block", extracted from the old doc
         //Each candidate can be matched multiple times with blocks from the new doc 
         multimap<unsigned int, Block> potentialblocks;
        
         //Get all possible blocks in the old file
+        vector<int> newblock;
         for(auto olditer = se.getOldIter(); olditer != se.getOldEnd() - (minsize-1); ++olditer) {
-            vector<int> newblock(olditer, olditer+minsize);
+            newblock.insert(newblock.end(), olditer, olditer+minsize);
             unsigned int blockhash = hashVector(newblock);
-            Block tempblock(olditer - se.getOldIter(), -1, newblock);
+
+            Block tempblock(olditer - se.getOldIter(), -1, move(newblock));
             potentialblocks.insert(make_pair(blockhash, tempblock));
+
+            newblock.clear();
         }
         
         //Check each block in the new file for a match with a block in the old file
+        vector<int> blockcheck;
         for(auto newiter = se.getNewIter(); newiter != se.getNewEnd() - (minsize-1); ++newiter) {
-            vector<int> blockcheck(newiter, newiter+minsize);
+            blockcheck.insert(blockcheck.end(), newiter, newiter+minsize);
             unsigned int blockhash = hashVector(blockcheck);
             
             //Get all blocks that match the current block's hash
@@ -59,6 +64,8 @@ namespace Matcher {
                     commonblocks.push_back(match);
                 }
             }
+
+            blockcheck.clear();
         }
         
         return commonblocks;
