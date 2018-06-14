@@ -36,6 +36,7 @@ src = [
     'src/script_engine/parse_engine.cpp',
     'src/Structures/translationtable.cpp',
     'src/Structures/documentstore.cpp',
+    'src/tests/blocktest.cpp',
 ]
 
 should_test = get_option('test')
