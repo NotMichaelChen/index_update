@@ -36,12 +36,16 @@ src = [
     'src/script_engine/parse_engine.cpp',
     'src/Structures/translationtable.cpp',
     'src/Structures/documentstore.cpp',
+]
+
+src_test = [
+    'src/tests/test_main.cpp',
     'src/tests/blocktest.cpp',
 ]
 
 should_test = get_option('test')
 if should_test
-    src += 'src/tests/test_main.cpp'
+    src += src_test
 else
     src += 'src/main.cpp'
 endif
