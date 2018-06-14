@@ -5,17 +5,17 @@
 using namespace std;
 
 namespace Matcher {
-    DistanceTable::DistanceTable(int blocklimit, BlockGraph& graph, vector<shared_ptr<Block>>& toporder) : maxsteps(blocklimit) {
+    DistanceTable::DistanceTable(int blocklimit, BlockGraph& graph, vector<Block>& toporder) : maxsteps(blocklimit) {
         //Initialize all vertices in graph
         //Since order doesn't matter, use toporder
-        for(shared_ptr<Block> vertex : toporder) {
+        for(Block vertex : toporder) {
             this->initVertex(vertex);
         }
         
         //Fill out the dist list for each vertex
-        for(shared_ptr<Block> vertex : toporder) {
-            vector<shared_ptr<Block>> adjacencylist = graph.getAdjacencyList(vertex);
-            for(shared_ptr<Block> neighbor : adjacencylist) {
+        for(Block vertex : toporder) {
+            vector<Block> adjacencylist = graph.getAdjacencyList(vertex);
+            for(Block neighbor : adjacencylist) {
                 this->mergeIntoNext(vertex, neighbor);
             }
         }
@@ -26,10 +26,10 @@ namespace Matcher {
         //The actual list may be shorter than maxsteps if that graph can be traversed using
         //less than "maxsteps" hops
         vector<DistanceTable::TableEntry> bestlist;
-        bestlist.resize(maxsteps, DistanceTable::TableEntry(-1, -1, nullptr, nullptr));
+        bestlist.resize(maxsteps, DistanceTable::TableEntry(-1, -1, {}, {}));
         
         //find the longest distance
-        for(auto iter = tablelist.begin(); iter != tablelist.end(); iter++) {        
+        for(auto iter = tablelist.begin(); iter != tablelist.end(); iter++) {
             vector<DistanceTable::TableEntry> testtable = iter->second;
             for(size_t i = 0; i < testtable.size(); i++) {;
                 if(testtable[i].distance > bestlist[i].distance) {
@@ -39,16 +39,16 @@ namespace Matcher {
         }
         
         //Trim any null pairs remaining, but don't trim if the list is empty
-        while(bestlist.back().current == nullptr && bestlist.size() > 0)
+        while(!bestlist.back().current.isValid() && bestlist.size() > 0)
             bestlist.pop_back();
         
         return bestlist;
     }
     
-    vector<shared_ptr<Block>> DistanceTable::findOptimalPath(int a) {
+    vector<Block> DistanceTable::findOptimalPath(int a) {
         vector<DistanceTable::TableEntry> bestlist = findAllBestPaths();
         //int refers to steps, not weight
-        DistanceTable::TableEntry bestending(-1, -1, nullptr, nullptr);
+        DistanceTable::TableEntry bestending(-1, -1, {}, {});
         
         int prevtotalweight = 0;
         for(size_t i = 0; i < bestlist.size(); ++i) {
@@ -68,21 +68,21 @@ namespace Matcher {
             prevtotalweight = curtotalweight;
         }
         
-        if(bestending.current == nullptr && !bestlist.empty())
+        if(!bestending.current.isValid() && !bestlist.empty())
             bestending = bestlist.back();
         
         return tracePath(bestending);
     }
     
-    vector<shared_ptr<Block>> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
-        vector<shared_ptr<Block>> path;
-        if(ending.current == nullptr)
+    vector<Block> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
+        vector<Block> path;
+        if(!ending.current.isValid())
             return path;
         
         path.push_back(ending.current);
         DistanceTable::TableEntry candidate = ending;
         
-        while(candidate.prev != nullptr) {
+        while(candidate.prev.isValid()) {
             path.push_back(candidate.prev);
             candidate = getPreviousEntry(candidate);
         }
@@ -92,16 +92,16 @@ namespace Matcher {
         return path;
     }
     
-    void DistanceTable::mergeIntoNext(shared_ptr<Block> prev, shared_ptr<Block> next) {
-        int weight = next->run.size();
+    void DistanceTable::mergeIntoNext(Block prev, Block next) {
+        int weight = next.run.size();
         
         //If neighbor's distlist is not large enough for comparing, resize it
         if(tablelist[next].size() < tablelist[prev].size()+1)
-            tablelist[next].resize(tablelist[prev].size()+1, DistanceTable::TableEntry(-1, -1, nullptr, nullptr));
+            tablelist[next].resize(tablelist[prev].size()+1, DistanceTable::TableEntry(-1, -1, {}, {}));
     
         //Compare each entry in prev to the entry in next+1
         for(size_t i = 0; i < tablelist[prev].size(); i++) {
-            if(tablelist[prev][i].current == nullptr)
+            if(!tablelist[prev][i].current.isValid())
                 continue;
             
             if(tablelist[prev][i].distance + weight > tablelist[next][i+1].distance) {
@@ -119,15 +119,15 @@ namespace Matcher {
     
     DistanceTable::TableEntry DistanceTable::getPreviousEntry(DistanceTable::TableEntry te) {
         if(te.steps < 2)
-            return DistanceTable::TableEntry(-1, -1, nullptr, nullptr);
+            return DistanceTable::TableEntry(-1, -1, {}, {});
         //subtract one to offset step/index difference, subtract another one to get previous step
         return tablelist[te.prev][te.steps-2];
     }
     
-    void DistanceTable::initVertex(shared_ptr<Block> V) {
+    void DistanceTable::initVertex(Block V) {
         if(tablelist.find(V) == tablelist.end()) {
             vector<DistanceTable::TableEntry> tableinit;
-            tableinit.push_back(DistanceTable::TableEntry(1, V->run.size(), V, nullptr));
+            tableinit.push_back(DistanceTable::TableEntry(1, V.run.size(), V, {}));
             //Assume that nullptr refers to the source node
             tablelist[V] = tableinit;
         }

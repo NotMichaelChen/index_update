@@ -5,7 +5,7 @@
 using namespace std;
 
 namespace Matcher {
-    vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<shared_ptr<Block>> commonblocks) {
+    vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<Block> commonblocks) {
         vector<Translation> translist;
         if(commonblocks.size() == 0)
             return translist;
@@ -17,9 +17,9 @@ namespace Matcher {
         
         //Likely not necessary, but a useful guarantee
         sort(commonblocks.begin(), commonblocks.end(), compareOld);
-        for(shared_ptr<Block> b : commonblocks) {
-            int oldlength = b->oldloc - currentloc;
-            int newlength = b->newloc - (currentloc+shift);
+        for(Block b : commonblocks) {
+            int oldlength = b.oldloc - currentloc;
+            int newlength = b.newloc - (currentloc+shift);
             
             if(oldlength != 0 || newlength != 0) {
                 Translation trans(
@@ -34,7 +34,7 @@ namespace Matcher {
             }
             
             //want to go 1 past the edge; do not subtract 1 from run_size
-            currentloc = b->oldloc + b->run.size();
+            currentloc = b.oldloc + b.run.size();
         }
         
         //Add the last edit region if a common block does not extend to the end

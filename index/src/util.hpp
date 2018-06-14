@@ -9,6 +9,10 @@ namespace Utility {
     //Gets a timestamp of the current time formatted as a string
     std::string getTimestamp();
 
+    //Hashes a vector of ints
+    //Not guaranteed to be optimal
+    unsigned int hashVector(const std::vector<int>& v);
+
     //Gets a list of files in a given directory
     std::vector<std::string> readDirectory(std::string path);
 

@@ -16,6 +16,17 @@ std::string getTimestamp() {
     return oss.str();
 }
 
+//https://stackoverflow.com/a/3404820
+//May not be optimal
+unsigned int hashVector(const std::vector<int>& v) {
+    unsigned int hc = v.size();
+    for(size_t i = 0; i < v.size(); i++)
+    {
+        hc = hc*314159 + v[i];
+    }
+    return hc;
+}
+
 //Gets all files inside the given directory
 //Returns a vector of *only* the file names
 //http://forum.codecall.net/topic/60157-read-all-files-in-a-folder/

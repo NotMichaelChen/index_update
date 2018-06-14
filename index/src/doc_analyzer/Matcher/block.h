@@ -1,20 +1,20 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
-#include <memory>
 #include <vector>
 
 #include "stringencoder.h"
-
-//Extracts all potential common blocks between file versions that may be selected by the graph algorithm
+#include "util.hpp"
 
 namespace Matcher {
     //Represents a block of text which may be common between the two files
     struct Block {
-        Block(int o, int n, std::vector<int> b) : run(b), oldloc(o), newloc(n)  {}
+        Block();
+        Block(int o, int n, std::vector<int> b);
         
-        int oldendloc() { return oldloc + run.size() - 1; }
-        int newendloc() { return newloc + run.size() - 1; }
+        int oldendloc();
+        int newendloc();
+        bool isValid();
             
         //The "run" of common text
         std::vector<int> run;
@@ -22,29 +22,33 @@ namespace Matcher {
         int oldloc;
         int newloc;
     };
+
     
     //Printing overload for blocks for debugging
     std::ostream& operator<<(std::ostream& os, const Block& bl);
     
     //Block operators
     //Define outside struct since they work based on pointers
-    bool operator==(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
+    bool operator==(const Block& lhs, const Block& rhs);
     //Compare blocks based on location in old file
-    bool compareOld(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
+    bool compareOld(const Block& lhs, const Block& rhs);
     //Compare blocks based on location in new file
-    bool compareNew(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
-    
-    //Gets all possible common blocks of text of size minsize
-    //Blocks can be overlapping; this is fixed with the other two functions
-    std::vector<std::shared_ptr<Block>> getCommonBlocks(int minsize, StringEncoder& se);
-    //Extends common blocks, and removes blocks that are overlapped by the extended block
-    void extendBlocks(std::vector<std::shared_ptr<Block>>& allblocks, StringEncoder& se);
-    //Resolves blocks that may be only partially overlapping
-    //This is done by adding extra blocks that represent the overlaps
-    void resolveIntersections(std::vector<std::shared_ptr<Block>>& allblocks);
-    //Hashes a vector of ints
-    //Not guaranteed to be optimal
-    unsigned int hashVector(std::vector<int>& v);
+    bool compareNew(const Block& lhs, const Block& rhs);
 }
 
+namespace std {
+    //Allows for hashing of Block
+    template <>
+    struct hash<Matcher::Block>
+    {
+        //http://en.cppreference.com/w/cpp/utility/hash
+        std::size_t operator()(const Matcher::Block& b) const
+        {
+
+        return ((hash<int>()(b.oldloc)
+                ^ (hash<int>()(b.newloc) << 1)) >> 1)
+                ^ (Utility::hashVector(b.run) << 1);
+        }
+    };
+}
 #endif
