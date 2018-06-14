@@ -1,6 +1,6 @@
 #include "libs/catch.hpp"
 
-#include "doc_analyzer/Matcher/block.h"
+#include "doc_analyzer/Matcher/blockmatching.hpp"
 
 //Test returns size of input
 size_t getCommonBlocksSize(std::string a, std::string b, int blocksize) {
@@ -10,14 +10,14 @@ size_t getCommonBlocksSize(std::string a, std::string b, int blocksize) {
 }
 
 //Simulates running getCommonBlocks then extendBlocks
-void extendBlocksTest(std::vector<std::shared_ptr<Matcher::Block>>& allblocks, std::string a, std::string b, int blocksize) {
+void extendBlocksTest(std::vector<Matcher::Block>& allblocks, std::string a, std::string b, int blocksize) {
     Matcher::StringEncoder se(a, b);
     allblocks = Matcher::getCommonBlocks(blocksize, se);
     Matcher::extendBlocks(allblocks, se);
 }
 
 //Simulates running all three functions to produce a final list of blocks
-void resolveIntersectionsTest(std::vector<std::shared_ptr<Matcher::Block>>& allblocks, std::string a, std::string b, int blocksize) {
+void resolveIntersectionsTest(std::vector<Matcher::Block>& allblocks, std::string a, std::string b, int blocksize) {
     Matcher::StringEncoder se(a, b);
     allblocks = Matcher::getCommonBlocks(blocksize, se);
     Matcher::extendBlocks(allblocks, se);
@@ -40,7 +40,7 @@ TEST_CASE("Test getCommonBlocks", "[block]") {
 }
 
 TEST_CASE("Test extendBlocks", "[block]") {
-    std::vector<std::shared_ptr<Matcher::Block>> testvec;
+    std::vector<Matcher::Block> testvec;
 
     extendBlocksTest(testvec, "", "", 0);
     REQUIRE(testvec.size() == 0);
@@ -72,8 +72,8 @@ TEST_CASE("Test extendBlocks", "[block]") {
     
     extendBlocksTest(testvec, "a b b e f d e g r", "a b b e g r", 2);
     REQUIRE(testvec.size() == 2);
-    REQUIRE(testvec[0]->run.size() == 4);
-    REQUIRE(testvec[1]->run.size() == 3);
+    REQUIRE(testvec[0].run.size() == 4);
+    REQUIRE(testvec[1].run.size() == 3);
     testvec.clear();
 
     extendBlocksTest(testvec, "a b", "a b a b a b", 2);
@@ -94,7 +94,7 @@ TEST_CASE("Test extendBlocks", "[block]") {
 }
 
 TEST_CASE("Test resolveIntersections", "[block]") {
-    std::vector<std::shared_ptr<Matcher::Block>> testvec;
+    std::vector<Matcher::Block> testvec;
     
     resolveIntersectionsTest(testvec, "", "", 2);
     REQUIRE(testvec.size() == 0);
