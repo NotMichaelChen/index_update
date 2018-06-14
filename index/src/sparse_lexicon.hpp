@@ -4,7 +4,7 @@
 #include <vector>
 #include <map>
 
-#include "json.hpp"
+#include "libs/json.hpp"
 
 class SparseExtendedLexicon {
 
