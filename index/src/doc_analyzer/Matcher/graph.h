@@ -18,10 +18,6 @@ namespace Matcher {
         //Returns an empty list if not found
         std::vector<Block> getAdjacencyList(Block V);
         
-        //Inserts a neighbor into V's adjacency list
-        //Create a list for V if it doesn't exist in G
-        void insertNeighbor(Block V, Block neighbor);
-        
         //Gets the list of all vertices that appear in the graph
         const std::vector<Block>& getAllVertices() const;
         

@@ -10,21 +10,14 @@ namespace Matcher {
         sort(commonblocks.begin(), commonblocks.end(), compareOld);
         
         //Create adjacency list for every block
-        for(size_t i = 0; i < commonblocks.size(); i++) {
-            Block current = commonblocks[i];
-            G[current] = vector<Block>();
+        for(auto iter = commonblocks.begin(); iter != commonblocks.end(); iter++) {
+            auto insertediter = G.emplace(make_pair(*iter, vector<Block>{})).first;
             
             //All potential neighbors will be strictly after the current block
-            for(size_t neighborindex = i+1; neighborindex < commonblocks.size(); neighborindex++) {
-                Block neighbor = commonblocks[neighborindex];
-                if(neighbor.oldloc > current.oldendloc() && neighbor.newloc > current.newendloc())
-                    this->insertNeighbor(current, neighbor);
+            for(auto neighboriter = iter+1; neighboriter != commonblocks.end(); neighboriter++) {
+                if(neighboriter->oldloc > iter->oldendloc() && neighboriter->newloc > iter->newendloc())
+                    insertediter->second.push_back(*neighboriter);
             }
-        }
-        
-        int edges = 0;
-        for(auto iter = G.begin(); iter != G.end(); iter++) {
-            edges += iter->second.size();
         }
         
         vertices = commonblocks;
@@ -39,19 +32,6 @@ namespace Matcher {
             return vector<Block>();
         }
     }                
-    
-    void BlockGraph::insertNeighbor(Block V, Block neighbor) {
-        //if V is found
-        if(G.find(V) != G.end()) {
-            G[V].push_back(neighbor);
-        }
-        else {
-            vector<Block> edges;
-            edges.push_back(neighbor);
-            G[V] = edges;
-            vertices.push_back(V);
-        }
-    }
     
     const vector<Block>& BlockGraph::getAllVertices() const {
         return vertices;
