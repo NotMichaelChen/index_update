@@ -1,12 +1,34 @@
 #include "blockmatching.hpp"
 
 #include <map>
+#include <unordered_map>
 #include <algorithm>
 
 #include "util.hpp"
 
 namespace Matcher
 {
+
+bool isOverlap(int oldbegin1, int newbegin1, int oldlen, int oldbegin2, int newbegin2, int newlen) {
+    return
+        oldbegin1 >= oldbegin2 &&
+        oldbegin1 + oldlen <= oldbegin2 + newlen &&
+        newbegin1 >= newbegin2 &&
+        newbegin1 + oldlen <= newbegin2 + newlen;
+}
+
+std::vector<int> getExtended(std::vector<int>::const_iterator olditer, std::vector<int>::const_iterator newiter, StringEncoder& se) {
+    auto begin = olditer;
+    while(olditer != se.getOldEnd() && newiter != se.getNewEnd() && *olditer == *newiter) {
+        olditer++;
+        newiter++;
+    }
+    auto end = olditer;
+
+    return std::vector<int>(begin, end);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
     std::vector<Block> commonblocks;
@@ -16,7 +38,7 @@ std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
     
     //Stores a "candidate block", extracted from the old doc
     //Each candidate can be matched multiple times with blocks from the new doc 
-    std::multimap<unsigned int, Block> potentialblocks;
+    std::unordered_multimap<unsigned int, Block> potentialblocks;
     
     //Get all possible blocks in the old file
     std::vector<int> newblock;
@@ -39,8 +61,27 @@ std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
         //Get all blocks that match the current block's hash
         auto blockmatchrange = potentialblocks.equal_range(blockhash);
         for(auto matchedblock = blockmatchrange.first; matchedblock != blockmatchrange.second; ++matchedblock) {
+            //Double-check equality
             if(blockcheck == matchedblock->second.run) {
-                commonblocks.emplace_back(matchedblock->second.oldloc, newiter - se.getNewIter(), matchedblock->second.run);
+                bool isoverlap = false;
+                //Potential overlap as long as this block's begin is after the other block's begin
+                for(auto overlapchecker = commonblocks.rbegin(); overlapchecker != commonblocks.rend() &&
+                    (newiter - se.getNewIter()) >= overlapchecker->newloc; overlapchecker++)
+                {
+                    if(isOverlap(matchedblock->second.oldloc, newiter - se.getNewIter(), minsize,
+                        overlapchecker->oldloc, overlapchecker->newloc, overlapchecker->run.size()))
+                    {
+                        isoverlap = true;
+                        break;
+                    }
+                }
+
+                if(isoverlap)
+                    continue;
+
+                std::vector<int> extendedblock = getExtended(se.getOldIter() + matchedblock->second.oldloc, newiter, se);
+
+                commonblocks.emplace_back(matchedblock->second.oldloc, newiter - se.getNewIter(), extendedblock);
             }
         }
 
@@ -48,61 +89,6 @@ std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
     }
     
     return commonblocks;
-}
-
-//Attempt to extend common blocks
-void extendBlocks(std::vector<Block>& allblocks, StringEncoder& se) {
-    //Sort based on old locations
-    std::sort(allblocks.begin(), allblocks.end(), compareOld);
-    //Create a set to store deleted locations
-    std::unordered_set<size_t> deletedlocs;
-    
-    //Index of block to be extended
-    size_t index = 0;
-    while(index < allblocks.size()) {
-        size_t oldblocklength = allblocks[index].run.size();
-        //indexes are now pointing beyond the block
-        auto olditer = se.getOldIter() + (allblocks[index].oldendloc()+1);
-        auto newiter = se.getNewIter() + (allblocks[index].newendloc()+1);
-        
-        //Attempt to extend the block
-        while(olditer != se.getOldEnd() && newiter != se.getNewEnd() && *olditer == *newiter) {
-            //Append the new word
-            allblocks[index].run.push_back(*olditer);
-            ++olditer;
-            ++newiter;
-        }
-        
-        //if we successfully extended the block, check for possible overlaps
-        if(allblocks[index].run.size() > oldblocklength) {
-            auto overlapchecker = allblocks.begin() + index + 1;
-
-            //Potential overlap as long as the other block's begin is before this block's end
-            while(overlapchecker != allblocks.end() && overlapchecker->oldloc < (olditer - se.getOldIter())) {
-                if(overlapchecker->oldloc >= allblocks[index].oldloc &&
-                    overlapchecker->oldendloc() <= (olditer - se.getOldIter()) &&
-                    overlapchecker->newloc >= allblocks[index].newloc &&
-                    overlapchecker->newendloc() <= (newiter - se.getNewIter()))
-                {
-                    deletedlocs.insert((size_t)(overlapchecker - allblocks.begin()));
-                }
-                overlapchecker++;
-            }
-        }
-        
-        do {
-            index++;
-        } while(deletedlocs.find(index) != deletedlocs.end());
-    }
-
-    //Copy over valid blocks
-    std::vector<Block> newblocks;
-    for(size_t i = 0; i < allblocks.size(); i++) {
-        if(deletedlocs.find(i) == deletedlocs.end()) {
-            newblocks.push_back(allblocks[i]);
-        }
-    }
-    allblocks.swap(newblocks);
 }
 
 //Resolve blocks that are intersecting
