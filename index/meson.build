@@ -42,6 +42,7 @@ src = [
 src_test = [
     'src/tests/test_main.cpp',
     'src/tests/test_stringencoder.cpp',
+    'src/tests/test_matcher.cpp',
     'src/tests/blocktest.cpp',
 ]
 
