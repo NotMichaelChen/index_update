@@ -94,27 +94,30 @@ namespace Matcher {
     
     void DistanceTable::mergeIntoNext(Block prev, Block next) {
         int weight = next.run.size();
+
+        auto prevblock = tablelist.find(prev)->second;
+        auto nextblock = tablelist.find(next)->second;
         
         //If neighbor's distlist is not large enough for comparing, resize it
-        if(tablelist[next].size() < tablelist[prev].size()+1)
-            tablelist[next].resize(tablelist[prev].size()+1, DistanceTable::TableEntry(-1, -1, {}, {}));
+        if(nextblock.size() < prevblock.size()+1)
+            nextblock.resize(prevblock.size()+1, DistanceTable::TableEntry(-1, -1, {}, {}));
     
         //Compare each entry in prev to the entry in next+1
-        for(size_t i = 0; i < tablelist[prev].size(); i++) {
-            if(!tablelist[prev][i].current.isValid())
+        for(size_t i = 0; i < prevblock.size(); i++) {
+            if(!prevblock[i].current.isValid())
                 continue;
             
-            if(tablelist[prev][i].distance + weight > tablelist[next][i+1].distance) {
-                tablelist[next][i+1].steps = tablelist[prev][i].steps + 1;
-                tablelist[next][i+1].distance = tablelist[prev][i].distance + weight;
-                tablelist[next][i+1].current = next;
-                tablelist[next][i+1].prev = prev;
+            if(prevblock[i].distance + weight > nextblock[i+1].distance) {
+                nextblock[i+1].steps = prevblock[i].steps + 1;
+                nextblock[i+1].distance = prevblock[i].distance + weight;
+                nextblock[i+1].current = next;
+                nextblock[i+1].prev = prev;
             }
         }
     
         //If the table exceeds the number of steps, remove the extra entry
-        if(tablelist[next].size() > maxsteps)
-            tablelist[next].pop_back();
+        if(nextblock.size() > maxsteps)
+            nextblock.pop_back();
     }
     
     DistanceTable::TableEntry DistanceTable::getPreviousEntry(DistanceTable::TableEntry te) {
@@ -128,7 +131,7 @@ namespace Matcher {
         if(tablelist.find(V) == tablelist.end()) {
             vector<DistanceTable::TableEntry> tableinit;
             tableinit.push_back(DistanceTable::TableEntry(1, V.run.size(), V, {}));
-            //Assume that nullptr refers to the source node
+            //Assume that an invalid block in prev refers to the source node
             tablelist[V] = tableinit;
         }
     }
