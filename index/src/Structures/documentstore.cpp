@@ -10,6 +10,17 @@
 using namespace std;
 
 namespace Structures {
+    //https://math.stackexchange.com/a/1567342
+
+    //collectionsize refers to the size of the collection before removal/adding
+    double updateAverageRemove(double avg, unsigned int toremove, unsigned int collectionsize) {
+        return ((avg * collectionsize) - toremove) / (collectionsize - 1);
+    }
+
+    double updateAverageAdd(double avg, unsigned int toadd, unsigned int collectionsize) {
+        return avg + (toadd - avg) / (collectionsize+1);
+    }
+
     DocumentStore::DocumentStore() {
         #ifdef _WIN32
             //! Windows netword DLL init
@@ -28,6 +39,8 @@ namespace Structures {
         client.select(0);
         
         client.setnx("nextid", "0");
+        client.setnx("avgdoclen", "0");
+        client.setnx("doccount", "0");
         client.sync_commit();
     }
     
@@ -43,44 +56,62 @@ namespace Structures {
         
         DocumentTuple obtaineddoc(-1, "", 0, "");
         
-        if(response.size() == 4) {
+        if(response.size() == 5) {
             obtaineddoc.docID = stoi(response[0].as_string());
             obtaineddoc.doc = response[1].as_string();
-            obtaineddoc.maxfragID = stoi(response[2].as_string());
-            obtaineddoc.timestamp = response[3].as_string();
+            //Skip getting doclength
+            obtaineddoc.maxfragID = stoi(response[3].as_string());
+            obtaineddoc.timestamp = response[4].as_string();
         }
         
         return obtaineddoc;
     }
     
     void DocumentStore::insertDocument(std::string url, std::string doc, unsigned int maxfragID, string timestamp) {
+        //Get nextid, olddoclen, avgdoclen, doccount
         string nextid;
         client.get("nextid", [&nextid](cpp_redis::reply& reply) {
             nextid = reply.as_string();
         });
-        
-        client.sync_commit();
-        
-        client.exists({url}, [&](cpp_redis::reply& reply) {
-            if(reply.ok()) {
-                //If the key already exists
-                if(reply.as_integer()) {
-                    //Keep only the docid
-                    client.ltrim(url, 0, 0);
-                    vector<string> newdocinfo = {doc, to_string(maxfragID), timestamp};
-                    client.rpush(url, newdocinfo);
-                }
-                else {
-                    vector<string> doctuple = {nextid, doc, to_string(maxfragID), timestamp};
-                    client.rpush(url, doctuple);
-                    client.incr("nextid");
-                }
-                
-                client.commit();
-            }
-            
-            //Do nothing if the exists command returns an error
+
+        int olddoclen;
+        client.lindex(url, 2, [&olddoclen](cpp_redis::reply& reply) {
+            if(reply.is_null())
+                olddoclen = -1;
+            else
+                olddoclen = stoi(reply.as_string());
         });
+
+        client.sync_commit();
+
+        double avgdoclen = getAverageDocLength();
+        unsigned int doccount = getDocumentCount();
+
+        //document doesn't exist
+        if(olddoclen < 0) {
+            vector<string> doctuple = {nextid, doc, to_string(doc.length()), to_string(maxfragID), timestamp};
+            client.rpush(url, doctuple);
+
+            client.set(nextid, url);
+
+            client.incr("nextid");
+            client.incr("doccount");
+        }
+        //document exists
+        else {
+            //Keep only the docid
+            client.ltrim(url, 0, 0);
+            vector<string> newdocinfo = {doc, to_string(doc.length()), to_string(maxfragID), timestamp};
+            client.rpush(url, newdocinfo);
+
+            avgdoclen = updateAverageRemove(avgdoclen, olddoclen, doccount);
+            //Only need to do this for calculations
+            doccount--;
+        }
+
+        avgdoclen = updateAverageAdd(avgdoclen, doc.length(), doccount);
+
+        client.set("avgdoclen", to_string(avgdoclen));
         
         client.sync_commit();
     }
@@ -92,26 +123,48 @@ namespace Structures {
     }
     
     size_t DocumentStore::getDocumentCount() {
-        size_t dbsize;
-        client.dbsize([&dbsize](cpp_redis::reply& reply) {
-            dbsize = reply.as_integer();
-        });
+        auto result = client.get("doccount");
 
         client.sync_commit();
+        result.wait();
 
-        //Remove the nextID entry
-        return dbsize-1;
+        return stoull(result.get().as_string());
+    }
+
+    int DocumentStore::getDocLength(unsigned int docID) {
+        //Get url from docID
+        auto result = client.get(to_string(docID));
+
+        client.sync_commit();
+        result.wait();
+
+        string url = result.get().as_string();
+
+        //Get doclength index
+        result = client.lindex(url, 2);
+
+        client.sync_commit();
+        result.wait();
+
+        return stoi(result.get().as_string());
+    }
+
+    double DocumentStore::getAverageDocLength() {
+        auto result = client.get("avgdoclen");
+        
+        client.sync_commit();
+        result.wait();
+
+        return stod(result.get().as_string());
     }
 
     int DocumentStore::getNextDocID() {
-        string nextid;
-        client.get("nextid", [&nextid](cpp_redis::reply& reply) {
-            nextid = reply.as_string();
-        });
-        
+        auto result = client.get("nextid");
+
         client.sync_commit();
-        
-        return stoi(nextid);
+        result.wait();
+
+        return stoi(result.get().as_string());
     }
 
     void DocumentStore::clear() {

@@ -25,15 +25,21 @@ namespace Structures {
 
         DocumentTuple getDocument(std::string url);
         void insertDocument(std::string url, std::string doc, unsigned int maxfragID, std::string timestamp);
-        void dump();
 
         size_t getDocumentCount();
+        int getDocLength(unsigned int docID);
+        double getAverageDocLength();
         int getNextDocID();
 
+        void dump();
         void clear();
     private:
-        //key: url
-        //val: docID, doc, maxfragID, timestamp
+        //{nextid}
+        //{avgdoclen}
+        //{doccount}
+        //{url}, {docID, doc, doclength, maxfragID, timestamp}
+        //{docID}, {url}
+        //Both can exist since keys are separate (numbers vs strings)
         cpp_redis::client client;
     };
 }

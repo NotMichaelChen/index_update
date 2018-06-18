@@ -276,4 +276,7 @@ void Index::printSize() {
 
     std::cerr << "exlex:" << std::endl;
     staticwriter.getExLexPointer()->printSize();
+
+    std::cerr << "inmemory avgdoclength: " << avgdoclength << std::endl;
+    std::cerr << "redis avgdoclength: " << docstore.getAverageDocLength() << std::endl;
 }
