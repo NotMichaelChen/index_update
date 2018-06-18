@@ -57,7 +57,10 @@ void Index::insert_document(std::string& url, std::string& newpage) {
     //https://math.stackexchange.com/a/1567342
     if(doclength.find(results.docID) != doclength.end()) {
         //Remove old value
-        avgdoclength = ((avgdoclength * doclength.size()) - newpage.length()) / (doclength.size() - 1);
+        if(doclength.size() == 1)
+            avgdoclength = 0;
+        else
+            avgdoclength = ((avgdoclength * doclength.size()) - newpage.length()) / (doclength.size() - 1);
     }
     //Add new value
     avgdoclength += (newpage.length() - avgdoclength) / (doclength.size()+1);

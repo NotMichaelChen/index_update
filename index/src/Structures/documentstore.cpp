@@ -14,7 +14,10 @@ namespace Structures {
 
     //collectionsize refers to the size of the collection before removal/adding
     double updateAverageRemove(double avg, unsigned int toremove, unsigned int collectionsize) {
-        return ((avg * collectionsize) - toremove) / (collectionsize - 1);
+        if(collectionsize == 1)
+            return 0;
+        else
+            return ((avg * collectionsize) - toremove) / (collectionsize - 1);
     }
 
     double updateAverageAdd(double avg, unsigned int toadd, unsigned int collectionsize) {
