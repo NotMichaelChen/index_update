@@ -29,4 +29,7 @@ namespace Matcher {
     bool compareNew(const Block& lhs, const Block& rhs) {
         return lhs.newloc < rhs.newloc;
     }
+    bool compareSizeGreater(const Block& lhs, const Block& rhs) {
+        return lhs.run.size() > rhs.run.size();
+    }
 }

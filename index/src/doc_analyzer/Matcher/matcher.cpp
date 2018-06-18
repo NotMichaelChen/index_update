@@ -15,6 +15,10 @@ namespace Matcher {
         resolveIntersections(commonblocks);
 
         cout << "Got " << commonblocks.size() << " blocks" << endl;
+        if(commonblocks.size() >= 100) {
+            sort(commonblocks.begin(), commonblocks.end(), compareSizeGreater);
+            commonblocks.resize(100);
+        }
 
         //Create a graph of the common blocks
         BlockGraph G(commonblocks);

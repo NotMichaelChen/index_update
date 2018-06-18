@@ -34,6 +34,7 @@ namespace Matcher {
     bool compareOld(const Block& lhs, const Block& rhs);
     //Compare blocks based on location in new file
     bool compareNew(const Block& lhs, const Block& rhs);
+    bool compareSizeGreater(const Block& lhs, const Block& rhs);
 }
 
 namespace std {
