@@ -18,10 +18,10 @@ public:
     }
 };
 
-std::vector<unsigned int> DAAT(std::vector<unsigned int>& termIDs, GlobalType::NonPosIndex& index, SparseExtendedLexicon& exlex,
-    std::string staticpath, DAATStatData statistics)
+std::vector<unsigned int> DAAT(std::vector<unsigned int>& termIDs, std::vector<unsigned int>& docscontaining,
+    GlobalType::NonPosIndex& index, SparseExtendedLexicon& exlex, std::string staticpath, Structures::DocumentStore& docstore)
 {
-        if(termIDs.empty()) {
+    if(termIDs.empty()) {
         return std::vector<unsigned int>();
     }
 
@@ -55,7 +55,7 @@ std::vector<unsigned int> DAAT(std::vector<unsigned int>& termIDs, GlobalType::N
 
             /* compute BM25 score from frequencies and other data */
             //TODO: Allow other ranking functions here
-            double score = BM25(freqs, *statistics.docscontaining, (*statistics.doclengths)[did], statistics.avgdoclength, statistics.totaldocs); 
+            double score = BM25(freqs, docscontaining, docstore.getDocLength(did), docstore.getAverageDocLength(), docstore.getDocumentCount()); 
 
             if(minheap.size() < DAAT_SIZE) {
                 minheap.emplace(did, score);

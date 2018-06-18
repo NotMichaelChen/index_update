@@ -37,11 +37,9 @@ private:
     //Indexes on disk are guaranteed to be sorted (due to delta compression)
     GlobalType::PosIndex positional_index;
     GlobalType::NonPosIndex nonpositional_index;
-    //TODO: Can this be obtained from docstore?
-    std::unordered_map<unsigned int, unsigned int> doclength;
+    
     spp::sparse_hash_map<unsigned int, GlobalType::PosIndex::iterator> positional_lookup;
     spp::sparse_hash_map<unsigned int, GlobalType::NonPosIndex::iterator> nonpositional_lookup;
-    double avgdoclength;
 
     unsigned long positional_size;
     unsigned long nonpositional_size;

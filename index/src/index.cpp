@@ -17,11 +17,8 @@ std::vector<unsigned int> Index::query(std::vector<std::string> words) {
         docscontaining.push_back(entry.f_t);
     }
 
-    size_t doccount = docstore.getDocumentCount();
-
-    DAATStatData statistics = {doccount, &docscontaining, &doclength, avgdoclength};
-
-    return DAAT(termIDs, nonpositional_index, *(staticwriter.getExLexPointer()), working_dir+GlobalConst::NonPosPath, statistics);
+    return DAAT(termIDs, docscontaining, nonpositional_index, *(staticwriter.getExLexPointer()),
+        working_dir+GlobalConst::NonPosPath, docstore);
 }
 
 Index::Index(std::string directory) : docstore(), transtable(), lex(), staticwriter(directory) {
@@ -44,7 +41,6 @@ Index::Index(std::string directory) : docstore(), transtable(), lex(), staticwri
 
     positional_size = 0;
     nonpositional_size = 0;
-    avgdoclength = 0;
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {
@@ -52,19 +48,6 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
     //Perform document analysis
     MatcherInfo results = indexUpdate(url, newpage, timestamp, docstore, transtable);
-
-    //Update document length info + average document length
-    //https://math.stackexchange.com/a/1567342
-    if(doclength.find(results.docID) != doclength.end()) {
-        //Remove old value
-        if(doclength.size() == 1)
-            avgdoclength = 0;
-        else
-            avgdoclength = ((avgdoclength * doclength.size()) - newpage.length()) / (doclength.size() - 1);
-    }
-    //Add new value
-    avgdoclength += (newpage.length() - avgdoclength) / (doclength.size()+1);
-    doclength[results.docID] = newpage.length();
 
     std::cerr << "Got P:" << results.Ppostings.size() << " NP:" << results.NPpostings.size() << " Postings" << std::endl;
 
@@ -162,11 +145,6 @@ void Index::dump() {
     //Write individual variables
     jobject["positional_size"] = positional_size;
     jobject["nonpositional_size"] = nonpositional_size;
-    jobject["avgdoclength"] = avgdoclength;
-    for(auto iter = doclength.begin(); iter != doclength.end(); iter++) {
-        std::string key = std::to_string(iter->first);
-        jobject["doclength"][key] = iter->second;
-    }
 
     //Write in-memory indexes
     for(auto inditer = nonpositional_index.begin(); inditer != nonpositional_index.end(); inditer++) {
@@ -215,11 +193,6 @@ void Index::restore() {
     //Read individual variables
     positional_size = jobject["positional_size"];
     nonpositional_size = jobject["nonpositional_size"];
-    avgdoclength = jobject["avgdoclength"];
-    for(auto dociter = jobject["doclength"].begin(); dociter != jobject["doclength"].end(); dociter++) {
-        unsigned int key = std::stoul(dociter.key());
-        doclength[key] = dociter.value();
-    }
 
     //Read in-memory indexes
     auto jiter = jobject.find("nonposindex");
@@ -260,8 +233,7 @@ void Index::restore() {
 void Index::clear() {
     positional_index.clear();
     nonpositional_index.clear();
-    doclength.clear();
-    avgdoclength = positional_size = nonpositional_size = 0;
+    positional_size = nonpositional_size = 0;
     
     docstore.clear();
     transtable.clear();
@@ -272,14 +244,11 @@ void Index::clear() {
 void Index::printSize() {
     std::cerr << "positional: " << positional_size << std::endl;
     std::cerr << "non-positional: " << nonpositional_size << std::endl;
-    
-    std::cerr << "doclength: " << doclength.size() << std::endl;
 
     std::cerr << "lex: " << lex.getSize() << std::endl;
 
     std::cerr << "exlex:" << std::endl;
     staticwriter.getExLexPointer()->printSize();
 
-    std::cerr << "inmemory avgdoclength: " << avgdoclength << std::endl;
     std::cerr << "redis avgdoclength: " << docstore.getAverageDocLength() << std::endl;
 }
