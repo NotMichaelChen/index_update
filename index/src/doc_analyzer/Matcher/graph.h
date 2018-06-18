@@ -15,8 +15,8 @@ namespace Matcher {
         BlockGraph(std::vector<Block>& commonblocks);
         
         //Get the adjacency list associated with V
-        //Returns an empty list if not found
-        std::vector<Block> getAdjacencyList(Block V);
+        //* Assumes that V is a valid vertice inside of the graph *
+        const std::vector<Block>& getAdjacencyList(Block V);
         
         //Gets the list of all vertices that appear in the graph
         const std::vector<Block>& getAllVertices() const;

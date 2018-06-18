@@ -23,15 +23,9 @@ namespace Matcher {
         vertices = commonblocks;
     }
     
-    vector<Block> BlockGraph::getAdjacencyList(Block V) {
-        //if V is found
-        if(G.find(V) != G.end()) {
-            return G[V];
-        }
-        else {
-            return vector<Block>();
-        }
-    }                
+    const vector<Block>& BlockGraph::getAdjacencyList(Block V) {
+        return G[V];
+    }
     
     const vector<Block>& BlockGraph::getAllVertices() const {
         return vertices;
