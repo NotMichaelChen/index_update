@@ -95,8 +95,8 @@ namespace Matcher {
     void DistanceTable::mergeIntoNext(Block prev, Block next) {
         int weight = next.run.size();
 
-        auto prevblock = tablelist.find(prev)->second;
-        auto nextblock = tablelist.find(next)->second;
+        auto& prevblock = tablelist.find(prev)->second;
+        auto& nextblock = tablelist.find(next)->second;
         
         //If neighbor's distlist is not large enough for comparing, resize it
         if(nextblock.size() < prevblock.size()+1)
