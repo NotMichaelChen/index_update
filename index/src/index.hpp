@@ -46,8 +46,8 @@ private:
 
     std::string working_dir;
 
-    Structures::DocumentStore docstore;
-    Structures::TranslationTable transtable;
+    DocumentStore docstore;
+    TranslationTable transtable;
     Lexicon lex;
     StaticIndex staticwriter;
 };

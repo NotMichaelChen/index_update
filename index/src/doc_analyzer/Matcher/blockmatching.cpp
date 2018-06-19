@@ -6,9 +6,6 @@
 
 #include "util.hpp"
 
-namespace Matcher
-{
-
 bool isOverlap(int oldbegin1, int newbegin1, int oldlen, int oldbegin2, int newbegin2, int newlen) {
     return
         oldbegin1 >= oldbegin2 &&
@@ -155,8 +152,4 @@ void resolveIntersections(std::vector<Block>& allblocks) {
     addedblocks.erase(std::unique(addedblocks.begin(), addedblocks.end()), addedblocks.end());
     //append the list of added blocks
     allblocks.insert(allblocks.end(), addedblocks.begin(), addedblocks.end());
-}
-
-
-
 }

@@ -4,22 +4,22 @@
 
 //Test returns size of input
 size_t getCommonBlocksSize(std::string a, std::string b, int blocksize) {
-    Matcher::StringEncoder se(a, b);
-    auto result = Matcher::getCommonBlocks(blocksize, se);
+    StringEncoder se(a, b);
+    auto result = getCommonBlocks(blocksize, se);
     return result.size();
 }
 
-std::vector<Matcher::Block> getCommonBlocksTest(std::string a, std::string b, int blocksize) {
-    Matcher::StringEncoder se(a, b);
-    auto result = Matcher::getCommonBlocks(blocksize, se);
+std::vector<Block> getCommonBlocksTest(std::string a, std::string b, int blocksize) {
+    StringEncoder se(a, b);
+    auto result = getCommonBlocks(blocksize, se);
     return result;
 }
 
 //Simulates running all three functions to produce a final list of blocks
-void resolveIntersectionsTest(std::vector<Matcher::Block>& allblocks, std::string a, std::string b, int blocksize) {
-    Matcher::StringEncoder se(a, b);
-    allblocks = Matcher::getCommonBlocks(blocksize, se);
-    Matcher::resolveIntersections(allblocks);
+void resolveIntersectionsTest(std::vector<Block>& allblocks, std::string a, std::string b, int blocksize) {
+    StringEncoder se(a, b);
+    allblocks = getCommonBlocks(blocksize, se);
+    resolveIntersections(allblocks);
 }
 
 TEST_CASE("Test getCommonBlocks", "[block]") {
@@ -55,7 +55,7 @@ TEST_CASE("Test getCommonBlocks", "[block]") {
 }
 
 TEST_CASE("Test resolveIntersections", "[block]") {
-    std::vector<Matcher::Block> testvec;
+    std::vector<Block> testvec;
     
     resolveIntersectionsTest(testvec, "", "", 2);
     REQUIRE(testvec.size() == 0);

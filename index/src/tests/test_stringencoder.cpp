@@ -3,7 +3,7 @@
 #include "doc_analyzer/Matcher/stringencoder.h"
 
 TEST_CASE("Test stringencoder", "[stringencoder]") {
-    Matcher::StringEncoder se("a b c d", "c b a e");
+    StringEncoder se("a b c d", "c b a e");
 
     std::vector<unsigned int> oldstream(se.getOldIter(), se.getOldEnd());
     std::vector<unsigned int> newstream(se.getNewIter(), se.getNewEnd());
@@ -40,7 +40,7 @@ TEST_CASE("Test stringencoder", "[stringencoder]") {
 
 
 
-    se = Matcher::StringEncoder("a b b c", "b b c d d");
+    se = StringEncoder("a b b c", "b b c d d");
 
     s = "a";
     REQUIRE(se.inOld(s));

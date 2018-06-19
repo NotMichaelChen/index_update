@@ -6,9 +6,9 @@
 using namespace std;
 
 //Assumed this is called from the index when a new document arrives
-MatcherInfo indexUpdate(string& url, string& newpage, string& timestamp, Structures::DocumentStore& docstore, Structures::TranslationTable& transtable) {
+MatcherInfo indexUpdate(string& url, string& newpage, string& timestamp, DocumentStore& docstore, TranslationTable& transtable) {
     //-fetch the previous version, and the did of the document, from a tuple store or database (TBD)
-    Structures::DocumentTuple olddoc = docstore.getDocument(url);
+    DocumentTuple olddoc = docstore.getDocument(url);
     //Document does not exist yet
     if(olddoc.timestamp.empty()) {
         //Set equal to next docID. This will be officially assigned in the doc store once the document is inserted
@@ -31,21 +31,21 @@ MatcherInfo indexUpdate(string& url, string& newpage, string& timestamp, Structu
     return info;
 }
 
-MatcherInfo makePosts(Structures::DocumentTuple& olddoc, string& newpage) {
+MatcherInfo makePosts(DocumentTuple& olddoc, string& newpage) {
     //-check if there was a previous version, if not create postings with fragid = 0
     unsigned int fragID = olddoc.maxfragID;
 
-    Matcher::StringEncoder se(olddoc.doc, newpage);
+    StringEncoder se(olddoc.doc, newpage);
 
-    vector<Matcher::Block> commonblocks;
+    vector<Block> commonblocks;
     if(olddoc.doc.length() != 0) {
         //-else, run the graph based matching algorithm on the two versions
-        commonblocks = Matcher::getOptimalBlocks(se, MIN_BLOCK_SIZE, MAX_BLOCK_COUNT, 5);
+        commonblocks = getOptimalBlocks(se, MIN_BLOCK_SIZE, MAX_BLOCK_COUNT, 5);
     }
 
     //Get the translation and posting list
-    vector<Matcher::Translation> translist = Matcher::getTranslations(se.getOldSize(), se.getNewSize(), commonblocks);
-    auto postingslist = Matcher::getPostings(commonblocks, olddoc.docID, fragID, se);
+    vector<Translation> translist = getTranslations(se.getOldSize(), se.getNewSize(), commonblocks);
+    auto postingslist = getPostings(commonblocks, olddoc.docID, fragID, se);
 
     //-generate postings and translation statements, and return them. (Question: how do we know the previous largest fragid for this document, so we know what to use as the next fragid? Maybe store with did in the tuple store?)
     MatcherInfo posts(postingslist.first, postingslist.second, translist, se, fragID);

@@ -10,6 +10,6 @@
 
 //Returns the vector of docIDs that were found, from low-high
 std::vector<unsigned int> DAAT(std::vector<unsigned int>& termIDs, std::vector<unsigned int>& docscontaining,
-    GlobalType::NonPosIndex& index, SparseExtendedLexicon& exlex, std::string staticpath, Structures::DocumentStore& docstore);
+    GlobalType::NonPosIndex& index, SparseExtendedLexicon& exlex, std::string staticpath, DocumentStore& docstore);
 
 #endif

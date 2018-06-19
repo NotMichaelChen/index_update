@@ -10,21 +10,20 @@
 
 #include "doc_analyzer/Matcher/translate.h"
 
-namespace Structures {
-    class TranslationTable {
-    public:
-        TranslationTable();
-        int apply(int docID, size_t fragID, int position);
-        void insert(std::vector<Matcher::Translation>& trans, int docID);
-        //If a document gets reindexed, throw away its translation list
-        void erase(int docID);
-        void dump();
-        void clear();
-        
-    private:
-        //key: docID
-        //val: translations
-        cpp_redis::client client;
-    };
-}
+class TranslationTable {
+public:
+    TranslationTable();
+    int apply(int docID, size_t fragID, int position);
+    void insert(std::vector<Translation>& trans, int docID);
+    //If a document gets reindexed, throw away its translation list
+    void erase(int docID);
+    void dump();
+    void clear();
+    
+private:
+    //key: docID
+    //val: translations
+    cpp_redis::client client;
+};
+
 #endif
