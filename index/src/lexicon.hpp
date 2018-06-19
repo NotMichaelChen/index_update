@@ -9,7 +9,7 @@
 #include <string>
 
 #include "libs/json.hpp"
-#include "sparsepp/spp.h"
+#include "libs/sparsepp/spp.h"
 
 struct Lex_data {
     Lex_data(unsigned int t, int f) : termid(t), f_t(f) {}

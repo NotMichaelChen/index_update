@@ -4,7 +4,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "sparsepp/spp.h"
+#include "libs/sparsepp/spp.h"
 #include "lexicon.hpp"
 #include "Structures/documentstore.h"
 #include "Structures/translationtable.h"
