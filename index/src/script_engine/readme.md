@@ -16,8 +16,8 @@ DOCINPUT *path reader*
 RESET
 >Resets the current index, clearing out all documents, static info, and other metadata. Must call SETDIR to resume insertions
 
-INSERT *x*
->Inserts x documents. If there aren't enough documents this will insert the remaining documents
+INSERT *x* *(y)*
+>Inserts x documents with y versions. If there aren't enough documents this will insert the remaining documents. y is optional
 
 QUERY *words*
 >Queries the index with the list of words. *words* is separated by spaces
