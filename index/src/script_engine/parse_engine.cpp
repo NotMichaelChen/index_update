@@ -36,7 +36,7 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, std::st
     std::shared_ptr<ReaderInterface> docreader)
 {
     size_t linenum = begin;
-    while(linenum < code.size()) {
+    while(linenum < code.size() && linenum < end) {
         //Split the command into space-separated tokens
         std::vector<std::string> arguments = splitLine(code[linenum]);
 
