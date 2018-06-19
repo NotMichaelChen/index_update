@@ -11,6 +11,7 @@ thread_dep = dependency('threads')
 src = [
     'src/index.cpp',
     'src/lexicon.cpp',
+    'src/morph.cpp',
     'src/posting.cpp',
     'src/redis.cpp',
     'src/sparse_lexicon.cpp',
