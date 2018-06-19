@@ -36,6 +36,7 @@ src = [
     'src/static_functions/postingIO.cpp',
     'src/static_functions/compression_functions/varbyte.cpp',
     'src/script_engine/parse_engine.cpp',
+    'src/script_engine/commands.cpp',
     'src/Structures/translationtable.cpp',
     'src/Structures/documentstore.cpp',
 ]
