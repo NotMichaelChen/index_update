@@ -33,7 +33,7 @@ size_t findEndLoop(std::vector<std::string>& code, size_t start) {
 
 //begin inclusive, end exclusive
 void parseCode(std::vector<std::string>& code, size_t begin, size_t end, std::string& dir, std::unique_ptr<Index>& indexptr,
-    std::shared_ptr<ReaderInterface> docreader)
+    std::unique_ptr<ReaderInterface>& docreader)
 {
     size_t linenum = begin;
     while(linenum < code.size() && linenum < end) {
@@ -125,10 +125,10 @@ void parseCode(std::vector<std::string>& code, size_t begin, size_t end, std::st
             std::transform(reader.begin(), reader.end(), reader.begin(), ::tolower);
 
             if(reader == "wet") {
-                docreader = std::make_shared<WETReader>(path);
+                docreader = std::make_unique<WETReader>(path);
             }
             else if(reader == "raw") {
-                docreader = std::make_shared<RAWReader>(path);
+                docreader = std::make_unique<RAWReader>(path);
             }
             else {
                 throw std::runtime_error("Error: invalid document reader specified");
@@ -175,7 +175,7 @@ void parseFile(std::string filename) {
     //Create index object and reader interface
     std::unique_ptr<Index> indexptr = nullptr;
     // Index index;
-    std::shared_ptr<ReaderInterface> docreader = nullptr;
+    std::unique_ptr<ReaderInterface> docreader = nullptr;
 
     //Parse the script
     std::string dir;
