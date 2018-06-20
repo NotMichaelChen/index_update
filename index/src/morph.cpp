@@ -22,20 +22,23 @@ std::string getTokenWhitespace(std::string::iterator& iter, std::string::iterato
 DocumentMorpher::DocumentMorpher(std::string& from, std::string& to, int numversions) :
     olddoc(from), newdoc(to), versionsleft(numversions+1)
 {
-    std::stringstream oldstream(olddoc);
-    std::stringstream newstream(newdoc);
+    std::istringstream oldstream(olddoc);
+    std::istringstream newstream(newdoc);
 
     std::string discard;
-    size_t oldpos, newpos;
+    long oldpos = -1;
+    long newpos = -1;
     while(oldstream >> discard && newstream >> discard) {
         oldpos = oldstream.tellg();
         newpos = newstream.tellg();
     }
-    if(!oldstream) {
-        newdoc.resize(newpos);
-    }
-    else {
-        olddoc.resize(oldpos);
+    if(oldpos != -1 && newpos != -1) {
+        if(!oldstream) {
+            newdoc.resize(newpos);
+        }
+        else {
+            olddoc.resize(oldpos);
+        }
     }
 }
 
