@@ -34,17 +34,18 @@ void commandInsert(std::unique_ptr<Index>& indexptr, std::unique_ptr<ReaderInter
 
         //If there are versions, generate them based on the next document
         if(versioncount > 0) {
-            //Only resize currentdoc if it's longer than the nextdoc; this is to avoid big deletions when versioning
-            if(currentdoc.length() > nextdoc.length())
-                currentdoc.resize(nextdoc.length());
-
             DocumentMorpher morpher(currentdoc, nextdoc, versioncount);
 
-            while(morpher.isValid()) {
-                std::string newdoc = morpher.getVersion();
+            while(true) {
+                std::string newdoc = morpher.getDocument();
                 std::cout << "Inserting file #" << docsinserted << ": " << currenturl << std::endl;
                 indexptr->insert_document(currenturl, newdoc);
                 docsinserted++;
+                
+                if(!morpher.isValid())
+                    break;
+
+                morpher.nextVersion();
             }
         }
         //Otherwise just insert the document

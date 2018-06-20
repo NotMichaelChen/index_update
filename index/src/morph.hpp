@@ -6,14 +6,16 @@
 
 class DocumentMorpher {
 public:
-    DocumentMorpher(std::string from, std::string to, int numversions);
+    DocumentMorpher(std::string& from, std::string& to, int numversions);
 
-    std::string getVersion();
+    std::string getDocument();
+    void nextVersion();
+
     bool isValid();
 
 private:
-    std::stringstream oldstream, newstream;
-    int versioncount;
+    std::string olddoc, newdoc;
+
     //Used to calculate probability of switching documents when generating new versions
     int versionsleft;
 };
