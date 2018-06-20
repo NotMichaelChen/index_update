@@ -34,12 +34,13 @@ public:
     void dump();
     void clear();
 private:
+    //db 0:
     //{nextid}
     //{avgdoclen}
     //{doccount}
     //{url}, {docID, doc, doclength, maxfragID, timestamp}
+    //db 2:
     //{docID}, {url}
-    //Both can exist since keys are separate (numbers vs strings)
     cpp_redis::client client;
 };
 

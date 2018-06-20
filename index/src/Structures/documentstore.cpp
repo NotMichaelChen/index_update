@@ -94,7 +94,9 @@ void DocumentStore::insertDocument(std::string url, std::string doc, unsigned in
         vector<string> doctuple = {nextid, doc, to_string(doc.length()), to_string(maxfragID), timestamp};
         client.rpush(url, doctuple);
 
+        client.select(2);
         client.set(nextid, url);
+        client.select(0);
 
         client.incr("nextid");
         client.incr("doccount");
@@ -135,7 +137,9 @@ size_t DocumentStore::getDocumentCount() {
 
 int DocumentStore::getDocLength(unsigned int docID) {
     //Get url from docID
+    client.select(2);
     auto result = client.get(to_string(docID));
+    client.select(0);
 
     client.sync_commit();
     result.wait();
