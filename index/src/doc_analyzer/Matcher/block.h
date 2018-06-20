@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "stringencoder.h"
-#include "util.hpp"
+#include "utility/util.hpp"
 
 //Represents a block of text which may be common between the two files
 struct Block {

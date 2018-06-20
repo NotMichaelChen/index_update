@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "util.hpp"
+#include "utility/util.hpp"
 
 RAWReader::RAWReader(std::string dir) : docdir(dir), doc_index(0) {
     doc_collection = Utility::readDirectory(dir);

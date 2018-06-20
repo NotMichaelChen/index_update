@@ -3,7 +3,7 @@
 #include <sys/stat.h>
 #include <fstream>
 
-#include "util.hpp"
+#include "utility/util.hpp"
 #include "query_processing/DAAT.hpp"
 #include "redis.hpp"
 

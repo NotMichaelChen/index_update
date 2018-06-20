@@ -4,7 +4,7 @@
 
 #include "static_functions/postingIO.hpp"
 #include "static_functions/bytesIO.hpp"
-#include "util.hpp"
+#include "utility/util.hpp"
 
 //Copies n bytes from the ifstream to the ofstream
 //Returns 0 on success

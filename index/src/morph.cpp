@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <random>
 
-#include "util.hpp"
+#include "utility/util.hpp"
 
 //Advances the iterator, obtaining a valid token and the whitespace that follows it
 std::string getTokenWhitespace(std::string::iterator& iter, std::string::iterator end) {

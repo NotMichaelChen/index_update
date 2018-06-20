@@ -16,7 +16,6 @@ src = [
     'src/redis.cpp',
     'src/sparse_lexicon.cpp',
     'src/static_index.cpp',
-    'src/util.cpp',
     'src/doc_analyzer/analyzer.cpp',
     'src/doc_analyzer/Matcher/block.cpp',
     'src/doc_analyzer/Matcher/blockmatching.cpp',
@@ -39,6 +38,8 @@ src = [
     'src/script_engine/commands.cpp',
     'src/Structures/translationtable.cpp',
     'src/Structures/documentstore.cpp',
+    'src/utility/timer.cpp',
+    'src/utility/util.cpp',
 ]
 
 src_test = [

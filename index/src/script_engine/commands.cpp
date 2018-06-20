@@ -1,6 +1,7 @@
 #include "commands.hpp"
 
 #include "morph.hpp"
+#include "utility/timer.hpp"
 
 void commandInsert(std::unique_ptr<Index>& indexptr, std::unique_ptr<ReaderInterface>& docreader, std::vector<std::string>& arguments) {
     //Check that arguments are valid
@@ -18,7 +19,7 @@ void commandInsert(std::unique_ptr<Index>& indexptr, std::unique_ptr<ReaderInter
         versioncount = stoi(arguments[2]);
 
     //Begin timed section
-    auto begin = std::chrono::high_resolution_clock::now();
+    Utility::Timer stopwatch;
 
     int docsinserted = 0;
     std::string nexturl = docreader->getURL();
@@ -39,7 +40,9 @@ void commandInsert(std::unique_ptr<Index>& indexptr, std::unique_ptr<ReaderInter
             while(true) {
                 std::string newdoc = morpher.getDocument();
                 std::cout << "Inserting file #" << docsinserted << ": " << currenturl << std::endl;
+                stopwatch.start();
                 indexptr->insert_document(currenturl, newdoc);
+                stopwatch.stop();
                 docsinserted++;
                 
                 if(!morpher.isValid())
@@ -51,16 +54,15 @@ void commandInsert(std::unique_ptr<Index>& indexptr, std::unique_ptr<ReaderInter
         //Otherwise just insert the document
         else {
             std::cout << "Inserting file #" << docsinserted << ": " << currenturl << std::endl;
+            stopwatch.start();
             indexptr->insert_document(currenturl, currentdoc);
+            stopwatch.stop();
             docsinserted++;
         }
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto dur = end - begin;
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
-    std::cout << "Inserted " << docsinserted << " documents in " << ms << "ms for an average of " << ms / (double)docsinserted
-        << " ms/doc\n";
+    std::cout << "Inserted " << docsinserted << " documents in " << stopwatch.getCumulative() << "ms for an average of "
+        << stopwatch.getCumulative() / (double)docsinserted << " ms/doc\n";
 
     // int docsinserted = 0;
     // for(int i = 0; i < doccount && docreader->isValid(); i++) {

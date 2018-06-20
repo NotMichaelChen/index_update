@@ -1,6 +1,6 @@
 #include "query_primitive.hpp"
 
-#include "util.hpp"
+#include "utility/util.hpp"
 
 query_primitive::query_primitive(unsigned int termID, GlobalType::NonPosIndex& index, SparseExtendedLexicon& exlex, std::string staticpath) {
     lists.emplace_back(termID, index);
