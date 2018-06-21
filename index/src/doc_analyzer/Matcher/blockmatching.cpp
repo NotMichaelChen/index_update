@@ -26,6 +26,58 @@ std::vector<int> getExtended(std::vector<int>::const_iterator olditer, std::vect
     return std::vector<int>(begin, end);
 }
 
+void extendRemoveOverlaps(std::vector<Block>& commonblocks, StringEncoder& se) {
+    if(commonblocks.size() <= 1)
+        return;
+
+    //Sort based on old locations
+    std::sort(commonblocks.begin(), commonblocks.end(), compareOld);
+    //Create a vector of chars to store deleted locations
+    //Can't use bools since vector<bool> is special
+    std::vector<char> isdeleted(commonblocks.size());
+    
+    //Index of block to be extended
+    size_t index = 0;
+    while(index < commonblocks.size()) {
+        auto olditer = se.getOldIter() + commonblocks[index].oldloc;
+        auto newiter = se.getNewIter() + commonblocks[index].newloc;
+        
+        std::vector<int> extendedrun = getExtended(olditer, newiter, se);
+        
+        //if we successfully extended the block, check for possible overlaps
+        if(extendedrun.size() > commonblocks[index].run.size()) {
+            commonblocks[index].run = extendedrun;
+            
+
+            //Potential overlap as long as the other block's begin is before this block's end
+            int oldendloc = commonblocks[index].oldendloc();
+            for(auto overlapchecker = commonblocks.begin() + index + 1; overlapchecker != commonblocks.end() && overlapchecker->oldloc < oldendloc; overlapchecker++) {
+                if(isdeleted[overlapchecker - commonblocks.begin()])
+                    continue;
+                
+                if(isOverlap(overlapchecker->oldloc, overlapchecker->newloc, overlapchecker->run.size(),
+                    commonblocks[index].oldloc, commonblocks[index].newloc, commonblocks[index].run.size()))
+                {
+                    isdeleted[overlapchecker - commonblocks.begin()] = 1;
+                }
+            }
+        }
+        
+        do {
+            index++;
+        } while(index < commonblocks.size() && isdeleted[index]);
+    }
+
+    //Copy over valid blocks
+    std::vector<Block> newblocks;
+    for(size_t i = 0; i < commonblocks.size(); i++) {
+        if(!isdeleted[i])
+            newblocks.push_back(commonblocks[i]);
+    }
+
+    commonblocks.swap(newblocks);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
@@ -58,36 +110,29 @@ std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
         blockcheck.insert(blockcheck.end(), newiter, newiter+minsize);
         unsigned int blockhash = Utility::hashVector(blockcheck);
         
-        std::cout << potentialblocks.count(blockhash) << std::endl;
+        // std::cout << potentialblocks.count(blockhash) << std::endl;
         //Get all blocks that match the current block's hash
+
+        //Stores all of the current valid blocks per set of candidate blocks of a given hash
+        std::vector<Block> currentblocks;
         auto blockmatchrange = potentialblocks.equal_range(blockhash);
+        
         for(auto matchedblock = blockmatchrange.first; matchedblock != blockmatchrange.second; ++matchedblock) {
             //Double-check equality
             if(blockcheck == matchedblock->second.run) {
-                bool isoverlap = false;
-                //Potential overlap as long as this block's begin is after the other block's begin
-                for(auto overlapchecker = commonblocks.rbegin(); overlapchecker != commonblocks.rend() &&
-                    (newiter - newbeginiter) >= overlapchecker->newloc; overlapchecker++)
-                {
-                    if(isOverlap(matchedblock->second.oldloc, newiter - newbeginiter, minsize,
-                        overlapchecker->oldloc, overlapchecker->newloc, overlapchecker->run.size()))
-                    {
-                        isoverlap = true;
-                        break;
-                    }
-                }
-
-                if(isoverlap)
-                    continue;
-
-                std::vector<int> extendedblock = getExtended(se.getOldIter() + matchedblock->second.oldloc, newiter, se);
-
-                commonblocks.emplace_back(matchedblock->second.oldloc, newiter - newbeginiter, extendedblock);
+                currentblocks.emplace_back(matchedblock->second.oldloc, newiter - newbeginiter, matchedblock->second.run);
             }
+
+            extendRemoveOverlaps(currentblocks, se);
+            commonblocks.insert(commonblocks.end(), currentblocks.begin(), currentblocks.end());
+
+            currentblocks.clear();
         }
 
         blockcheck.clear();
     }
+
+    extendRemoveOverlaps(commonblocks, se);
     
     return commonblocks;
 }
