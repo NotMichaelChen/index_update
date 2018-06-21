@@ -3,6 +3,7 @@
 #include <map>
 #include <unordered_map>
 #include <algorithm>
+#include <iostream>
 
 #include "utility/util.hpp"
 
@@ -48,6 +49,8 @@ std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
 
         newblock.clear();
     }
+
+    auto newbeginiter = se.getNewIter();
     
     //Check each block in the new file for a match with a block in the old file
     std::vector<int> blockcheck;
@@ -55,6 +58,7 @@ std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
         blockcheck.insert(blockcheck.end(), newiter, newiter+minsize);
         unsigned int blockhash = Utility::hashVector(blockcheck);
         
+        std::cout << potentialblocks.count(blockhash) << std::endl;
         //Get all blocks that match the current block's hash
         auto blockmatchrange = potentialblocks.equal_range(blockhash);
         for(auto matchedblock = blockmatchrange.first; matchedblock != blockmatchrange.second; ++matchedblock) {
@@ -63,9 +67,9 @@ std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
                 bool isoverlap = false;
                 //Potential overlap as long as this block's begin is after the other block's begin
                 for(auto overlapchecker = commonblocks.rbegin(); overlapchecker != commonblocks.rend() &&
-                    (newiter - se.getNewIter()) >= overlapchecker->newloc; overlapchecker++)
+                    (newiter - newbeginiter) >= overlapchecker->newloc; overlapchecker++)
                 {
-                    if(isOverlap(matchedblock->second.oldloc, newiter - se.getNewIter(), minsize,
+                    if(isOverlap(matchedblock->second.oldloc, newiter - newbeginiter, minsize,
                         overlapchecker->oldloc, overlapchecker->newloc, overlapchecker->run.size()))
                     {
                         isoverlap = true;
@@ -78,7 +82,7 @@ std::vector<Block> getCommonBlocks(int minsize, StringEncoder& se) {
 
                 std::vector<int> extendedblock = getExtended(se.getOldIter() + matchedblock->second.oldloc, newiter, se);
 
-                commonblocks.emplace_back(matchedblock->second.oldloc, newiter - se.getNewIter(), extendedblock);
+                commonblocks.emplace_back(matchedblock->second.oldloc, newiter - newbeginiter, extendedblock);
             }
         }
 

@@ -23,9 +23,18 @@ vector<Block> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblock
     BlockGraph G(commonblocks);
     vector<Block> topsort = topologicalSort(G);
 
+    size_t sum = 0;
+    for(Block& b : commonblocks) {
+        sum += G.getAdjacencyList(b).size();
+    }
+
+    cout << "Generated " << sum << " edges in the block graph" << endl;
+
     //Get the optimal set of blocks to select
     DistanceTable disttable(maxblockcount, G, topsort);
     vector<Block> finalpath = disttable.findOptimalPath(selectionparameter);
+
+    cout << "Selected " << finalpath.size() << " blocks" << endl;
 
     return finalpath;
 }
