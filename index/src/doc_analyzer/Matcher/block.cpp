@@ -28,3 +28,14 @@ bool compareNew(const shared_ptr<Block>& lhs, const shared_ptr<Block>& rhs) {
 bool compareSizeGreater(const shared_ptr<Block>& lhs, const shared_ptr<Block>& rhs) {
     return lhs->run.size() > rhs->run.size();
 }
+
+bool compareStrict(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs) {
+    if(lhs->oldloc != rhs->oldloc)
+        return lhs->oldloc < rhs->oldloc;
+    else if(lhs->newloc != rhs->newloc)
+        return lhs->newloc < rhs->newloc;
+    else if(lhs->run.size() != rhs->run.size())
+        return lhs->run.size() < rhs->run.size();
+    else
+        return false;
+}

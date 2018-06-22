@@ -35,4 +35,6 @@ bool compareOld(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>&
 bool compareNew(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
 bool compareSizeGreater(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
 
+bool compareStrict(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
+
 #endif

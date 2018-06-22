@@ -133,7 +133,7 @@ std::vector<std::shared_ptr<Block>> getCommonBlocks(int minsize, StringEncoder& 
     }
 
     extendRemoveOverlaps(commonblocks, se);
-    
+
     return commonblocks;
 }
 
@@ -156,9 +156,9 @@ void resolveIntersections(std::vector<std::shared_ptr<Block>>& allblocks) {
             if(allblocks[j]->oldloc > allblocks[i]->oldendloc())
                 break;
             
-            //Intersection occurs if B.end > A.end > B.begin > A.begin
+            //Intersection occurs if B.end > A.end >= B.begin > A.begin
             //We know that B.begin > A.begin (iterating in sorted order)
-            //We know that A.end > B.begin (is our breaking condition)
+            //We know that A.end >= B.begin (is our breaking condition)
             //Thus we only need to check B.end > A.end
             if(allblocks[j]->oldendloc() > allblocks[i]->oldendloc()) {
                 //calculate how much the current block needs to shrink by
@@ -195,9 +195,9 @@ void resolveIntersections(std::vector<std::shared_ptr<Block>>& allblocks) {
             }
         }
     }
-    
+
     //remove duplicates
-    std::sort(addedblocks.begin(), addedblocks.end(), compareOld);
+    std::sort(addedblocks.begin(), addedblocks.end(), compareStrict);
     addedblocks.erase(std::unique(addedblocks.begin(), addedblocks.end()), addedblocks.end());
     //append the list of added blocks
     allblocks.insert(allblocks.end(), addedblocks.begin(), addedblocks.end());
