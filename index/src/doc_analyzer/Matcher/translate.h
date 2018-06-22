@@ -19,7 +19,7 @@ struct Translation {
 };
 
 //Get a list of translations given a list of common blocks between two files
-std::vector<Translation> getTranslations(int oldfilelen, int newfilelen, std::vector<Block> commonblocks);
+std::vector<Translation> getTranslations(int oldfilelen, int newfilelen, std::vector<std::shared_ptr<Block>> commonblocks);
 //Applys a translation to a given index
 //Returns a negative number if the index is invalid
 int applyTranslation(int oldindex, Translation t);

@@ -37,7 +37,7 @@ MatcherInfo makePosts(DocumentTuple& olddoc, string& newpage) {
 
     StringEncoder se(olddoc.doc, newpage);
 
-    vector<Block> commonblocks;
+    vector<std::shared_ptr<Block>> commonblocks;
     if(olddoc.doc.length() != 0) {
         //-else, run the graph based matching algorithm on the two versions
         commonblocks = getOptimalBlocks(se, MIN_BLOCK_SIZE, MAX_BLOCK_COUNT, 0.5);

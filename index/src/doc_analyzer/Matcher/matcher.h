@@ -9,10 +9,10 @@
 #include "stringencoder.h"
 
 //Gets the optimal set of common blocks of text between the two files
-std::vector<Block> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter);
+std::vector<std::shared_ptr<Block>> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter);
 //Specifically generates postings given a vector of blocks
 //fragID refers to the next ID to use
 std::pair<std::unordered_map<std::string, ExternNPposting>, std::vector<ExternPposting>>
-    getPostings(std::vector<Block>& commonblocks, unsigned int doc_id, unsigned int& fragID, StringEncoder& se);
+    getPostings(std::vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int& fragID, StringEncoder& se);
 
 #endif

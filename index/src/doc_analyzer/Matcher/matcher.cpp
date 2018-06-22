@@ -8,9 +8,9 @@
 
 using namespace std;
 
-vector<Block> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
+vector<std::shared_ptr<Block>> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
     //Find common blocks between the two files
-    vector<Block> commonblocks = getCommonBlocks(minblocksize, se);
+    vector<shared_ptr<Block>> commonblocks = getCommonBlocks(minblocksize, se);
     resolveIntersections(commonblocks);
 
     cout << "Got " << commonblocks.size() << " blocks" << endl;
@@ -21,10 +21,10 @@ vector<Block> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblock
 
     //Create a graph of the common blocks
     BlockGraph G(commonblocks);
-    vector<Block> topsort = topologicalSort(G);
+    vector<shared_ptr<Block>> topsort = topologicalSort(G);
 
     size_t sum = 0;
-    for(Block& b : commonblocks) {
+    for(shared_ptr<Block>& b : commonblocks) {
         sum += G.getAdjacencyList(b).size();
     }
 
@@ -32,7 +32,7 @@ vector<Block> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblock
 
     //Get the optimal set of blocks to select
     DistanceTable disttable(maxblockcount, G, topsort);
-    vector<Block> finalpath = disttable.findOptimalPath(selectionparameter);
+    vector<shared_ptr<Block>> finalpath = disttable.findOptimalPath(selectionparameter);
 
     cout << "Selected " << finalpath.size() << " blocks" << endl;
 
@@ -43,7 +43,7 @@ vector<Block> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblock
 bool skipBlock(int beginloc, size_t blocklength, int& index, size_t& blockindex);
 
 pair<unordered_map<string, ExternNPposting>, vector<ExternPposting>>
-getPostings(vector<Block>& commonblocks, unsigned int doc_id, unsigned int &fragID, StringEncoder& se) {
+getPostings(vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int &fragID, StringEncoder& se) {
     //Which block to skip next
     size_t blockindex = 0;
     unordered_map<string, ExternNPposting> nppostingsmap;
@@ -54,8 +54,8 @@ getPostings(vector<Block>& commonblocks, unsigned int doc_id, unsigned int &frag
 
     //Set index to either the end of the first block or to 0
     int index = 0;
-    if(commonblocks.size() > 0 && index == commonblocks[0].oldloc) {
-        index = commonblocks[blockindex].run.size();
+    if(commonblocks.size() > 0 && index == commonblocks[0]->oldloc) {
+        index = commonblocks[blockindex]->run.size();
         blockindex++;
     }
     
@@ -70,7 +70,7 @@ getPostings(vector<Block>& commonblocks, unsigned int doc_id, unsigned int &frag
         index++;
         //Condition prevents attempting to access an empty vector
         while(blockindex < commonblocks.size() && 
-            skipBlock(commonblocks[blockindex].oldloc, commonblocks[blockindex].run.size(), index, blockindex))
+            skipBlock(commonblocks[blockindex]->oldloc, commonblocks[blockindex]->run.size(), index, blockindex))
             ;
     }
 
@@ -78,8 +78,8 @@ getPostings(vector<Block>& commonblocks, unsigned int doc_id, unsigned int &frag
 
     index = 0;
     blockindex = 0;
-    if(commonblocks.size() > 0 && index == commonblocks[0].newloc) {
-        index = commonblocks[blockindex].run.size();
+    if(commonblocks.size() > 0 && index == commonblocks[0]->newloc) {
+        index = commonblocks[blockindex]->run.size();
         blockindex++;
     }
     
@@ -95,12 +95,12 @@ getPostings(vector<Block>& commonblocks, unsigned int doc_id, unsigned int &frag
 
         index++;
         if(blockindex < commonblocks.size()) {
-            bool skip = skipBlock(commonblocks[blockindex].newloc, commonblocks[blockindex].run.size(), index, blockindex);
+            bool skip = skipBlock(commonblocks[blockindex]->newloc, commonblocks[blockindex]->run.size(), index, blockindex);
             //When we skip a block of common text, we need a new fragID. Only need a new fragID once though, not per skip
             if(skip)
                 ++fragID;
             while(blockindex < commonblocks.size() &&
-                skipBlock(commonblocks[blockindex].newloc, commonblocks[blockindex].run.size(), index, blockindex))
+                skipBlock(commonblocks[blockindex]->newloc, commonblocks[blockindex]->run.size(), index, blockindex))
                 ;
         }
     }

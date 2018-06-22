@@ -9,14 +9,14 @@ size_t getCommonBlocksSize(std::string a, std::string b, int blocksize) {
     return result.size();
 }
 
-std::vector<Block> getCommonBlocksTest(std::string a, std::string b, int blocksize) {
+std::vector<std::shared_ptr<Block>> getCommonBlocksTest(std::string a, std::string b, int blocksize) {
     StringEncoder se(a, b);
     auto result = getCommonBlocks(blocksize, se);
     return result;
 }
 
 //Simulates running all three functions to produce a final list of blocks
-void resolveIntersectionsTest(std::vector<Block>& allblocks, std::string a, std::string b, int blocksize) {
+void resolveIntersectionsTest(std::vector<std::shared_ptr<Block>>& allblocks, std::string a, std::string b, int blocksize) {
     StringEncoder se(a, b);
     allblocks = getCommonBlocks(blocksize, se);
     resolveIntersections(allblocks);
@@ -36,8 +36,8 @@ TEST_CASE("Test getCommonBlocks", "[block]") {
     REQUIRE(getCommonBlocksSize("a b b e f d e g r", "a b b e g r", 2) == 2);
     REQUIRE(getCommonBlocksSize("a b b e g r", "a b b e f d e g r", 2) == 2);
     auto vec = getCommonBlocksTest("a b b e f d e g r", "a b b e g r", 2);
-    REQUIRE(vec[0].run.size() == 4);
-    REQUIRE(vec[1].run.size() == 3);
+    REQUIRE(vec[0]->run.size() == 4);
+    REQUIRE(vec[1]->run.size() == 3);
 
     REQUIRE(getCommonBlocksSize("a b", "a b a b a b", 2) == 3);
     REQUIRE(getCommonBlocksSize("a b a b a b", "a b", 2) == 3);
@@ -55,7 +55,7 @@ TEST_CASE("Test getCommonBlocks", "[block]") {
 }
 
 TEST_CASE("Test resolveIntersections", "[block]") {
-    std::vector<Block> testvec;
+    std::vector<std::shared_ptr<Block>> testvec;
     
     resolveIntersectionsTest(testvec, "", "", 2);
     REQUIRE(testvec.size() == 0);

@@ -5,7 +5,7 @@
 
 BlockGraph makeGraph(std::string a, std::string b, int blocksize) {
     StringEncoder se(a, b);
-    std::vector<Block> allblocks = getCommonBlocks(blocksize, se);
+    std::vector<std::shared_ptr<Block>> allblocks = getCommonBlocks(blocksize, se);
     resolveIntersections(allblocks);
     return BlockGraph(allblocks);
 }

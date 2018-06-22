@@ -2,6 +2,7 @@
 #define BLOCK_H
 
 #include <vector>
+#include <memory>
 
 #include "stringencoder.h"
 #include "utility/util.hpp"
@@ -13,7 +14,6 @@ struct Block {
     
     int oldendloc();
     int newendloc();
-    bool isValid();
         
     //The "run" of common text
     std::vector<int> run;
@@ -28,28 +28,11 @@ std::ostream& operator<<(std::ostream& os, const Block& bl);
 
 //Block operators
 //Define outside struct since they work based on pointers
-bool operator==(const Block& lhs, const Block& rhs);
+bool operator==(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
 //Compare blocks based on location in old file
-bool compareOld(const Block& lhs, const Block& rhs);
+bool compareOld(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
 //Compare blocks based on location in new file
-bool compareNew(const Block& lhs, const Block& rhs);
-bool compareSizeGreater(const Block& lhs, const Block& rhs);
-
-
-namespace std {
-    //Allows for hashing of Block
-    template <>
-    struct hash<Block>
-    {
-        //http://en.cppreference.com/w/cpp/utility/hash
-        std::size_t operator()(const Block& b) const
-        {
-
-        return ((hash<int>()(b.oldloc)
-                ^ (hash<int>()(b.newloc) << 1)) >> 1)
-                ^ (Utility::hashVector(b.run) << 1);
-        }
-    };
-}
+bool compareNew(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
+bool compareSizeGreater(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
 
 #endif

@@ -4,17 +4,17 @@
 
 using namespace std;
 
-DistanceTable::DistanceTable(int blocklimit, BlockGraph& graph, vector<Block>& toporder) : maxsteps(blocklimit) {
+DistanceTable::DistanceTable(int blocklimit, BlockGraph& graph, vector<shared_ptr<Block>>& toporder) : maxsteps(blocklimit) {
     //Initialize all vertices in graph
     //Since order doesn't matter, use toporder
-    for(Block vertex : toporder) {
+    for(shared_ptr<Block> vertex : toporder) {
         this->initVertex(vertex);
     }
     
     //Fill out the dist list for each vertex
-    for(Block vertex : toporder) {
-        vector<Block> adjacencylist = graph.getAdjacencyList(vertex);
-        for(Block neighbor : adjacencylist) {
+    for(shared_ptr<Block> vertex : toporder) {
+        vector<shared_ptr<Block>> adjacencylist = graph.getAdjacencyList(vertex);
+        for(shared_ptr<Block> neighbor : adjacencylist) {
             this->mergeIntoNext(vertex, neighbor);
         }
     }
@@ -25,7 +25,7 @@ vector<DistanceTable::TableEntry> DistanceTable::findAllBestPaths() {
     //The actual list may be shorter than maxsteps if that graph can be traversed using
     //less than "maxsteps" hops
     vector<DistanceTable::TableEntry> bestlist;
-    bestlist.resize(maxsteps, DistanceTable::TableEntry(-1, -1, {}, {}));
+    bestlist.resize(maxsteps, DistanceTable::TableEntry(-1, -1, nullptr, nullptr));
     
     //find the longest distance
     for(auto iter = tablelist.begin(); iter != tablelist.end(); iter++) {
@@ -38,16 +38,16 @@ vector<DistanceTable::TableEntry> DistanceTable::findAllBestPaths() {
     }
     
     //Trim any null pairs remaining, but don't trim if the list is empty
-    while(!bestlist.back().current.isValid() && bestlist.size() > 0)
+    while(bestlist.back().current == nullptr && bestlist.size() > 0)
         bestlist.pop_back();
     
     return bestlist;
 }
 
-vector<Block> DistanceTable::findOptimalPath(int a) {
+vector<shared_ptr<Block>> DistanceTable::findOptimalPath(int a) {
     vector<DistanceTable::TableEntry> bestlist = findAllBestPaths();
     //int refers to steps, not weight
-    DistanceTable::TableEntry bestending(-1, -1, {}, {});
+    DistanceTable::TableEntry bestending(-1, -1, nullptr, nullptr);
     
     int prevtotalweight = 0;
     for(size_t i = 0; i < bestlist.size(); ++i) {
@@ -67,21 +67,21 @@ vector<Block> DistanceTable::findOptimalPath(int a) {
         prevtotalweight = curtotalweight;
     }
     
-    if(!bestending.current.isValid() && !bestlist.empty())
+    if(bestending.current == nullptr && !bestlist.empty())
         bestending = bestlist.back();
     
     return tracePath(bestending);
 }
 
-vector<Block> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
-    vector<Block> path;
-    if(!ending.current.isValid())
+vector<shared_ptr<Block>> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
+    vector<shared_ptr<Block>> path;
+    if(ending.current == nullptr)
         return path;
     
     path.push_back(ending.current);
     DistanceTable::TableEntry candidate = ending;
     
-    while(candidate.prev.isValid()) {
+    while(candidate.prev != nullptr) {
         path.push_back(candidate.prev);
         candidate = getPreviousEntry(candidate);
     }
@@ -91,19 +91,19 @@ vector<Block> DistanceTable::tracePath(DistanceTable::TableEntry ending) {
     return path;
 }
 
-void DistanceTable::mergeIntoNext(Block prev, Block next) {
-    int weight = next.run.size();
+void DistanceTable::mergeIntoNext(shared_ptr<Block> prev, shared_ptr<Block> next) {
+    int weight = next->run.size();
 
     auto& prevblock = tablelist.find(prev)->second;
     auto& nextblock = tablelist.find(next)->second;
     
     //If neighbor's distlist is not large enough for comparing, resize it
     if(nextblock.size() < prevblock.size()+1)
-        nextblock.resize(prevblock.size()+1, DistanceTable::TableEntry(-1, -1, {}, {}));
+        nextblock.resize(prevblock.size()+1, DistanceTable::TableEntry(-1, -1, nullptr, nullptr));
 
     //Compare each entry in prev to the entry in next+1
     for(size_t i = 0; i < prevblock.size(); i++) {
-        if(!prevblock[i].current.isValid())
+        if(prevblock[i].current == nullptr)
             continue;
         
         if(prevblock[i].distance + weight > nextblock[i+1].distance) {
@@ -121,15 +121,15 @@ void DistanceTable::mergeIntoNext(Block prev, Block next) {
 
 DistanceTable::TableEntry DistanceTable::getPreviousEntry(DistanceTable::TableEntry te) {
     if(te.steps < 2)
-        return DistanceTable::TableEntry(-1, -1, {}, {});
+        return DistanceTable::TableEntry(-1, -1, nullptr, nullptr);
     //subtract one to offset step/index difference, subtract another one to get previous step
     return tablelist[te.prev][te.steps-2];
 }
 
-void DistanceTable::initVertex(Block V) {
+void DistanceTable::initVertex(shared_ptr<Block> V) {
     if(tablelist.find(V) == tablelist.end()) {
         vector<DistanceTable::TableEntry> tableinit;
-        tableinit.push_back(DistanceTable::TableEntry(1, V.run.size(), V, {}));
+        tableinit.push_back(DistanceTable::TableEntry(1, V->run.size(), V, nullptr));
         //Assume that an invalid block in prev refers to the source node
         tablelist[V] = tableinit;
     }
