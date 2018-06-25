@@ -59,11 +59,10 @@ vector<shared_ptr<Block>> DistanceTable::findOptimalPath(int a) {
         //ax - y > 0?
         //If there isn't enough saved common text to take the next pair, then return the current one
         if(margin < a*(i+1)) {
-            //Number of steps is one greater than the index
-            bestending = bestlist[i];
             break;
         }
         
+        bestending = bestlist[i];
         prevtotalweight = curtotalweight;
     }
     
