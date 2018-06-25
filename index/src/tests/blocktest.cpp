@@ -117,7 +117,7 @@ TEST_CASE("Test extendBlocks", "[block]") {
     testvec.clear();
     
     extendBlocksTest(testvec, "a b a b e a b a b", "a b a b a b a b", 2);
-    REQUIRE(testvec.size() == 4);
+    REQUIRE(testvec.size() == 6);
     testvec.clear();
 }
 

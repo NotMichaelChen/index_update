@@ -17,8 +17,11 @@ bool isOverlap(int oldbegin1, int newbegin1, int oldlen, int oldbegin2, int newb
 }
 
 std::vector<int> getExtended(std::vector<int>::const_iterator olditer, std::vector<int>::const_iterator newiter, StringEncoder& se) {
+    auto oldend = se.getOldEnd();
+    auto newend = se.getNewEnd();
+
     auto begin = olditer;
-    while(olditer != se.getOldEnd() && newiter != se.getNewEnd() && *olditer == *newiter) {
+    while(olditer != oldend && newiter != newend && *olditer == *newiter) {
         olditer++;
         newiter++;
     }
@@ -80,22 +83,21 @@ void extendBlocks(std::vector<std::shared_ptr<Block>>& commonblocks, StringEncod
         return;
 
     //Sort based on old locations
-    std::sort(commonblocks.begin(), commonblocks.end(), compareOld);
+    std::sort(commonblocks.begin(), commonblocks.end(), compareStrict);
     //Create a vector of chars to store deleted locations
     //Can't use bools since vector<bool> is special
     std::vector<char> isdeleted(commonblocks.size());
-    
-    //Index of block to be extended
+
+    //Extend every block
+    for(auto iter = commonblocks.begin(); iter != commonblocks.end(); iter++) {
+        auto olditer = se.getOldIter() + (*iter)->oldloc;
+        auto newiter = se.getNewIter() + (*iter)->newloc;
+        (*iter)->run = getExtended(olditer, newiter, se);
+    }
+
+    //Eliminate overlaps
     size_t index = 0;
     while(index < commonblocks.size()) {
-        auto olditer = se.getOldIter() + commonblocks[index]->oldloc;
-        auto newiter = se.getNewIter() + commonblocks[index]->newloc;
-        
-        std::vector<int> extendedrun = getExtended(olditer, newiter, se);
-        
-        //if we successfully extended the block, check for possible overlaps
-        if(extendedrun.size() > commonblocks[index]->run.size()) {
-            commonblocks[index]->run = extendedrun;
             
             //Potential overlap as long as the other block's begin is before this block's end
             int oldendloc = commonblocks[index]->oldendloc();
@@ -109,7 +111,6 @@ void extendBlocks(std::vector<std::shared_ptr<Block>>& commonblocks, StringEncod
                     isdeleted[overlapchecker - commonblocks.begin()] = 1;
                 }
             }
-        }
         
         do {
             index++;
