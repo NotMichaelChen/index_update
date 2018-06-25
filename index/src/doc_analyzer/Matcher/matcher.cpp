@@ -54,12 +54,11 @@ getPostings(vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, u
     //Sort blocks based on oldindex first
     sort(commonblocks.begin(), commonblocks.end(), compareOld);
 
-    //Set index to either the end of the first block or to 0
+    //Skip common blocks if they begin at the start of the document
     int index = 0;
-    if(commonblocks.size() > 0 && index == commonblocks[0]->oldloc) {
-        index = commonblocks[blockindex]->len;
-        blockindex++;
-    }
+    while(blockindex < commonblocks.size() && 
+            skipBlock(commonblocks[blockindex]->oldloc, commonblocks[blockindex]->len, index, blockindex))
+            ;
     
     while(index < se.getOldSize()) {
         string decodedword = se.decodeNum(*(se.getOldIter()+index));
@@ -80,10 +79,9 @@ getPostings(vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, u
 
     index = 0;
     blockindex = 0;
-    if(commonblocks.size() > 0 && index == commonblocks[0]->newloc) {
-        index = commonblocks[blockindex]->len;
-        blockindex++;
-    }
+    while(blockindex < commonblocks.size() && 
+            skipBlock(commonblocks[blockindex]->newloc, commonblocks[blockindex]->len, index, blockindex))
+            ;
     
     while(index < se.getNewSize()) {
         //Edited sections in new file are considered "inserted"
