@@ -80,8 +80,8 @@ TEST_CASE("Test extendBlocks", "[block]") {
 
     extendBlocksTest(testvec, "a b b e f d e g r", "a b b e g r", 2);
     REQUIRE(testvec.size() == 2);
-    REQUIRE(testvec[0]->run.size() == 4);
-    REQUIRE(testvec[1]->run.size() == 3);
+    REQUIRE(testvec[0]->len == 4);
+    REQUIRE(testvec[1]->len == 3);
     testvec.clear();
 
     extendBlocksTest(testvec, "a b", "a b a b a b", 2);

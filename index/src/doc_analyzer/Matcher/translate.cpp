@@ -33,7 +33,7 @@ vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<std::
         }
         
         //want to go 1 past the edge; do not subtract 1 from run_size
-        currentloc = b->oldloc + b->run.size();
+        currentloc = b->oldloc + b->len;
     }
     
     //Add the last edit region if a common block does not extend to the end

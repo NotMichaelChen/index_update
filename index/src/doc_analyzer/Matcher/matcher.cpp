@@ -8,6 +8,7 @@
 
 using namespace std;
 
+//Using pointers for now to avoid having to write a hash function for a block (used to be due to memory constraints)
 vector<std::shared_ptr<Block>> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
     //Find common blocks between the two files
     vector<shared_ptr<Block>> commonblocks = getCommonBlocks(minblocksize, se);
@@ -56,7 +57,7 @@ getPostings(vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, u
     //Set index to either the end of the first block or to 0
     int index = 0;
     if(commonblocks.size() > 0 && index == commonblocks[0]->oldloc) {
-        index = commonblocks[blockindex]->run.size();
+        index = commonblocks[blockindex]->len;
         blockindex++;
     }
     
@@ -71,7 +72,7 @@ getPostings(vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, u
         index++;
         //Condition prevents attempting to access an empty vector
         while(blockindex < commonblocks.size() && 
-            skipBlock(commonblocks[blockindex]->oldloc, commonblocks[blockindex]->run.size(), index, blockindex))
+            skipBlock(commonblocks[blockindex]->oldloc, commonblocks[blockindex]->len, index, blockindex))
             ;
     }
 
@@ -80,7 +81,7 @@ getPostings(vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, u
     index = 0;
     blockindex = 0;
     if(commonblocks.size() > 0 && index == commonblocks[0]->newloc) {
-        index = commonblocks[blockindex]->run.size();
+        index = commonblocks[blockindex]->len;
         blockindex++;
     }
     
@@ -96,12 +97,12 @@ getPostings(vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, u
 
         index++;
         if(blockindex < commonblocks.size()) {
-            bool skip = skipBlock(commonblocks[blockindex]->newloc, commonblocks[blockindex]->run.size(), index, blockindex);
+            bool skip = skipBlock(commonblocks[blockindex]->newloc, commonblocks[blockindex]->len, index, blockindex);
             //When we skip a block of common text, we need a new fragID. Only need a new fragID once though, not per skip
             if(skip)
                 ++fragID;
             while(blockindex < commonblocks.size() &&
-                skipBlock(commonblocks[blockindex]->newloc, commonblocks[blockindex]->run.size(), index, blockindex))
+                skipBlock(commonblocks[blockindex]->newloc, commonblocks[blockindex]->len, index, blockindex))
                 ;
         }
     }

@@ -10,16 +10,16 @@
 //Represents a block of text which may be common between the two files
 struct Block {
     Block();
-    Block(int o, int n, std::vector<int> b);
+    Block(int o, int n, size_t l);
     
     int oldendloc();
     int newendloc();
-        
-    //The "run" of common text
-    std::vector<int> run;
+    
     //Indicates where in each file the block begins
     int oldloc;
     int newloc;
+    //Indicates the length of common text
+    size_t len;
 };
 
 
@@ -34,7 +34,7 @@ bool compareOld(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>&
 //Compare blocks based on location in new file
 bool compareNew(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
 bool compareSizeGreater(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
-
+//Compares blocks by old location, then new location, then by length
 bool compareStrict(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
 
 #endif

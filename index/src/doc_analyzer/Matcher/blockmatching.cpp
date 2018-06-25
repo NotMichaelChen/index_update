@@ -16,18 +16,19 @@ bool isOverlap(int oldbegin1, int newbegin1, int oldlen, int oldbegin2, int newb
         newbegin1 + oldlen <= newbegin2 + newlen;
 }
 
-std::vector<int> getExtended(std::vector<int>::const_iterator olditer, std::vector<int>::const_iterator newiter, StringEncoder& se) {
+void extendBlock(std::shared_ptr<Block> block, StringEncoder& se) {
     auto oldend = se.getOldEnd();
     auto newend = se.getNewEnd();
 
-    auto begin = olditer;
+    //Go past end of block
+    auto olditer = se.getOldIter() + block->oldendloc()+1;
+    auto newiter = se.getNewIter() + block->newendloc()+1;
+
     while(olditer != oldend && newiter != newend && *olditer == *newiter) {
+        block->len++;
         olditer++;
         newiter++;
     }
-    auto end = olditer;
-
-    return std::vector<int>(begin, end);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,9 +39,17 @@ std::vector<std::shared_ptr<Block>> getCommonBlocks(int minsize, StringEncoder& 
     if(se.getOldSize() < minsize || se.getNewSize() < minsize || minsize < 1)
         return commonblocks;
     
+    //Represents a candidate block obtained from the old document
+    struct CandidateBlock {
+        CandidateBlock(int o, std::vector<int> r) : oldloc(o), run(r) {}
+
+        int oldloc;
+        std::vector<int> run;
+    };
+    
     //Stores a "candidate block", extracted from the old doc
     //Each candidate can be matched multiple times with blocks from the new doc 
-    std::unordered_multimap<unsigned int, Block> potentialblocks;
+    std::unordered_multimap<unsigned int, CandidateBlock> potentialblocks;
     
     //Get all possible blocks in the old file
     std::vector<int> newblock;
@@ -48,7 +57,7 @@ std::vector<std::shared_ptr<Block>> getCommonBlocks(int minsize, StringEncoder& 
         newblock.insert(newblock.end(), olditer, olditer+minsize);
         unsigned int blockhash = Utility::hashVector(newblock);
 
-        Block tempblock(olditer - se.getOldIter(), -1, move(newblock));
+        CandidateBlock tempblock(olditer - se.getOldIter(), move(newblock));
         potentialblocks.insert(std::make_pair(blockhash, tempblock));
 
         newblock.clear();
@@ -68,7 +77,7 @@ std::vector<std::shared_ptr<Block>> getCommonBlocks(int minsize, StringEncoder& 
         for(auto matchedblock = blockmatchrange.first; matchedblock != blockmatchrange.second; ++matchedblock) {
             //Double-check equality
             if(blockcheck == matchedblock->second.run) {
-                commonblocks.push_back(std::make_shared<Block>(matchedblock->second.oldloc, newiter - newbeginiter, matchedblock->second.run));
+                commonblocks.push_back(std::make_shared<Block>(matchedblock->second.oldloc, newiter - newbeginiter, matchedblock->second.run.size()));
             }
         }
 
@@ -82,7 +91,6 @@ void extendBlocks(std::vector<std::shared_ptr<Block>>& commonblocks, StringEncod
     if(commonblocks.size() <= 1)
         return;
 
-    //Sort based on old locations
     std::sort(commonblocks.begin(), commonblocks.end(), compareStrict);
     //Create a vector of chars to store deleted locations
     //Can't use bools since vector<bool> is special
@@ -90,27 +98,25 @@ void extendBlocks(std::vector<std::shared_ptr<Block>>& commonblocks, StringEncod
 
     //Extend every block
     for(auto iter = commonblocks.begin(); iter != commonblocks.end(); iter++) {
-        auto olditer = se.getOldIter() + (*iter)->oldloc;
-        auto newiter = se.getNewIter() + (*iter)->newloc;
-        (*iter)->run = getExtended(olditer, newiter, se);
+        extendBlock(*iter, se);
     }
 
     //Eliminate overlaps
     size_t index = 0;
     while(index < commonblocks.size()) {
             
-            //Potential overlap as long as the other block's begin is before this block's end
-            int oldendloc = commonblocks[index]->oldendloc();
-            for(auto overlapchecker = commonblocks.begin() + index + 1; overlapchecker != commonblocks.end() && (*overlapchecker)->oldloc <= oldendloc; overlapchecker++) {
-                if(isdeleted[overlapchecker - commonblocks.begin()])
-                    continue;
-                
-                if(isOverlap((*overlapchecker)->oldloc, (*overlapchecker)->newloc, (*overlapchecker)->run.size(),
-                    commonblocks[index]->oldloc, commonblocks[index]->newloc, commonblocks[index]->run.size()))
-                {
-                    isdeleted[overlapchecker - commonblocks.begin()] = 1;
-                }
+        //Potential overlap as long as the other block's begin is before this block's end
+        int oldendloc = commonblocks[index]->oldendloc();
+        for(auto overlapchecker = commonblocks.begin() + index + 1; overlapchecker != commonblocks.end() && (*overlapchecker)->oldloc <= oldendloc; overlapchecker++) {
+            if(isdeleted[overlapchecker - commonblocks.begin()])
+                continue;
+            
+            if(isOverlap((*overlapchecker)->oldloc, (*overlapchecker)->newloc, (*overlapchecker)->len,
+                commonblocks[index]->oldloc, commonblocks[index]->newloc, commonblocks[index]->len))
+            {
+                isdeleted[overlapchecker - commonblocks.begin()] = 1;
             }
+        }
         
         do {
             index++;
@@ -158,7 +164,7 @@ void resolveIntersections(std::vector<std::shared_ptr<Block>>& allblocks) {
                     addedblocks.push_back(std::make_shared<Block>(
                         allblocks[i]->oldloc,
                         allblocks[i]->newloc,
-                        std::vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)
+                        shrunksize
                     ));
                 }
             }
@@ -179,7 +185,7 @@ void resolveIntersections(std::vector<std::shared_ptr<Block>>& allblocks) {
                     addedblocks.push_back(std::make_shared<Block>(
                         allblocks[i]->oldloc,
                         allblocks[i]->newloc,
-                        std::vector<int>(allblocks[i]->run.begin(), allblocks[i]->run.begin()+shrunksize)
+                        shrunksize
                     ));
                 }
             }

@@ -92,7 +92,7 @@ vector<shared_ptr<Block>> DistanceTable::tracePath(DistanceTable::TableEntry end
 }
 
 void DistanceTable::mergeIntoNext(shared_ptr<Block> prev, shared_ptr<Block> next) {
-    int weight = next->run.size();
+    int weight = next->len;
 
     auto& prevblock = tablelist.find(prev)->second;
     auto& nextblock = tablelist.find(next)->second;
@@ -129,7 +129,7 @@ DistanceTable::TableEntry DistanceTable::getPreviousEntry(DistanceTable::TableEn
 void DistanceTable::initVertex(shared_ptr<Block> V) {
     if(tablelist.find(V) == tablelist.end()) {
         vector<DistanceTable::TableEntry> tableinit;
-        tableinit.push_back(DistanceTable::TableEntry(1, V->run.size(), V, nullptr));
+        tableinit.push_back(DistanceTable::TableEntry(1, V->len, V, nullptr));
         //Assume that an invalid block in prev refers to the source node
         tablelist[V] = tableinit;
     }
