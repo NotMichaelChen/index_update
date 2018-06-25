@@ -11,6 +11,7 @@ using namespace std;
 vector<std::shared_ptr<Block>> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
     //Find common blocks between the two files
     vector<shared_ptr<Block>> commonblocks = getCommonBlocks(minblocksize, se);
+    extendBlocks(commonblocks, se);
     resolveIntersections(commonblocks);
 
     cout << "Got " << commonblocks.size() << " blocks" << endl;

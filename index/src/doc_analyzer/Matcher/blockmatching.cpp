@@ -7,6 +7,7 @@
 
 #include "utility/util.hpp"
 
+//is 1 overlapped by 2
 bool isOverlap(int oldbegin1, int newbegin1, int oldlen, int oldbegin2, int newbegin2, int newlen) {
     return
         oldbegin1 >= oldbegin2 &&
@@ -24,58 +25,6 @@ std::vector<int> getExtended(std::vector<int>::const_iterator olditer, std::vect
     auto end = olditer;
 
     return std::vector<int>(begin, end);
-}
-
-void extendRemoveOverlaps(std::vector<std::shared_ptr<Block>>& commonblocks, StringEncoder& se) {
-    if(commonblocks.size() <= 1)
-        return;
-
-    //Sort based on old locations
-    std::sort(commonblocks.begin(), commonblocks.end(), compareOld);
-    //Create a vector of chars to store deleted locations
-    //Can't use bools since vector<bool> is special
-    std::vector<char> isdeleted(commonblocks.size());
-    
-    //Index of block to be extended
-    size_t index = 0;
-    while(index < commonblocks.size()) {
-        auto olditer = se.getOldIter() + commonblocks[index]->oldloc;
-        auto newiter = se.getNewIter() + commonblocks[index]->newloc;
-        
-        std::vector<int> extendedrun = getExtended(olditer, newiter, se);
-        
-        //if we successfully extended the block, check for possible overlaps
-        if(extendedrun.size() > commonblocks[index]->run.size()) {
-            commonblocks[index]->run = extendedrun;
-            
-
-            //Potential overlap as long as the other block's begin is before this block's end
-            int oldendloc = commonblocks[index]->oldendloc();
-            for(auto overlapchecker = commonblocks.begin() + index + 1; overlapchecker != commonblocks.end() && (*overlapchecker)->oldloc < oldendloc; overlapchecker++) {
-                if(isdeleted[overlapchecker - commonblocks.begin()])
-                    continue;
-                
-                if(isOverlap((*overlapchecker)->oldloc, (*overlapchecker)->newloc, (*overlapchecker)->run.size(),
-                    commonblocks[index]->oldloc, commonblocks[index]->newloc, commonblocks[index]->run.size()))
-                {
-                    isdeleted[overlapchecker - commonblocks.begin()] = 1;
-                }
-            }
-        }
-        
-        do {
-            index++;
-        } while(index < commonblocks.size() && isdeleted[index]);
-    }
-
-    //Copy over valid blocks
-    std::vector<std::shared_ptr<Block>> newblocks;
-    for(size_t i = 0; i < commonblocks.size(); i++) {
-        if(!isdeleted[i])
-            newblocks.push_back(commonblocks[i]);
-    }
-
-    commonblocks.swap(newblocks);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,31 +59,71 @@ std::vector<std::shared_ptr<Block>> getCommonBlocks(int minsize, StringEncoder& 
         blockcheck.insert(blockcheck.end(), newiter, newiter+minsize);
         unsigned int blockhash = Utility::hashVector(blockcheck);
         
-        // std::cout << potentialblocks.count(blockhash) << std::endl;
         //Get all blocks that match the current block's hash
-
-        //Stores all of the current valid blocks per set of candidate blocks of a given hash
-        std::vector<std::shared_ptr<Block>> currentblocks;
         auto blockmatchrange = potentialblocks.equal_range(blockhash);
         
         for(auto matchedblock = blockmatchrange.first; matchedblock != blockmatchrange.second; ++matchedblock) {
             //Double-check equality
             if(blockcheck == matchedblock->second.run) {
-                currentblocks.push_back(std::make_shared<Block>(matchedblock->second.oldloc, newiter - newbeginiter, matchedblock->second.run));
+                commonblocks.push_back(std::make_shared<Block>(matchedblock->second.oldloc, newiter - newbeginiter, matchedblock->second.run));
             }
-
-            extendRemoveOverlaps(currentblocks, se);
-            commonblocks.insert(commonblocks.end(), currentblocks.begin(), currentblocks.end());
-
-            currentblocks.clear();
         }
 
         blockcheck.clear();
     }
 
-    extendRemoveOverlaps(commonblocks, se);
-
     return commonblocks;
+}
+
+void extendBlocks(std::vector<std::shared_ptr<Block>>& commonblocks, StringEncoder& se) {
+    if(commonblocks.size() <= 1)
+        return;
+
+    //Sort based on old locations
+    std::sort(commonblocks.begin(), commonblocks.end(), compareOld);
+    //Create a vector of chars to store deleted locations
+    //Can't use bools since vector<bool> is special
+    std::vector<char> isdeleted(commonblocks.size());
+    
+    //Index of block to be extended
+    size_t index = 0;
+    while(index < commonblocks.size()) {
+        auto olditer = se.getOldIter() + commonblocks[index]->oldloc;
+        auto newiter = se.getNewIter() + commonblocks[index]->newloc;
+        
+        std::vector<int> extendedrun = getExtended(olditer, newiter, se);
+        
+        //if we successfully extended the block, check for possible overlaps
+        if(extendedrun.size() > commonblocks[index]->run.size()) {
+            commonblocks[index]->run = extendedrun;
+            
+            //Potential overlap as long as the other block's begin is before this block's end
+            int oldendloc = commonblocks[index]->oldendloc();
+            for(auto overlapchecker = commonblocks.begin() + index + 1; overlapchecker != commonblocks.end() && (*overlapchecker)->oldloc <= oldendloc; overlapchecker++) {
+                if(isdeleted[overlapchecker - commonblocks.begin()])
+                    continue;
+                
+                if(isOverlap((*overlapchecker)->oldloc, (*overlapchecker)->newloc, (*overlapchecker)->run.size(),
+                    commonblocks[index]->oldloc, commonblocks[index]->newloc, commonblocks[index]->run.size()))
+                {
+                    isdeleted[overlapchecker - commonblocks.begin()] = 1;
+                }
+            }
+        }
+        
+        do {
+            index++;
+        } while(index < commonblocks.size() && isdeleted[index]);
+    }
+
+    //Copy over valid blocks
+    std::vector<std::shared_ptr<Block>> newblocks;
+    for(size_t i = 0; i < commonblocks.size(); i++) {
+        if(!isdeleted[i])
+            newblocks.push_back(commonblocks[i]);
+    }
+
+    commonblocks.swap(newblocks);
 }
 
 //Resolve blocks that are intersecting
