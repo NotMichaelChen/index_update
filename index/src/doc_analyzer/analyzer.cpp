@@ -24,7 +24,7 @@ MatcherInfo indexUpdate(string& url, string& newpage, string& timestamp, Documen
     transtable.insert(info.translations, olddoc.docID);
 
     //-and store the currentpage instead of the previouspage in the tuple store.
-    docstore.insertDocument(url, newpage, info.maxfragID, timestamp);
+    docstore.insertDocument(url, newpage, info.se.getNewSize(), info.maxfragID, timestamp);
 
     info.docID = olddoc.docID;
 

@@ -23,7 +23,7 @@ public:
     DocumentStore();
 
     DocumentTuple getDocument(std::string url);
-    void insertDocument(std::string url, std::string doc, unsigned int maxfragID, std::string timestamp);
+    void insertDocument(std::string url, std::string doc, int termlength, unsigned int maxfragID, std::string timestamp);
 
     //Document Statistics
     size_t getDocumentCount();

@@ -69,7 +69,7 @@ DocumentTuple DocumentStore::getDocument(string url) {
     return obtaineddoc;
 }
 
-void DocumentStore::insertDocument(std::string url, std::string doc, unsigned int maxfragID, string timestamp) {
+void DocumentStore::insertDocument(std::string url, std::string doc, int termlength, unsigned int maxfragID, string timestamp) {
     //Get nextid, olddoclen, avgdoclen, doccount
     string nextid;
     client.get("nextid", [&nextid](cpp_redis::reply& reply) {
@@ -91,7 +91,7 @@ void DocumentStore::insertDocument(std::string url, std::string doc, unsigned in
 
     //document doesn't exist
     if(olddoclen < 0) {
-        vector<string> doctuple = {nextid, doc, to_string(doc.length()), to_string(maxfragID), timestamp};
+        vector<string> doctuple = {nextid, doc, to_string(termlength), to_string(maxfragID), timestamp};
         client.rpush(url, doctuple);
 
         client.select(2);
@@ -105,7 +105,7 @@ void DocumentStore::insertDocument(std::string url, std::string doc, unsigned in
     else {
         //Keep only the docid
         client.ltrim(url, 0, 0);
-        vector<string> newdocinfo = {doc, to_string(doc.length()), to_string(maxfragID), timestamp};
+        vector<string> newdocinfo = {doc, to_string(termlength), to_string(maxfragID), timestamp};
         client.rpush(url, newdocinfo);
 
         avgdoclen = updateAverageRemove(avgdoclen, olddoclen, doccount);
@@ -113,7 +113,7 @@ void DocumentStore::insertDocument(std::string url, std::string doc, unsigned in
         doccount--;
     }
 
-    avgdoclen = updateAverageAdd(avgdoclen, doc.length(), doccount);
+    avgdoclen = updateAverageAdd(avgdoclen, termlength, doccount);
 
     client.set("avgdoclen", to_string(avgdoclen));
     
