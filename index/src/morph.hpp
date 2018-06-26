@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+#include <random>
 
 class DocumentMorpher {
 public:
@@ -18,6 +19,9 @@ private:
 
     //Used to calculate probability of switching documents when generating new versions
     int versionsleft;
+
+    std::mt19937_64 gen;
+    std::uniform_real_distribution<double> dis;
 };
 
 #endif

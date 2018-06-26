@@ -2,7 +2,7 @@
 #define GLOBAL_PARAMETERS_HPP
 
 #define MIN_BLOCK_SIZE 10
-#define MAX_BLOCK_COUNT 50
+#define MAX_BLOCK_COUNT 100
 
 #define POSTING_LIMIT 10000000 //make sure doesn't exceed memory limit
 #define BLOCKSIZE 128

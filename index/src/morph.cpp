@@ -1,7 +1,6 @@
 #include "morph.hpp"
 
 #include <algorithm>
-#include <random>
 
 #include "utility/util.hpp"
 
@@ -20,7 +19,7 @@ std::string getTokenWhitespace(std::string::iterator& iter, std::string::iterato
 }
 
 DocumentMorpher::DocumentMorpher(std::string& from, std::string& to, int numversions) :
-    olddoc(from), newdoc(to), versionsleft(numversions+1)
+    olddoc(from), newdoc(to), versionsleft(numversions+1), gen((std::random_device())()), dis(0, 1.0)
 {
     std::istringstream oldstream(olddoc);
     std::istringstream newstream(newdoc);
@@ -65,11 +64,6 @@ void DocumentMorpher::nextVersion() {
     while(newiter != newdoc.end() && std::isspace(*newiter)) {
         newiter++;
     }
-
-    //http://en.cppreference.com/w/cpp/numeric/random/uniform_real_distribution
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-    std::uniform_real_distribution<double> dis(0, 1.0);
 
     //State a = olddoc, state b = newdoc
     bool in_state_a = true;
