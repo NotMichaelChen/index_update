@@ -1,8 +1,44 @@
 #include "distancetable.h"
 
 #include <algorithm>
+#include <iostream>
 
 using namespace std;
+
+//Assumes that commonblocks is already sorted by old position
+vector<shared_ptr<Block>> getAdjacencyList(vector<shared_ptr<Block>>& commonblocks, size_t index) {
+    vector<shared_ptr<Block>> adjacencylist;
+
+    shared_ptr<Block>& source = commonblocks[index];
+    
+    //All potential neighbors will be strictly after the current block
+    for(auto neighborindex = index+1; neighborindex < commonblocks.size(); neighborindex++) {
+        shared_ptr<Block>& neighbor = commonblocks[neighborindex];
+        if(neighbor->oldloc > source->oldendloc() && neighbor->newloc > source->newendloc())
+            adjacencylist.push_back(neighbor);
+    }
+
+    return adjacencylist;
+}
+
+DistanceTable::DistanceTable(int blocklimit, vector<shared_ptr<Block>> commonblocks) : maxsteps(blocklimit) {
+    //Initialize all vertices in graph
+    for(shared_ptr<Block>& vertex : commonblocks) {
+        this->initVertex(vertex);
+    }
+
+    sort(commonblocks.begin(), commonblocks.end(), compareOld);
+    
+    //Fill out the dist list for each vertex
+    size_t index = 0;
+    for(shared_ptr<Block>& vertex : commonblocks) {
+        vector<shared_ptr<Block>> adjacencylist = getAdjacencyList(commonblocks, index);
+        for(shared_ptr<Block>& neighbor : adjacencylist) {
+            this->mergeIntoNext(vertex, neighbor);
+        }
+        index++;
+    }
+}
 
 DistanceTable::DistanceTable(int blocklimit, BlockGraph& graph, vector<shared_ptr<Block>>& toporder) : maxsteps(blocklimit) {
     //Initialize all vertices in graph

@@ -22,6 +22,7 @@ public:
         std::shared_ptr<Block> prev;
     };
     
+    DistanceTable(int blocklimit, std::vector<std::shared_ptr<Block>> commonblocks);
     DistanceTable(int blocklimit, BlockGraph& graph, std::vector<std::shared_ptr<Block>>& toporder);
     
     

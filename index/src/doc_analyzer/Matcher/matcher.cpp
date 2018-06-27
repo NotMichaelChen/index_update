@@ -16,24 +16,25 @@ vector<std::shared_ptr<Block>> getOptimalBlocks(StringEncoder& se, int minblocks
     resolveIntersections(commonblocks);
 
     cout << "Got " << commonblocks.size() << " blocks" << endl;
-    if(commonblocks.size() > 2000) {
+    if(commonblocks.size() > 100000) {
         sort(commonblocks.begin(), commonblocks.end(), compareSizeGreater);
         commonblocks.resize(2000);
     }
 
     //Create a graph of the common blocks
-    BlockGraph G(commonblocks);
-    vector<shared_ptr<Block>> topsort = topologicalSort(G);
+    // BlockGraph G(commonblocks);
+    // vector<shared_ptr<Block>> topsort = topologicalSort(G);
 
-    size_t sum = 0;
-    for(shared_ptr<Block>& b : commonblocks) {
-        sum += G.getAdjacencyList(b).size();
-    }
+    // size_t sum = 0;
+    // for(shared_ptr<Block>& b : commonblocks) {
+    //     sum += G.getAdjacencyList(b).size();
+    // }
 
-    cout << "Generated " << sum << " edges in the block graph" << endl;
+    // cout << "Generated " << sum << " edges in the block graph" << endl;
 
     //Get the optimal set of blocks to select
-    DistanceTable disttable(maxblockcount, G, topsort);
+    // DistanceTable disttable(maxblockcount, G, topsort);
+    DistanceTable disttable(maxblockcount, commonblocks);
     vector<shared_ptr<Block>> finalpath = disttable.findOptimalPath(selectionparameter);
 
     cout << "Selected " << finalpath.size() << " blocks" << endl;
