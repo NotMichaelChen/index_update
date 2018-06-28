@@ -19,6 +19,7 @@ src = [
     'src/doc_analyzer/analyzer.cpp',
     'src/doc_analyzer/Matcher/block.cpp',
     'src/doc_analyzer/Matcher/blockmatching.cpp',
+    'src/doc_analyzer/Matcher/cluster.cpp',
     'src/doc_analyzer/Matcher/distancetable.cpp',
     'src/doc_analyzer/Matcher/graph.cpp',
     'src/doc_analyzer/Matcher/matcher.cpp',

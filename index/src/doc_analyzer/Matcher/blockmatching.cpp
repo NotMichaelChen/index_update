@@ -194,7 +194,7 @@ void resolveIntersections(std::vector<std::shared_ptr<Block>>& allblocks) {
 
     //remove duplicates
     std::sort(addedblocks.begin(), addedblocks.end(), compareStrict);
-    addedblocks.erase(std::unique(addedblocks.begin(), addedblocks.end()), addedblocks.end());
+    addedblocks.erase(std::unique(addedblocks.begin(), addedblocks.end(), compareEqual), addedblocks.end());
     //append the list of added blocks
     allblocks.insert(allblocks.end(), addedblocks.begin(), addedblocks.end());
 }

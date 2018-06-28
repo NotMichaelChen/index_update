@@ -15,7 +15,7 @@ ostream& operator<<(ostream& os, const Block& bl) {
     return os;
 }
 
-bool operator==(const shared_ptr<Block>& lhs, const shared_ptr<Block>& rhs) {
+bool compareEqual(const shared_ptr<Block>& lhs, const shared_ptr<Block>& rhs) {
     return lhs->oldloc == rhs->oldloc && lhs->newloc == rhs->newloc && lhs->len == rhs->len;
 }
 

@@ -6,6 +6,7 @@
 
 #include "graph.h"
 #include "block.h"
+#include "cluster.hpp"
 
 //Table that holds distance info when traversing a graph
 //**All references to steps are assuming starting from some source node S that connects to all other nodes
@@ -22,7 +23,8 @@ public:
         std::shared_ptr<Block> prev;
     };
     
-    DistanceTable(int blocklimit, std::vector<std::shared_ptr<Block>> commonblocks);
+    DistanceTable(int blocklimit, std::vector<Cluster>& vertexclusters, std::vector<std::shared_ptr<Block>>& commonblocks);
+    DistanceTable(int blocklimit, std::vector<std::shared_ptr<Block>>& commonblocks);
     DistanceTable(int blocklimit, BlockGraph& graph, std::vector<std::shared_ptr<Block>>& toporder);
     
     
@@ -46,6 +48,7 @@ private:
     void initVertex(std::shared_ptr<Block> V);
     //Merge the list from prev into the list of next, where next is a neighbor of prev
     void mergeIntoNext(std::shared_ptr<Block> prev, std::shared_ptr<Block> next);
+    void mergeIntoNext(std::vector<TableEntry> merged_table, std::shared_ptr<Block> next);
     //Gets the previous table entry given a current table entry
     TableEntry getPreviousEntry(TableEntry te);
     //Gets a list of every best path in the graph

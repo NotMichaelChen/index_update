@@ -28,7 +28,7 @@ std::ostream& operator<<(std::ostream& os, const Block& bl);
 
 //Block operators
 //Define outside struct since they work based on pointers
-bool operator==(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
+bool compareEqual(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
 //Compare blocks based on location in old file
 bool compareOld(const std::shared_ptr<Block>& lhs, const std::shared_ptr<Block>& rhs);
 //Compare blocks based on location in new file

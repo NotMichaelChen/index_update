@@ -21,7 +21,51 @@ vector<shared_ptr<Block>> getAdjacencyList(vector<shared_ptr<Block>>& commonbloc
     return adjacencylist;
 }
 
-DistanceTable::DistanceTable(int blocklimit, vector<shared_ptr<Block>> commonblocks) : maxsteps(blocklimit) {
+DistanceTable::DistanceTable(int blocklimit, std::vector<Cluster>& vertexclusters, std::vector<std::shared_ptr<Block>>& commonblocks)
+    : maxsteps(blocklimit)
+{
+    //Initialize all vertices in graph
+    for(shared_ptr<Block>& vertex : commonblocks) {
+        this->initVertex(vertex);
+    }
+
+    //Sort the clusters and the common blocks
+    sort(vertexclusters.begin(), vertexclusters.end(), compareCluster);
+    sort(commonblocks.begin(), commonblocks.end(), compareOld);
+
+    for(Cluster& common_vertices : vertexclusters) {
+        vector<TableEntry> merged_table;
+
+        for(shared_ptr<Block>& v : common_vertices.vertices) {
+            vector<TableEntry>& from_table = tablelist.find(v)->second;
+
+            //If neighbor's distlist is not large enough for comparing, resize it
+            if(merged_table.size() < from_table.size())
+                merged_table.resize(from_table.size(), TableEntry(-1, -1, nullptr, nullptr));
+
+            //Compare each entry in prev to the entry in next+1
+            for(size_t i = 0; i < from_table.size(); i++) {
+                if(from_table[i].current == nullptr)
+                    continue;
+                
+                //Take entries that beat the table's old distance
+                if(from_table[i].distance > merged_table[i].distance) {
+                    merged_table[i] = from_table[i];
+                }
+            }
+        }
+
+        //Get the adjacency list from the first vertex in the cluster
+        auto iter_result = lower_bound(commonblocks.begin(), commonblocks.end(), common_vertices.vertices[0], compareOld);
+        vector<shared_ptr<Block>> adjacency_list = getAdjacencyList(commonblocks, iter_result - commonblocks.begin());
+
+        for(shared_ptr<Block>& neighbor : adjacency_list) {
+            mergeIntoNext(merged_table, neighbor);
+        }
+    }
+}
+
+DistanceTable::DistanceTable(int blocklimit, vector<shared_ptr<Block>>& commonblocks) : maxsteps(blocklimit) {
     //Initialize all vertices in graph
     for(shared_ptr<Block>& vertex : commonblocks) {
         this->initVertex(vertex);
@@ -146,6 +190,33 @@ void DistanceTable::mergeIntoNext(shared_ptr<Block> prev, shared_ptr<Block> next
             nextblock[i+1].distance = prevblock[i].distance + weight;
             nextblock[i+1].current = next;
             nextblock[i+1].prev = prev;
+        }
+    }
+
+    //If the table exceeds the number of steps, remove the extra entry
+    if(nextblock.size() > maxsteps)
+        nextblock.pop_back();
+}
+
+void DistanceTable::mergeIntoNext(std::vector<TableEntry> merged_table, std::shared_ptr<Block> next) {
+    int weight = next->len;
+
+    auto& nextblock = tablelist.find(next)->second;
+    
+    //If neighbor's distlist is not large enough for comparing, resize it
+    if(nextblock.size() < merged_table.size()+1)
+        nextblock.resize(merged_table.size()+1, DistanceTable::TableEntry(-1, -1, nullptr, nullptr));
+
+    //Compare each entry in prev to the entry in next+1
+    for(size_t i = 0; i < merged_table.size(); i++) {
+        if(merged_table[i].current == nullptr)
+            continue;
+        
+        if(merged_table[i].distance + weight > nextblock[i+1].distance) {
+            nextblock[i+1].steps = merged_table[i].steps + 1;
+            nextblock[i+1].distance = merged_table[i].distance + weight;
+            nextblock[i+1].current = next;
+            nextblock[i+1].prev = merged_table[i].current;
         }
     }
 

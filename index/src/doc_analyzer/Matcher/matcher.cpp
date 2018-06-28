@@ -5,8 +5,12 @@
 
 #include "distancetable.h"
 #include "blockmatching.hpp"
+#include "cluster.hpp"
 
 using namespace std;
+
+static double avgcoverage = 0;
+static int coveragecount = 0;
 
 //Using pointers for now to avoid having to write a hash function for a block (used to be due to memory constraints)
 vector<std::shared_ptr<Block>> getOptimalBlocks(StringEncoder& se, int minblocksize, int maxblockcount, int selectionparameter) {
@@ -34,10 +38,22 @@ vector<std::shared_ptr<Block>> getOptimalBlocks(StringEncoder& se, int minblocks
 
     //Get the optimal set of blocks to select
     // DistanceTable disttable(maxblockcount, G, topsort);
-    DistanceTable disttable(maxblockcount, commonblocks);
+    // DistanceTable disttable(maxblockcount, commonblocks);
+    vector<Cluster> clusters = generateClusters(commonblocks);
+    DistanceTable disttable(maxblockcount, clusters, commonblocks);
     vector<shared_ptr<Block>> finalpath = disttable.findOptimalPath(selectionparameter);
 
     cout << "Selected " << finalpath.size() << " blocks" << endl;
+
+    int newcommon = 0;
+    for(shared_ptr<Block> b : finalpath)
+        newcommon += b->len;
+
+    if(se.getNewSize() > 0) {
+        avgcoverage += (((double)newcommon/se.getNewSize() * 100) - avgcoverage) / (coveragecount+1);
+        coveragecount++;
+        cout << "Average coverage of new document is " << avgcoverage << "%" << endl;
+    }
 
     return finalpath;
 }
