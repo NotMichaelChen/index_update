@@ -17,6 +17,7 @@ vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<std::
     //Likely not necessary, but a useful guarantee
     sort(commonblocks.begin(), commonblocks.end(), compareOld);
     for(std::shared_ptr<Block> b : commonblocks) {
+        //Lengths of the edited blocks of text
         int oldlength = b->oldloc - currentloc;
         int newlength = b->newloc - (currentloc+shift);
         
@@ -32,7 +33,7 @@ vector<Translation> getTranslations(int oldfilelen, int newfilelen, vector<std::
             shift += newlength - oldlength;
         }
         
-        //want to go 1 past the edge; do not subtract 1 from run_size
+        //want to go 1 past the edge; do not subtract 1 from common block length
         currentloc = b->oldloc + b->len;
     }
     
