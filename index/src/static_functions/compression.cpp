@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <string>
 
 //Pads the given vector of bytes to the boundary of a given word length
 void pad(std::vector<uint8_t>& data, unsigned int len) {
@@ -68,6 +69,6 @@ std::vector<uint8_t> encode_array(std::vector<unsigned int>& nums, std::list<uin
     std::vector<uint8_t> result;
     result.reserve(bytestream.size());
     std::copy(std::begin(bytestream), std::end(bytestream), std::back_inserter(result));
-    
+
     return result;
 }

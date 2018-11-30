@@ -15,7 +15,7 @@ struct Posting {
         third = p; //position
     }
 
-    bool operator<(const Posting& rhs);
+    bool operator<(const Posting& rhs) const;
 
     unsigned int termID;
     unsigned int docID;
@@ -31,7 +31,7 @@ struct nPosting {
         second = f; //frequency
     }
 
-    bool operator<(const nPosting& rhs);
+    bool operator<(const nPosting& rhs) const;
 
     unsigned int termID;
     unsigned int docID;

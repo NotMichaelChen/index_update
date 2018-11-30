@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <string>
 
 double IDF(unsigned int totaldocs, unsigned int docscontaining) {
     double numerator = totaldocs - docscontaining + 0.5;

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <fstream>
+#include <string>
 
 #include "posting.hpp"
 #include "global_parameters.hpp"
@@ -28,7 +29,7 @@ public:
 
 private:
     bool inmemory;
-    
+
     //In-memory variables
     std::vector<nPosting> postinglist;
     size_t postingindex;
