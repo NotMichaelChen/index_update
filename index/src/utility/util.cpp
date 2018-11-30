@@ -3,6 +3,7 @@
 #include "dirent.h"
 #include <iomanip>
 #include <cstring>
+#include <sstream>
 
 namespace Utility
 {
@@ -62,7 +63,7 @@ std::vector<std::string> splitString(std::string& str, char c) {
 
     while(std::getline(stream, segment, c))
         seglist.push_back(segment);
-    
+
     return seglist;
 }
 

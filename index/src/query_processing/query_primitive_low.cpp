@@ -121,7 +121,7 @@ unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
             failure = true;
             return GlobalConst::UIntMax;
         }
-        
+
         return docblock[blockindex];
     }
 }
