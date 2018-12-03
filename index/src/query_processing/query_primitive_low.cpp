@@ -24,6 +24,7 @@ query_primitive_low::query_primitive_low(unsigned int termID, std::string path, 
     //Can assume that static posting lists are sorted
 
     //Determine if term exists in index
+    //TODO: Should be abstracted into sparse lexicon
     ifile.open(filepath);
     if(!ifile)
         throw std::invalid_argument("Error: invalid filepath in query_primitive_low: " + filepath);
@@ -75,11 +76,11 @@ query_primitive_low::query_primitive_low(unsigned int termID, std::string path, 
     docblock = read_block(buffersize, ifile, VBDecode, true);
 }
 
-unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
+unsigned int query_primitive_low::nextGEQ(unsigned int docID, bool& failure) {
     //Reset to clear previous value
     failure = false;
     if(inmemory) {
-        while(postingindex < postinglist.size() && postinglist[postingindex].docID < pos) {
+        while(postingindex < postinglist.size() && postinglist[postingindex].docID < docID) {
             ++postingindex;
         }
         //Notify failure upon return
@@ -92,9 +93,9 @@ unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
     else {
         size_t oldindex = docIDindex;
         //Find the correct block to look at
-        while(docIDindex < last_docID.size() && last_docID[docIDindex] < pos) {
+        while(docIDindex < last_docID.size() && last_docID[docIDindex] < docID) {
             //Move the docID block pointer
-            docblockpos += blocksizes[(docIDindex*2)-1] + blocksizes[(docIDindex*2)];
+            docblockpos += blocksizes[(docIDindex*2)] + blocksizes[(docIDindex*2)+1];
 
             ++docIDindex;
         }
@@ -114,7 +115,7 @@ unsigned int query_primitive_low::nextGEQ(unsigned int pos, bool& failure) {
             freqdecompressed = false;
         }
         //Perform standard docID searching
-        while(blockindex < docblock.size() && docblock[blockindex] < pos)
+        while(blockindex < docblock.size() && docblock[blockindex] < docID)
             ++blockindex;
 
         if(blockindex == docblock.size()) {
