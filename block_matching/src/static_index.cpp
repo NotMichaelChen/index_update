@@ -330,10 +330,8 @@ std::vector<Posting> StaticIndex::merge_pos_postinglist(std::vector<Posting>& li
             iiter++;
         }
         else {
-            //TODO: Determine how postings should be cleaned here
-            finallist.push_back(*ziter);
+            //Newer posting takes priority
             finallist.push_back(*iiter);
-            ziter++;
             iiter++;
         }
     }
@@ -363,11 +361,9 @@ std::vector<nPosting> StaticIndex::merge_nonpos_postinglist(std::vector<nPosting
             iiter++;
         }
         else {
-            //TODO: Determine how postings should be cleaned here
+            //Newer posting takes priority
             nPosting tempposting = *ziter;
-            tempposting.second += iiter->second;
-            finallist.push_back(tempposting);
-            ziter++;
+            finallist.push_back(*iiter);
             iiter++;
         }
     }
