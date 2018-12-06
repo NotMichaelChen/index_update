@@ -12,6 +12,7 @@
 #include "global_parameters.hpp"
 #include "doc_analyzer/analyzer.h"
 #include "posting.hpp"
+#include "dynamic_index.hpp"
 
 //This index does not use compression
 class Index {
@@ -35,20 +36,13 @@ private:
     //Data structures
     //Note: Posting lists are *lazily sorted*, that is, docIDs are stored randomly until they need to be sorted.
     //Indexes on disk are guaranteed to be sorted (due to delta compression)
-    GlobalType::PosIndex positional_index;
-    GlobalType::NonPosIndex nonpositional_index;
-    
-    spp::sparse_hash_map<unsigned int, GlobalType::PosIndex::iterator> positional_lookup;
-    spp::sparse_hash_map<unsigned int, GlobalType::NonPosIndex::iterator> nonpositional_lookup;
-
-    unsigned long positional_size;
-    unsigned long nonpositional_size;
 
     std::string working_dir;
 
     DocumentStore docstore;
     TranslationTable transtable;
     Lexicon lex;
+    DynamicIndex dynamicindex;
     StaticIndex staticwriter;
 };
 

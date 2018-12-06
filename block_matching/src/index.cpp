@@ -16,8 +16,10 @@ std::vector<unsigned int> Index::query(std::vector<std::string> words) {
         docscontaining.push_back(entry.f_t);
     }
 
-    return DAAT(termIDs, docscontaining, nonpositional_index, *(staticwriter.getExLexPointer()),
-        working_dir+GlobalConst::NonPosPath, docstore);
+    throw std::runtime_error("Not Implemented");
+    //TODO: fix QP to use iterators instead of the whole index
+    // return DAAT(termIDs, docscontaining, nonpositional_index, *(staticwriter.getExLexPointer()),
+    //     working_dir+GlobalConst::NonPosPath, docstore);
 }
 
 Index::Index(std::string directory) : docstore(), transtable(), lex(), staticwriter(directory) {
@@ -37,9 +39,6 @@ Index::Index(std::string directory) : docstore(), transtable(), lex(), staticwri
     if(!(stat((working_dir + GlobalConst::NonPosPath).c_str(),&st) == 0 && st.st_mode & (S_IFDIR != 0))) {
         mkdir((working_dir + GlobalConst::NonPosPath).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
-
-    positional_size = 0;
-    nonpositional_size = 0;
 }
 
 void Index::insert_document(std::string& url, std::string& newpage) {
@@ -71,33 +70,16 @@ void Index::insertNPPostings(MatcherInfo& results) {
             else if(!results.se.inOld(np_iter->second.term) && results.se.inNew(np_iter->second.term))
                 entry.f_t++;
             //Don't change in other cases
-
-        GlobalType::NonPosIndex::iterator insertioniter;
-
-        //Lookup where the posting list is in the index for the given termID
-        auto iter_lookup = nonpositional_lookup.find(entry.termid);
-        if(iter_lookup == nonpositional_lookup.end()) {
-            //Construct posting list for the term since it doesn't exist
-            auto results = nonpositional_index.emplace(std::make_pair(entry.termid, std::vector<nPosting>{}));
-            nonpositional_lookup[entry.termid] = results.first;
-
-            insertioniter = results.first;
-        }
-        else {
-            insertioniter = iter_lookup->second;
-        }
-
-        insertioniter->second.emplace_back(entry.termid, np_iter->second.docID, np_iter->second.freq);
+        
+        dynamicindex.insertPostingNP(entry.termid, np_iter->second.docID, np_iter->second.freq);
     }
 
-    nonpositional_size += results.NPpostings.size();
-    if(nonpositional_size > POSTING_LIMIT) {
+    if(dynamicindex.getNPPostingCount() > POSTING_LIMIT) {
         //when dynamic index cannot fit into memory, write to disk
         std::cerr << "Writing non-positional index" << std::endl;
-        staticwriter.write_np_disk(nonpositional_index.begin(), nonpositional_index.end());
-        nonpositional_lookup.clear();
-        nonpositional_index.clear();
-        nonpositional_size = 0;
+        auto nonpositers = dynamicindex.getNonPosIter();
+        staticwriter.write_np_disk(nonpositers.first, nonpositers.second);
+        dynamicindex.clearNonPos();
     }
 }
 
@@ -106,134 +88,29 @@ void Index::insertPPostings(MatcherInfo& results) {
     for(auto p_iter = results.Ppostings.begin(); p_iter != results.Ppostings.end(); p_iter++) {
         Lex_data entry = lex.getEntry(p_iter->term);
 
-        GlobalType::PosIndex::iterator insertioniter;
-
-        //Lookup where the posting list is in the index for the given termID
-        auto iter_lookup = positional_lookup.find(entry.termid);
-        if(iter_lookup == positional_lookup.end()) {
-            //Construct posting list for the term since it doesn't exist
-            auto results = positional_index.emplace(std::make_pair(entry.termid, std::vector<Posting>{}));
-            positional_lookup[entry.termid] = results.first;
-
-            insertioniter = results.first;
-        }
-        else {
-            insertioniter = iter_lookup->second;
-        }
-
-        insertioniter->second.emplace_back(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
+        this->dynamicindex.insertPostingP(entry.termid, p_iter->docID, p_iter->fragID, p_iter->pos);
     }
 
-    positional_size += results.Ppostings.size();
-    if(positional_size > POSTING_LIMIT) {
+    if(dynamicindex.getPPostingCount() > POSTING_LIMIT) {
         std::cerr << "Writing positional index" << std::endl;
-        staticwriter.write_p_disk(positional_index.begin(), positional_index.end());
-        positional_lookup.clear();
-        positional_index.clear();
-        positional_size = 0;
+        auto positers = dynamicindex.getPosIter();
+        staticwriter.write_p_disk(positers.first, positers.second);
+        dynamicindex.clearPos();
     }
 }
 
 void Index::dump() {
-    nlohmann::json jobject;
-
-    //Write lexicons
-    lex.dump(jobject);
-    staticwriter.getExLexPointer()->dump(jobject);
-
-    //Write individual variables
-    jobject["positional_size"] = positional_size;
-    jobject["nonpositional_size"] = nonpositional_size;
-
-    //Write in-memory indexes
-    for(auto inditer = nonpositional_index.begin(); inditer != nonpositional_index.end(); inditer++) {
-        std::string key = std::to_string(inditer->first);
-        for(auto postiter = inditer->second.begin(); postiter != inditer->second.end(); postiter++) {
-            jobject["nonposindex"][key].push_back(nlohmann::json::object({
-                {"termID", postiter->termID},
-                {"docID", postiter->docID},
-                {"frequency", postiter->second},
-            }));
-        }
-    }
-
-    for(auto inditer = positional_index.begin(); inditer != positional_index.end(); inditer++) {
-        std::string key = std::to_string(inditer->first);
-        for(auto postiter = inditer->second.begin(); postiter != inditer->second.end(); postiter++) {
-            jobject["posindex"][key].push_back(nlohmann::json::object({
-                {"termID", postiter->termID},
-                {"docID", postiter->docID},
-                {"fragmentID", postiter->second},
-                {"position", postiter->third}
-            }));
-        }
-    }
-
-    std::string jstring = jobject.dump();
-    std::ofstream ofile(working_dir + "/indexdump", std::ios::out | std::ios::trunc);
-    ofile.write(jstring.c_str(), jstring.size());
-
+    //TODO: reimplement
     //TODO: use redis dump function
 }
 
 void Index::restore() {
-    std::ifstream ifile(working_dir + "/indexdump");
-    if(!ifile) {
-        return;
-    }
-
-    nlohmann::json jobject;
-    ifile >> jobject;
-
-    //Read Lexicons
-    lex.restore(jobject);
-    staticwriter.getExLexPointer()->restore(jobject);
-
-    //Read individual variables
-    positional_size = jobject["positional_size"];
-    nonpositional_size = jobject["nonpositional_size"];
-
-    //Read in-memory indexes
-    auto jiter = jobject.find("nonposindex");
-    if(jiter != jobject.end()) {
-        for(auto inditer = jiter->begin(); inditer != jiter->end(); inditer++) {
-            unsigned int key = std::stoul(inditer.key());
-            std::vector<nPosting> data;
-
-            for(auto dataiter = inditer->begin(); dataiter != inditer->end(); dataiter++) {
-                data.emplace_back(dataiter->at("termID"), dataiter->at("docID"), dataiter->at("frequency"));
-            }
-
-            nonpositional_index[key] = data;
-        }
-    }
-
-    jiter = jobject.find("posindex");
-    if(jiter != jobject.end()) {
-        for(auto inditer = jiter->begin(); inditer != jiter->end(); inditer++) {
-            unsigned int key = std::stoul(inditer.key());
-            std::vector<Posting> data;
-
-            for(auto dataiter = inditer->begin(); dataiter != inditer->end(); dataiter++) {
-                data.emplace_back(
-                    dataiter->at("termID"),
-                    dataiter->at("docID"),
-                    dataiter->at("fragmentID"),
-                    dataiter->at("position"));
-            }
-
-            positional_index[key] = data;
-        }
-    }
-
+    //TODO: reimplement
     //TODO: use redis restore function
 }
 
 void Index::clear() {
-    positional_index.clear();
-    nonpositional_index.clear();
-    positional_size = nonpositional_size = 0;
-    
+    dynamicindex.clear();
     docstore.clear();
     transtable.clear();
     lex.clear();
@@ -241,8 +118,8 @@ void Index::clear() {
 }
 
 void Index::printSize() {
-    std::cerr << "positional: " << positional_size << std::endl;
-    std::cerr << "non-positional: " << nonpositional_size << std::endl;
+    std::cerr << "positional: " << dynamicindex.getPPostingCount() << std::endl;
+    std::cerr << "non-positional: " << dynamicindex.getNPPostingCount() << std::endl;
 
     std::cerr << "lex: " << lex.getSize() << std::endl;
 

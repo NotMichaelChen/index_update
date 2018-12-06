@@ -15,6 +15,7 @@ src = [
     'src/posting.cpp',
     'src/sparse_lexicon.cpp',
     'src/static_index.cpp',
+    'src/dynamic_index.cpp',
     'src/doc_analyzer/analyzer.cpp',
     'src/doc_analyzer/Matcher/block.cpp',
     'src/doc_analyzer/Matcher/blockmatching.cpp',
