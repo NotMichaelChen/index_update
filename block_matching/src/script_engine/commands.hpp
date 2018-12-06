@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "index.hpp"
+#include "index/index.hpp"
 #include "document_readers/reader_interface.hpp"
 #include "document_readers/RAWreader.hpp"
 #include "document_readers/WETreader.hpp"

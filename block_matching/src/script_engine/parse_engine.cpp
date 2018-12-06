@@ -1,6 +1,6 @@
 #include "parse_engine.hpp"
 
-#include "index.hpp"
+#include "index/index.hpp"
 #include "document_readers/WETreader.hpp"
 #include "document_readers/RAWreader.hpp"
 

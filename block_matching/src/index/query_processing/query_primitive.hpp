@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "posting.hpp"
-#include "sparse_lexicon.hpp"
+#include "index/posting.hpp"
+#include "index/sparse_lexicon.hpp"
 #include "query_primitive_low.hpp"
 
 class query_primitive {

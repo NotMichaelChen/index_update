@@ -4,7 +4,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "sparse_lexicon.hpp"
+#include "index/sparse_lexicon.hpp"
 #include "global_parameters.hpp"
 #include "Structures/documentstore.h"
 

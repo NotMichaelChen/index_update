@@ -4,7 +4,7 @@
 #include <vector>
 #include <fstream>
 
-#include "posting.hpp"
+#include "index/posting.hpp"
 
 // Contains functions related to reading and writing from static_indexes
 

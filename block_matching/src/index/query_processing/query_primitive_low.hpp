@@ -5,7 +5,7 @@
 #include <fstream>
 #include <string>
 
-#include "posting.hpp"
+#include "index/posting.hpp"
 #include "global_parameters.hpp"
 
 class query_primitive_low {

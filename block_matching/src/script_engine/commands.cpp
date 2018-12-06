@@ -1,6 +1,6 @@
 #include "commands.hpp"
 
-#include "morph.hpp"
+#include "utility/morph.hpp"
 #include "utility/timer.hpp"
 
 void commandInsert(std::unique_ptr<Index>& indexptr, std::unique_ptr<ReaderInterface>& docreader, std::vector<std::string>& arguments) {
