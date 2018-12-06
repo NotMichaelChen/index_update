@@ -101,12 +101,11 @@ void Index::insertPPostings(MatcherInfo& results) {
 
 void Index::dump() {
     //TODO: reimplement
-    //TODO: use redis dump function
+    dynamicindex.dump(staticwriter);
 }
 
 void Index::restore() {
     //TODO: reimplement
-    //TODO: use redis restore function
 }
 
 void Index::clear() {
