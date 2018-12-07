@@ -1,5 +1,7 @@
 #include "parse_engine.hpp"
 
+#include <sstream>
+
 #include "index/index.hpp"
 #include "document_readers/WETreader.hpp"
 #include "document_readers/RAWreader.hpp"

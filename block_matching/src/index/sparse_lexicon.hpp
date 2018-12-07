@@ -3,8 +3,7 @@
 
 #include <vector>
 #include <map>
-
-#include "libs/json.hpp"
+#include <fstream>
 
 class SparseExtendedLexicon {
 
@@ -17,8 +16,8 @@ public:
     unsigned long getPosLEQOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
     unsigned long getNonPosLEQOffset(unsigned int termID, unsigned int indexnum, bool isZindex);
 
-    void dump(nlohmann::json& jobject);
-    void restore(nlohmann::json& jobject);
+    void dump(std::ofstream& ofile);
+    void restore(std::ifstream& ifile);
     void clear();
     void printSize();
 

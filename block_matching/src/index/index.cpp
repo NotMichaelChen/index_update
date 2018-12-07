@@ -106,6 +106,11 @@ void Index::dump() {
     std::ofstream ofile(working_dir + "/lexicon", std::ios::binary);
     lex.dump(ofile);
     ofile.close();
+    ofile.clear();
+
+    ofile.open(working_dir + "/extendedlexicon", std::ios::binary);
+    staticwriter.getExLexPointer()->dump(ofile);
+    ofile.close();
 }
 
 void Index::restore() {
@@ -113,6 +118,12 @@ void Index::restore() {
 
     std::ifstream ifile(working_dir + "/lexicon", std::ios::binary);
     lex.restore(ifile);
+    ifile.close();
+    ifile.clear();
+
+    ifile.open(working_dir + "/extendedlexicon", std::ios::binary);
+    staticwriter.getExLexPointer()->restore(ifile);
+    ifile.close();
 }
 
 void Index::clear() {

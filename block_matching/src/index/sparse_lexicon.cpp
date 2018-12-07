@@ -1,6 +1,7 @@
 #include "sparse_lexicon.hpp"
 
 #include <iostream>
+#include "static_functions/bytesIO.hpp"
 
 void SparseExtendedLexicon::insertEntry(unsigned int termID, unsigned int indexnum, bool isZindex, unsigned long offset,
     bool positional)
@@ -104,76 +105,55 @@ void SparseExtendedLexicon::printSize() {
     std::cerr << "inonposlex: " << counter << std::endl;
 }
 
-void SparseExtendedLexicon::dump(nlohmann::json& jobject) {
-    for(size_t i = 0; i < zposlex.size(); i++) {
-        for(auto mapiter = zposlex[i].begin(); mapiter != zposlex[i].end(); mapiter++) {
-            jobject["zposlex"][i][std::to_string(mapiter->first)] = mapiter->second;
-        }
-    }
+void SparseExtendedLexicon::dump(std::ofstream& ofile) {
 
-    for(size_t i = 0; i < iposlex.size(); i++) {
-        for(auto mapiter = iposlex[i].begin(); mapiter != iposlex[i].end(); mapiter++) {
-            jobject["iposlex"][i][std::to_string(mapiter->first)] = mapiter->second;
-        }
-    }
+    //Helper function that writes a single sparse lexicon to disk
+    auto writeLex = [&ofile](std::vector<std::map<unsigned int, unsigned long>>& lex) {
+        // Write out number of entries in exlex
+        writeAsBytes(lex.size(), ofile);
 
-    for(size_t i = 0; i < znonposlex.size(); i++) {
-        for(auto mapiter = znonposlex[i].begin(); mapiter != znonposlex[i].end(); mapiter++) {
-            jobject["znonposlex"][i][std::to_string(mapiter->first)] = mapiter->second;
+        for(const auto& lexicon : lex) {
+            // Write out size of dictionary
+            writeAsBytes(lexicon.size(), ofile);
+            for(auto iter = lexicon.begin(); iter != lexicon.end(); iter++) {
+                writeAsBytes(iter->first, ofile);
+                writeAsBytes(iter->second, ofile);
+            }
         }
-    }
+    };
 
-    for(size_t i = 0; i < inonposlex.size(); i++) {
-        for(auto mapiter = inonposlex[i].begin(); mapiter != inonposlex[i].end(); mapiter++) {
-            jobject["inonposlex"][i][std::to_string(mapiter->first)] = mapiter->second;
-        }
-    }
+    writeLex(zposlex);
+    writeLex(znonposlex);
+    writeLex(iposlex);
+    writeLex(inonposlex);
 }
 
-void SparseExtendedLexicon::restore(nlohmann::json& jobject) {
-    auto jiter = jobject.find("zposlex");
-    if(jobject.find("zposlex") != jobject.end()) {
-        zposlex.resize(jiter->size());
-        for(size_t i = 0; i < jiter->size(); i++) {
-            for(auto mapiter = jiter->at(i).begin(); mapiter != jiter->at(i).end(); mapiter++) {
-                unsigned int key = std::stoul(mapiter.key());
-                zposlex[i].insert(std::make_pair(key, mapiter.value()));
-            }
-        }
-    }
+void SparseExtendedLexicon::restore(std::ifstream& ifile) {
+    if(!ifile)
+        return;
 
-    jiter = jobject.find("iposlex");
-    if(jobject.find("iposlex") != jobject.end()) {
-        iposlex.resize(jiter->size());
-        for(size_t i = 0; i < jiter->size(); i++) {
-            for(auto mapiter = jiter->at(i).begin(); mapiter != jiter->at(i).end(); mapiter++) {
-                unsigned int key = std::stoul(mapiter.key());
-                iposlex[i].insert(std::make_pair(key, mapiter.value()));
+    auto readLex = [&ifile](std::vector<std::map<unsigned int, unsigned long>>& lex) {
+        //Read in lexicon length
+        size_t lexlen;
+        readFromBytes(lexlen, ifile);
+        for(size_t lexindex = 0; lexindex < lexlen; lexindex++) {
+            size_t dictlen;
+            readFromBytes(dictlen, ifile);
+            for(size_t j = 0; j < dictlen; j++) {
+                unsigned int key;
+                unsigned long val;
+                readFromBytes(key, ifile);
+                readFromBytes(val, ifile);
+                lex[lexindex][key] = val;
             }
         }
-    }
+    };
 
-    jiter = jobject.find("znonposlex");
-    if(jobject.find("znonposlex") != jobject.end()) {
-        znonposlex.resize(jiter->size());
-        for(size_t i = 0; i < jiter->size(); i++) {
-            for(auto mapiter = jiter->at(i).begin(); mapiter != jiter->at(i).end(); mapiter++) {
-                unsigned int key = std::stoul(mapiter.key());
-                znonposlex[i].insert(std::make_pair(key, mapiter.value()));
-            }
-        }
-    }
+    readLex(zposlex);
+    readLex(znonposlex);
+    readLex(iposlex);
+    readLex(inonposlex);
 
-    jiter = jobject.find("inonposlex");
-    if(jobject.find("inonposlex") != jobject.end()) {
-        inonposlex.resize(jiter->size());
-        for(size_t i = 0; i < jiter->size(); i++) {
-            for(auto mapiter = jiter->at(i).begin(); mapiter != jiter->at(i).end(); mapiter++) {
-                unsigned int key = std::stoul(mapiter.key());
-                inonposlex[i].insert(std::make_pair(key, mapiter.value()));
-            }
-        }
-    }
 }
 
 void SparseExtendedLexicon::clear() {
