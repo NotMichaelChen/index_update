@@ -68,6 +68,9 @@ bool skipBlock(int beginloc, size_t blocklength, int& index, size_t& blockindex)
 
 pair<unordered_map<string, ExternNPposting>, vector<ExternPposting>>
 getPostings(vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, unsigned int &fragID, StringEncoder& se) {
+    // Tells whether a fragID has been applied. Used to determine if fragID needs to be incremented
+    // to match the "next ID to use" postcondition
+    bool fragIDapplied = false;
     //Which block to skip next
     size_t blockindex = 0;
     unordered_map<string, ExternNPposting> nppostingsmap;
@@ -114,18 +117,24 @@ getPostings(vector<std::shared_ptr<Block>>& commonblocks, unsigned int doc_id, u
         }
         //Always insert positional posting for a word
         ppostingslist.emplace_back(decodedword, doc_id, fragID, index);
+        fragIDapplied = true;
 
         index++;
         if(blockindex < commonblocks.size()) {
             bool skip = skipBlock(commonblocks[blockindex]->newloc, commonblocks[blockindex]->len, index, blockindex);
             //When we skip a block of common text, we need a new fragID. Only need a new fragID once though, not per skip
-            if(skip)
+            if(skip) {
                 ++fragID;
+                fragIDapplied = false;
+            }
             while(blockindex < commonblocks.size() &&
                 skipBlock(commonblocks[blockindex]->newloc, commonblocks[blockindex]->len, index, blockindex))
                 ;
         }
     }
+
+    if(fragIDapplied)
+        fragID++;
 
     return make_pair(nppostingsmap, ppostingslist);
 }

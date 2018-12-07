@@ -46,7 +46,6 @@ src = [
 
 src_test = [
     'src_test/test_stringencoder.cpp',
-    'src_test/test_blockgraph.cpp',
     'src_test/blocktest.cpp',
     'src_test/test_matcher.cpp',
     'src_test/test_main.cpp',
