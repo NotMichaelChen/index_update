@@ -9,15 +9,14 @@ Requirements:
 
 To build:
 
-* Create a directory to hold the build files (ex. `builddir`), and change into it
-* Type `meson .. {debug|debugoptimized|release}` into the terminal in your created directory
-* Type `ninja` to build the program
+* Type `meson --buildtype {debug|debugoptimized|release} {builddir}`
+  * This will create a build directory called `builddir`
+* Change into the build directory and type `ninja` to build the program
 
 To build tests:
 
-* Create a directory to hold the build files (can be different from your eariler folder) and change into it
-* Type `meson .. -D:test=true` into the terminal
-* Type `ninja` to build the tests
+* Type `meson -Dtest=true {builddir}`
+* Change into the build directory and type `ninja` to build the tests
 
 ## Testing instructions
 

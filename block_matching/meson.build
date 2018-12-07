@@ -8,6 +8,7 @@ tacopie_dep = cxx.find_library('tacopie')
 cppredis = dependency('cpp_redis')
 thread_dep = dependency('threads')
 
+# find [directory] -name ["pattern"]
 src = [
     'src/doc_analyzer/analyzer.cpp',
     'src/doc_analyzer/Matcher/graph.cpp',
@@ -18,7 +19,6 @@ src = [
     'src/doc_analyzer/Matcher/matcher.cpp',
     'src/doc_analyzer/Matcher/stringencoder.cpp',
     'src/dumps/redis_dump.cpp',
-    'src/main.cpp',
     'src/document_readers/WETreader.cpp',
     'src/document_readers/RAWreader.cpp',
     'src/script_engine/commands.cpp',
@@ -45,11 +45,11 @@ src = [
 ]
 
 src_test = [
-    'src/tests/test_stringencoder.cpp',
-    'src/tests/test_blockgraph.cpp',
-    'src/tests/blocktest.cpp',
-    'src/tests/test_matcher.cpp',
-    'src/tests/test_main.cpp',
+    'src_test/test_stringencoder.cpp',
+    'src_test/test_blockgraph.cpp',
+    'src_test/blocktest.cpp',
+    'src_test/test_matcher.cpp',
+    'src_test/test_main.cpp',
 ]
 
 should_test = get_option('test')

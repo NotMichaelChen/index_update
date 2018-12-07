@@ -8,6 +8,7 @@ tacopie_dep = cxx.find_library('tacopie')
 cppredis = dependency('cpp_redis')
 thread_dep = dependency('threads')
 
+# find [directory] -name ["pattern"]
 src = [
 'src/redis_interfaces/documentstore.cpp',
 'src/doc_parsing/docparser.cpp',
