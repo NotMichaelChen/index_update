@@ -102,10 +102,17 @@ void Index::insertPPostings(MatcherInfo& results) {
 void Index::dump() {
     //TODO: reimplement
     dynamicindex.dump(staticwriter);
+
+    std::ofstream ofile(working_dir + "/lexicon", std::ios::binary);
+    lex.dump(ofile);
+    ofile.close();
 }
 
 void Index::restore() {
     //TODO: reimplement
+
+    std::ifstream ifile(working_dir + "/lexicon", std::ios::binary);
+    lex.restore(ifile);
 }
 
 void Index::clear() {

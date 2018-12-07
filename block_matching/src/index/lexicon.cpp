@@ -1,5 +1,7 @@
 #include "lexicon.hpp"
 
+#include "static_functions/bytesIO.hpp"
+
 using namespace std;
 
 Lexicon::Lexicon() : nextID(0) {}
@@ -19,20 +21,28 @@ spp::sparse_hash_map<std::string, Lex_data>::iterator Lexicon::initEntry(string&
     return results.first;
 }
 
-//Adds lexicon data to the json object for later dumping to disk
-void Lexicon::dump(nlohmann::json& jobject) {
+void Lexicon::dump(ofstream& ofile) {
+    writeAsBytes(nextID, ofile);
     for(auto iter = lex.begin(); iter != lex.end(); ++iter) {
-        jobject["lexicon"][iter->first]["termid"] = iter->second.termid;
-        jobject["lexicon"][iter->first]["f_t"] = iter->second.f_t;
+        // Use '\n' as the terminating character since we split on it during document processing
+        ofile << iter->first << '\n';
+        writeAsBytes(iter->second.termid, ofile);
+        writeAsBytes(iter->second.f_t, ofile);
     }
 }
 
-void Lexicon::restore(nlohmann::json& jobject) {
-    auto jiter = jobject.find("lexicon");
-    if(jiter != jobject.end()) {
-        for(auto lexiter = jiter->begin(); lexiter != jiter->end(); lexiter++) {
-            lex.emplace(lexiter.key(), Lex_data{lexiter.value()["termid"], lexiter.value()["f_t"]});
-        }
+void Lexicon::restore(ifstream& ifile) {
+    if(!ifile)
+        return;
+    readFromBytes(this->nextID, ifile);
+
+    std::string term;
+    unsigned int termid;
+    int f_t;
+    while(std::getline(ifile, term)) {
+        readFromBytes(termid, ifile);
+        readFromBytes(f_t, ifile);
+        lex.emplace(term, Lex_data{termid, f_t});
     }
 }
 

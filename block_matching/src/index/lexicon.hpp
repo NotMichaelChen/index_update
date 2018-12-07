@@ -7,6 +7,7 @@
 #define LEXICON_HPP
 
 #include <string>
+#include <fstream>
 
 #include "libs/json.hpp"
 #include "libs/sparsepp/spp.h"
@@ -23,10 +24,8 @@ public:
 
     Lex_data& getEntry(std::string& term);
 
-    //Dumps contents of lexicon into given json, under the object "lexicon"
-    void dump(nlohmann::json& jobject);
-    //Restores the lexicon from a given json object
-    void restore(nlohmann::json& jobject);
+    void dump(std::ofstream& ofile);
+    void restore(std::ifstream& ifile);
 
     void clear();
     size_t getSize();
