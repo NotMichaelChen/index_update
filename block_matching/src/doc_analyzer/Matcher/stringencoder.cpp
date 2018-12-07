@@ -7,15 +7,12 @@
 
 using namespace std;
 
-//Returns whether punctuation was stripped
-bool stripPunctuation(string& s) {
-    auto from = find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(ispunct)));
-    auto to = find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(ispunct))).base();
-    //Skip if word is just punctuation
-    if(to == s.begin())
-        return false;
-    
-    s = string(from, to);
+//Returns whether the term has only alphanumerics or not
+bool isAlnum(const string& s) {
+    for(char i : s) {
+        if(!isalnum(i))
+            return false;
+    }
     return true;
 }
 
@@ -23,12 +20,12 @@ StringEncoder::StringEncoder(string oldfile, string newfile) : nextcode(0) {
     transform(oldfile.begin(), oldfile.end(), oldfile.begin(), ::tolower);
     transform(newfile.begin(), newfile.end(), newfile.begin(), ::tolower);
 
-    vector<string> oldtokens = Utility::splitString(oldfile, " \n\t\r\f");
-    vector<string> newtokens = Utility::splitString(newfile, " \n\t\r\f");
+    vector<string> oldtokens = Utility::splitString(oldfile, " \n\t\r\f!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
+    vector<string> newtokens = Utility::splitString(newfile, " \n\t\r\f!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
 
     for(string& token : oldtokens) {
         //Strip punctuation
-        if(!stripPunctuation(token))
+        if(!isAlnum(token))
             continue;
 
         auto results = dictionary.insert(make_pair(token, nextcode));
@@ -45,7 +42,7 @@ StringEncoder::StringEncoder(string oldfile, string newfile) : nextcode(0) {
     
     for(string& token : newtokens) {
         //Strip punctuation
-        if(!stripPunctuation(token))
+        if(!isAlnum(token))
             continue;
 
         auto results = dictionary.insert(make_pair(token, nextcode));
