@@ -10,21 +10,30 @@ thread_dep = dependency('threads')
 
 # find [directory] -name ["pattern"]
 src = [
-'src/redis_interfaces/documentstore.cpp',
-'src/doc_parsing/docparser.cpp',
-'src/doc_parsing/transform.cpp',
-'src/doc_parsing/diff.cpp',
-'src/doc_parsing/stringencoder.cpp',
-'src/posting.cpp',
-'src/main.cpp',
-'src/lexicon.cpp',
-'src/index.cpp',
-'src/tests/testdriver.cpp',
-'src/tests/doc_parsing/difftest.cpp',
-'src/landmark/landmarkdirectory.cpp',
-'src/landmark/landmarkarray.cpp',
-'src/utility/util.cpp',
+    'src/redis_interfaces/documentstore.cpp',
+    'src/doc_parsing/docparser.cpp',
+    'src/doc_parsing/transform.cpp',
+    'src/doc_parsing/diff.cpp',
+    'src/doc_parsing/stringencoder.cpp',
+    'src/posting.cpp',
+    'src/lexicon.cpp',
+    'src/index.cpp',
+    'src/landmark/landmarkdirectory.cpp',
+    'src/landmark/landmarkarray.cpp',
+    'src/utility/util.cpp',
 ]
+
+src_test = [
+    'src_test/test_main.cpp',
+    'src_test/test_diff.cpp',
+]
+
+should_test = get_option('test')
+if should_test
+    src += src_test
+else
+    src += 'src/main.cpp'
+endif
 
 dep = [
     cppredis,
