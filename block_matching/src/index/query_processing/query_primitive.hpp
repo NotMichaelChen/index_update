@@ -6,10 +6,11 @@
 #include "index/posting.hpp"
 #include "index/sparse_lexicon.hpp"
 #include "query_primitive_low.hpp"
+#include "index/dynamic_index.hpp"
 
 class query_primitive {
 public:
-    query_primitive(unsigned int termID, GlobalType::NonPosIndex& index, SparseExtendedLexicon& exlex, std::string staticpath);
+    query_primitive(unsigned int termID, DynamicIndex& index, SparseExtendedLexicon& exlex, std::string staticpath);
 
     //Advances QP to next docID greater than x
     unsigned int nextGEQ(unsigned int x);

@@ -6,11 +6,11 @@
 #include "static_functions/bytesIO.hpp"
 #include "static_functions/compression_functions/varbyte.hpp"
 
-query_primitive_low::query_primitive_low(unsigned int termID, GlobalType::NonPosIndex& index) {
+query_primitive_low::query_primitive_low(unsigned int termID, DynamicIndex& index) {
     inmemory = true;
     //Do *not* assume that in-memory posting lists are sorted
-    std::sort(index[termID].begin(), index[termID].end());
-    postinglist = index[termID];
+    postinglist = index.getNPostingList(termID);
+    std::sort(postinglist->begin(), postinglist->end());
     postingindex = 0;
 }
 
@@ -80,15 +80,15 @@ unsigned int query_primitive_low::nextGEQ(unsigned int docID, bool& failure) {
     //Reset to clear previous value
     failure = false;
     if(inmemory) {
-        while(postingindex < postinglist.size() && postinglist[postingindex].docID < docID) {
+        while(postingindex < postinglist->size() && (*postinglist)[postingindex].docID < docID) {
             ++postingindex;
         }
         //Notify failure upon return
-        if(postingindex == postinglist.size()) {
+        if(postingindex == postinglist->size()) {
             failure = true;
             return GlobalConst::UIntMax;
         }
-        return postinglist[postingindex].docID;
+        return (*postinglist)[postingindex].docID;
     }
     else {
         size_t oldindex = docIDindex;
@@ -131,7 +131,7 @@ unsigned int query_primitive_low::nextGEQ(unsigned int docID, bool& failure) {
 //Undefined if nextGEQ returned invalid
 unsigned int query_primitive_low::getFreq() {
     if(inmemory) {
-        return postinglist[postingindex].second;
+        return (*postinglist)[postingindex].second;
     }
     else {
         if(!freqdecompressed) {

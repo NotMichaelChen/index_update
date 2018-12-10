@@ -2,7 +2,7 @@
 
 #include "utility/util.hpp"
 
-query_primitive::query_primitive(unsigned int termID, GlobalType::NonPosIndex& index, SparseExtendedLexicon& exlex, std::string staticpath) {
+query_primitive::query_primitive(unsigned int termID, DynamicIndex& index, SparseExtendedLexicon& exlex, std::string staticpath) {
     lists.emplace_back(termID, index);
 
     std::vector<std::string> indexnames = Utility::readDirectory(staticpath);

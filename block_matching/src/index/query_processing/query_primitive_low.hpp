@@ -5,12 +5,13 @@
 #include <fstream>
 #include <string>
 
+#include "index/dynamic_index.hpp"
 #include "index/posting.hpp"
 #include "global_parameters.hpp"
 
 class query_primitive_low {
 public:
-    query_primitive_low(unsigned int termID, GlobalType::NonPosIndex& index);
+    query_primitive_low(unsigned int termID, DynamicIndex& index);
     query_primitive_low(unsigned int termID, std::string path, size_t LEQpos);
 
     //Advances the read pointer of lp to the posting with the smallest docID that is at least x, and then returns that docID.
@@ -31,7 +32,7 @@ private:
     bool inmemory;
 
     //In-memory variables
-    std::vector<nPosting> postinglist;
+    std::vector<nPosting>* postinglist;
     size_t postingindex;
 
     //Metadata
