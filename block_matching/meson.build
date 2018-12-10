@@ -45,6 +45,7 @@ src = [
 ]
 
 src_test = [
+    'src_test/test_redis.cpp',
     'src_test/test_stringencoder.cpp',
     'src_test/blocktest.cpp',
     'src_test/test_matcher.cpp',
