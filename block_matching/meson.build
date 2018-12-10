@@ -18,7 +18,6 @@ src = [
     'src/doc_analyzer/Matcher/distancetable.cpp',
     'src/doc_analyzer/Matcher/matcher.cpp',
     'src/doc_analyzer/Matcher/stringencoder.cpp',
-    'src/dumps/redis_dump.cpp',
     'src/document_readers/WETreader.cpp',
     'src/document_readers/RAWreader.cpp',
     'src/script_engine/commands.cpp',
@@ -41,6 +40,7 @@ src = [
     'src/static_functions/postingIO.cpp',
     'src/utility/timer.cpp',
     'src/utility/morph.cpp',
+    'src/utility/redis.cpp',
     'src/utility/util.cpp',
 ]
 

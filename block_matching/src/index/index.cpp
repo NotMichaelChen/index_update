@@ -5,7 +5,7 @@
 
 #include "utility/util.hpp"
 #include "query_processing/DAAT.hpp"
-#include "dumps/redis_dump.hpp"
+#include "utility/redis.hpp"
 
 std::vector<unsigned int> Index::query(std::vector<std::string> words) {
     std::vector<unsigned int> termIDs;
