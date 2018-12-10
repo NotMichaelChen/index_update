@@ -5,6 +5,7 @@
 
 #include "utility/util.hpp"
 #include "query_processing/DAAT.hpp"
+#include "dumps/redis_dump.hpp"
 
 std::vector<unsigned int> Index::query(std::vector<std::string> words) {
     std::vector<unsigned int> termIDs;
@@ -100,7 +101,6 @@ void Index::insertPPostings(MatcherInfo& results) {
 }
 
 void Index::dump() {
-    //TODO: reimplement
     dynamicindex.dump(staticwriter);
 
     std::ofstream ofile(working_dir + "/lexicon", std::ios::binary);
@@ -111,11 +111,17 @@ void Index::dump() {
     ofile.open(working_dir + "/extendedlexicon", std::ios::binary);
     staticwriter.getExLexPointer()->dump(ofile);
     ofile.close();
+
+    std::string redisname = working_dir + "/redisdump_docstore";
+    //TODO: don't use hardcoded numbers
+    redis_dump(redisname, 0);
+    redisname = working_dir + "/redisdump_ttable";
+    redis_dump(redisname, 1);
+    redisname = working_dir + "/redisdump_docstoremeta";
+    redis_dump(redisname, 2);
 }
 
 void Index::restore() {
-    //TODO: reimplement
-
     std::ifstream ifile(working_dir + "/lexicon", std::ios::binary);
     lex.restore(ifile);
     ifile.close();
@@ -124,6 +130,14 @@ void Index::restore() {
     ifile.open(working_dir + "/extendedlexicon", std::ios::binary);
     staticwriter.getExLexPointer()->restore(ifile);
     ifile.close();
+
+    std::string redisname = working_dir + "/redisdump_docstore";
+    //TODO: don't use hardcoded numbers
+    redis_restore(redisname, 0);
+    redisname = working_dir + "/redisdump_ttable";
+    redis_restore(redisname, 1);
+    redisname = working_dir + "/redisdump_docstoremeta";
+    redis_restore(redisname, 2);
 }
 
 void Index::clear() {
@@ -132,6 +146,7 @@ void Index::clear() {
     transtable.clear();
     lex.clear();
     staticwriter.getExLexPointer()->clear();
+    redis_flushDB();
 }
 
 void Index::printSize() {
