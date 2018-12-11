@@ -20,7 +20,7 @@ struct EditEntry {
     EditOperation editop; // 0 = insert, 1 = delete, 2 = shift
     unsigned int landID;
     int pos; // offset for posting, location/amount for landmarks
-    int termID; // -1 for landmarks
+    int termID; // undefined for landmarks, normally -1 for landmarks
 };
 
 std::vector<EditEntry> transformDiff(const std::vector<int>& olddoc, const std::vector<int>& newdoc,

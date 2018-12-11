@@ -1,6 +1,9 @@
 #include "transform.hpp"
 
+#include <stdexcept>
+
 // Follows the split-block policy (all edit operations splits a block)
+// TODO: Actually perform the operations so we have access to the latest landmarks
 std::vector<EditEntry> transformDiff(const std::vector<int>& olddoc, const std::vector<int>& newdoc,
     LandmarkArray& landarray, std::vector<DiffRange>& editscript)
 {
@@ -13,14 +16,14 @@ std::vector<EditEntry> transformDiff(const std::vector<int>& olddoc, const std::
         auto landiter = landarray.getLandmark(entry.start);
         
         if(entry.isIns) {
-            //Insert a new landmark if insertion doesn't exactly overlap a landmark
-            //add one since entry.start describes inserting before that position
-            unsigned int newlandmarkid = landiter->landID;
-            if(entry.start != landiter->pos) {
-                transformedscript.emplace_back(true, EditEntry::insertion, nextID, entry.start-1, -1);
+            //Invalidate old landmark
+            transformedscript.emplace_back(true, EditEntry::deletion, landiter->landID, 0, -1);
 
-                ++nextID;
-            }
+            //Insert a new landmark
+            //add one since entry.start describes inserting before that position
+            unsigned int newlandmarkid = nextID;
+            transformedscript.emplace_back(true, EditEntry::insertion, newlandmarkid, entry.start-1, -1);
+            ++nextID;
 
             // Shift every landmark entry.len to the right
             // We always shift every landmark after the current one
@@ -29,56 +32,48 @@ std::vector<EditEntry> transformDiff(const std::vector<int>& olddoc, const std::
                 transformedscript.emplace_back(true, EditEntry::shift, nextlanditer->landID, entry.len, -1);
             }
 
-            // Issue delete postings for words from entry.start to end of landmark
-            unsigned int posend = (nextlanditer == landarray.getEnd()) ? olddoc.size() : nextlanditer->pos;
-
-            for(unsigned int i = entry.start; i < posend; i++) {
-                transformedscript.emplace_back(false, EditEntry::deletion, newlandmarkid, i - entry.start, olddoc[i]);
-            }
-
             // Issue new postings starting with new words then old deleted words
+            unsigned int posend = (nextlanditer == landarray.getEnd()) ? olddoc.size() : nextlanditer->pos;
             for(int i : entry.terms) {
                 transformedscript.emplace_back(false, EditEntry::insertion, landiter->landID, entry.start, i);
             }
             for(unsigned int i = entry.start; i < entry.start + entry.len; i++) {
                 transformedscript.emplace_back(false, EditEntry::insertion, landiter->landID, entry.start, olddoc[i]);
             }
-            
         }
         else {
-            // If there are landmarks in the deletion range, delete them
+            // Invalidate all landmarks that are part of the deletion range
             auto overlappedlandmarks = landarray.getLandmarkRange(entry.start, entry.start + entry.len);
+            if(overlappedlandmarks.empty())
+                throw std::runtime_error("Error: landmark range in deletion is empty");
+
             for(auto iter : overlappedlandmarks) {
                 transformedscript.emplace_back(true, EditEntry::deletion, iter->landID, 0, -1);
             }
 
-            // TODO: do we ever need to insert landmarks when deleting? We should just move the last landmark
-            // Insert new landmark before delete range if it doesn't overlap a landmark
-            unsigned int newlandmarkid = landiter->landID;
-            if(entry.start-1 != landiter->pos && entry.start != 0) {
-                transformedscript.emplace_back(true, EditEntry::deletion, nextID, entry.start-1, -1);
-                newlandmarkid = nextID;
-                ++nextID;
-            }
-
+            // Shift all landmarks past the deletion range
             auto nextlanditer = landarray.getLandmarkAfter(entry.start + entry.len);
-
-            // Shift every landmark entry.len to the left
             if(nextlanditer != landarray.getEnd()) {
+                // Only need to add one entry since it is implied that the other landmarks will be shifted
                 transformedscript.emplace_back(true, EditEntry::shift, nextlanditer->landID, -entry.len, -1);
             }
 
-            // Issue deletion postings starting from entry.start to next landmark after entry.start+entry.len inclusive
+            // Reinsert landmark at position of first landmark that was invalidated
+            auto firstinvalidlandmark = overlappedlandmarks[0]; // Guaranteed to exist, otherwise we'd throw exception
+            transformedscript.emplace_back(true, EditEntry::insertion, nextID, firstinvalidlandmark->pos, -1);
+            unsigned int newlandmarkid = nextID;
+            ++nextID;
+
+            // Reinsert terms before deletion range then after deletion range until next landmark
+            for(unsigned int i = firstinvalidlandmark->pos; i < entry.start; i++) {
+                transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, i - firstinvalidlandmark->pos, olddoc[i]);
+            }
+
             // represents the landmark after the end of the deletion block
             unsigned int posend = (nextlanditer == landarray.getEnd()) ? olddoc.size() : nextlanditer->pos;
 
-            for(unsigned int i = entry.start; i < posend; i++) {
-                transformedscript.emplace_back(false, EditEntry::deletion, newlandmarkid, i - entry.start, olddoc[i]);
-            }
-
-            // Issue new postings starting from entry end to next landmark
-            for(unsigned int i = entry.start + entry.len; i < posend; ++i) {
-                transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, i - entry.start, olddoc[i]);
+            for(unsigned int i = entry.start+entry.len; i < posend; i++) {
+                transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, firstinvalidlandmark->pos, olddoc[i]);
             }
         }
     }
