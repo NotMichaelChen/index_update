@@ -67,7 +67,7 @@ std::vector<std::string> splitString(std::string& str, char c) {
     return seglist;
 }
 
-std::vector<std::string> splitString(std::string& str, std::string delim) {
+std::vector<std::string> splitString(const std::string& str, const std::string& delim) {
     std::vector<std::string> tokens;
     char* pMutableString = (char*) malloc( str.size()+1 );
     strcpy( pMutableString, str.c_str() );
@@ -93,6 +93,15 @@ std::string trim(std::string const& str)
     std::size_t first     = firstScan == std::string::npos ? str.length() : firstScan;
     std::size_t last      = str.find_last_not_of(' ');
     return str.substr(first, last-first+1);
+}
+
+//Returns whether the term has only alphanumerics or not
+bool isAlnum(const std::string& s) {
+    for(char i : s) {
+        if(!isalnum(i))
+            return false;
+    }
+    return true;
 }
 
 }

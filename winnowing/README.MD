@@ -12,15 +12,15 @@ init array H[n-b]
 for i = 0..n-b:
     H[i] = hash(F[i..i+b-1])
 
-choose w = 100 or more
+choose WB = 100 or more
 init pointcut array C[n-b] all 0s
 # Slide the window over H
-for w = 0..n-b:
+for w = 0..n-b-WB:
     init array of possible cuts PC
     # Find all possible cuts
-    for i = w+1..w+b-1:
+    for i = w..w+WB-1:
         cut = true
-        for j = w+1..w+b-1:
+        for j = w..w+WB-1:
             if i == j:
                 continue
             if H[i] > H[j]:
