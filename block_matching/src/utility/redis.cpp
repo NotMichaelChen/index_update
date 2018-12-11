@@ -1,6 +1,9 @@
 #include "redis.hpp"
 
+#include <cstdint>
+
 #include "static_functions/bytesIO.hpp"
+#include <iostream>
 
 static void writeStringPair(std::ofstream& ofile, std::string& key, std::string& hash) {
     size_t keysize = key.size();
@@ -14,10 +17,17 @@ static void writeStringPair(std::ofstream& ofile, std::string& key, std::string&
 static bool readStringPair(std::ifstream& ifile, std::string& key, std::string& hash) {
     size_t keysize = 0;
     size_t hashsize = 0;
+    std::vector<char> buf;
+
     readFromBytes(keysize, ifile);
-    ifile.read(&key[0], keysize);
+    buf.resize(keysize);
+    ifile.read(&buf.front(), keysize);
+    key = std::string(buf.begin(), buf.end());
+
     readFromBytes(hashsize, ifile);
-    ifile.read(&hash[0], hashsize);
+    buf.resize(hashsize);
+    ifile.read(&buf.front(), hashsize);
+    hash = std::string(buf.begin(), buf.end());
 
     return (bool) ifile;
 }
@@ -30,14 +40,14 @@ void redis_dump(std::string& name, int dbnum) {
 
     std::ofstream ofile(name, std::ios::binary);
 
-    size_t cursor = 0;
+    int64_t cursor = 0;
     std::vector<cpp_redis::reply> keys;
 
     do {
         // Scan for keys page-by-page
         client.scan(cursor, [&cursor, &keys](cpp_redis::reply& reply) {
             std::vector<cpp_redis::reply> response = reply.as_array();
-            cursor = response[0].as_integer();
+            cursor = stoll(response[0].as_string());
             keys = response[1].as_array();
         });
         client.sync_commit();
@@ -48,6 +58,7 @@ void redis_dump(std::string& name, int dbnum) {
 
             // Get its value
             auto result = client.dump(k);
+            client.sync_commit();
             result.wait();
             std::string val = result.get().as_string();
 

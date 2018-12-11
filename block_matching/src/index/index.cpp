@@ -18,9 +18,9 @@ std::vector<unsigned int> Index::query(std::vector<std::string> words) {
     }
 
     throw std::runtime_error("Not Implemented");
-    //TODO: fix QP to use iterators instead of the whole index
-    // return DAAT(termIDs, docscontaining, nonpositional_index, *(staticwriter.getExLexPointer()),
-    //     working_dir+GlobalConst::NonPosPath, docstore);
+    // TODO: fix QP to use iterators instead of the whole index
+    return DAAT(termIDs, docscontaining, dynamicindex, *(staticwriter.getExLexPointer()),
+        working_dir+GlobalConst::NonPosPath, docstore);
 }
 
 Index::Index(std::string directory) : docstore(), transtable(), lex(), staticwriter(directory) {

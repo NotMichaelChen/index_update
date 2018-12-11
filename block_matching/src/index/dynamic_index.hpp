@@ -16,6 +16,8 @@ public:
     uint64_t getPPostingCount();
     uint64_t getNPPostingCount();
 
+    std::vector<nPosting>* getNPostingList(unsigned int termid);
+
     void dump(StaticIndex& staticwriter);
     // No restore method, just dumps its info onto disk
     void clear();

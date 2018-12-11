@@ -27,6 +27,10 @@ uint64_t DynamicIndex::getNPPostingCount() {
     return nonpositional_size;
 }
 
+std::vector<nPosting>* DynamicIndex::getNPostingList(unsigned int termid) {
+    return &nonpositional_index[termid];
+}
+
 void DynamicIndex::dump(StaticIndex& staticwriter) {
     staticwriter.write_np_disk(nonpositional_index.begin(), nonpositional_index.end());
     staticwriter.write_p_disk(positional_index.begin(), positional_index.end());
