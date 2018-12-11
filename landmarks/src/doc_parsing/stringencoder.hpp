@@ -34,8 +34,8 @@ public:
     int getOldSize();
     int getNewSize();
 
-    std::vector<int> getOldEncoded();
-    std::vector<int> getNewEncoded();
+    const std::vector<int>& getOldEncoded();
+    const std::vector<int>& getNewEncoded();
     
 private:
     //old and new files in integer form

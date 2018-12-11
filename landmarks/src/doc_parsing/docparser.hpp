@@ -7,10 +7,11 @@
 #include "stringencoder.hpp"
 #include "redis_interfaces/documentstore.hpp"
 #include "landmark/landmark.hpp"
+#include "landmark/landmarkdirectory.hpp"
 
 class DocumentParser {
 public:
-    DocumentParser(std::string& url, std::string& newpage, std::string& timestamp, DocumentStore& docstore);
+    DocumentParser(std::string& url, std::string& newpage, std::string& timestamp, DocumentStore& docstore, LandmarkDirectory& landdir);
 
     bool isFirstDoc();
     bool termInOld(std::string& term);

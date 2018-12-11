@@ -7,7 +7,7 @@ int mod(int n, int M) {
     return ((n % M) + M) % M;
 }
 
-std::vector<DiffRange> makeDiffRange(std::vector<int>& olddoc, std::vector<int>& newdoc) {
+std::vector<DiffRange> makeDiffRange(const std::vector<int>& olddoc, const std::vector<int>& newdoc) {
     std::vector<DiffEntry> diffres = diff(olddoc, newdoc);
 
     if(diffres.empty()) {

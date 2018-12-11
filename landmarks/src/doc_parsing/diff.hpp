@@ -23,5 +23,5 @@ struct DiffRange {
 };
 
 // Create a vector of diffranges that indicate a range of insertions or deletions
-std::vector<DiffRange> makeDiffRange(std::vector<int>& olddoc, std::vector<int>& newdoc);
+std::vector<DiffRange> makeDiffRange(const std::vector<int>& olddoc, const std::vector<int>& newdoc);
 std::vector<DiffEntry> diff(std::vector<int> e, std::vector<int> f, int i = 0, int j = 0);

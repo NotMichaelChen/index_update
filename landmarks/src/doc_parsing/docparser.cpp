@@ -3,7 +3,7 @@
 #include "diff.hpp"
 #include "transform.hpp"
 
-DocumentParser::DocumentParser(std::string& url, std::string& newpage, std::string& timestamp, DocumentStore& docstore) {
+DocumentParser::DocumentParser(std::string& url, std::string& newpage, std::string& timestamp, DocumentStore& docstore, LandmarkDirectory& landdir) {
     DocumentTuple olddoc = docstore.getDocument(url);
     
     if(olddoc.doc.empty()) {
@@ -13,14 +13,8 @@ DocumentParser::DocumentParser(std::string& url, std::string& newpage, std::stri
 
     se = std::make_unique<StringEncoder>(olddoc.doc, newpage);
 
-    std::vector<DiffEntry> edittranscript = diff(se->getOldEncoded(), se->getNewEncoded());
-    //TODO: maybe separate comparison into own function
-    // std::sort(edittranscript.begin(), edittranscript.end(),
-    //     [](const DiffEntry& lhs, const DiffEntry& rhs) {
-    //         (lhs.pos == rhs.pos) ? (!lhs.isIns && rhs.isIns) : (lhs.pos < rhs.pos);
-    //     }
-    // );
-    // transform(se->getOldEncoded(), , edittranscript);
+    std::vector<DiffRange> diffscript = makeDiffRange(se->getOldEncoded(), se->getNewEncoded());
+    std::vector<EditEntry> transformedscript = transformDiff(se->getOldEncoded(), se->getNewEncoded(), landdir.getLandmarkArray(this->docID), diffscript);
 
     docstore.insertDocument(url, newpage, se->getNewSize(), timestamp);
 }

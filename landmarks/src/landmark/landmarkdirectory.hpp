@@ -4,10 +4,13 @@
 
 #include "libs/sparsepp/spp.h"
 #include "landmark/landmark.hpp"
+#include "landmark/landmarkarray.hpp"
 
 class LandmarkDirectory {
 public:
-    void insertLandmarkArray(unsigned int docID, std::vector<Landmark>& landmarks);
+
+    LandmarkArray& getLandmarkArray(unsigned int docID);
+
 private:
-    spp::sparse_hash_map<unsigned int, std::vector<Landmark>> directory;
+    spp::sparse_hash_map<unsigned int, LandmarkArray> directory;
 };

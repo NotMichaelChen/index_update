@@ -23,4 +23,5 @@ struct EditEntry {
     int termID; // -1 for landmarks
 };
 
-void transform(std::vector<int>& olddoc, std::vector<Landmark>& landmarks, std::vector<DiffEntry>& editscript);
+std::vector<EditEntry> transformDiff(const std::vector<int>& olddoc, const std::vector<int>& newdoc,
+    LandmarkArray& landarray, std::vector<DiffRange>& editscript);

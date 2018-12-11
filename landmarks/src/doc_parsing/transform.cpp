@@ -1,7 +1,9 @@
 #include "transform.hpp"
 
 // Follows the split-block policy (all edit operations splits a block)
-void transform(std::vector<int>& olddoc, std::vector<int>& newdoc, LandmarkArray& landarray, std::vector<DiffRange> editscript) {
+std::vector<EditEntry> transformDiff(const std::vector<int>& olddoc, const std::vector<int>& newdoc,
+    LandmarkArray& landarray, std::vector<DiffRange>& editscript)
+{
     std::vector<EditEntry> transformedscript;
     // Make copy so we can edit it but keep original value
     // We don't need to change nextID here, we will do it when applying the edit script
@@ -80,4 +82,6 @@ void transform(std::vector<int>& olddoc, std::vector<int>& newdoc, LandmarkArray
             }
         }
     }
+
+    return transformedscript;
 }

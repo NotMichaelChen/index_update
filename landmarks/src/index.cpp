@@ -5,12 +5,12 @@
 
 void Index::insert_document(std::string& url, std::string& newpage) {
     std::string timestamp = Utility::getTimestamp();
-    DocumentParser parser(url, newpage, timestamp, docstore);
+    // DocumentParser parser(url, newpage, timestamp, docstore, landdir);
 
-    insertNPPostings(parser);
-    insertPPostings(parser);
-    auto landmarks = parser.getLandmarks();
-    landdir.insertLandmarkArray(parser.getDocID(), landmarks);
+    // insertNPPostings(parser);
+    // insertPPostings(parser);
+    // auto landmarks = parser.getLandmarks();
+    // landdir.insertLandmarkArray(parser.getDocID(), landmarks);
 }
 
 void Index::insertNPPostings(DocumentParser& results) {

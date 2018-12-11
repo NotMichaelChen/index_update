@@ -155,10 +155,10 @@ int StringEncoder::getNewSize() {
     return newencoded.size();
 }
 
-std::vector<int> StringEncoder::getOldEncoded() {
+const std::vector<int>& StringEncoder::getOldEncoded() {
     return oldencoded;
 }
 
-std::vector<int> StringEncoder::getNewEncoded() {
+const std::vector<int>& StringEncoder::getNewEncoded() {
     return newencoded;
 }
