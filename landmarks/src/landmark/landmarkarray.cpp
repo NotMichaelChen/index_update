@@ -1,5 +1,7 @@
 #include "landmarkarray.hpp"
 
+#include <stdexcept>
+
 unsigned int LandmarkArray::getNextID() {
     return nextID;
 }
@@ -14,7 +16,7 @@ unsigned int LandmarkArray::getAndIncrNextID() {
     return tmp;
 }
 
-std::vector<Landmark>::iterator LandmarkArray::getLandmark(unsigned int pos) {
+LandmarkArray::LmPointer LandmarkArray::getLandmark(unsigned int pos) {
     auto landiter = landmarks.begin();
     while(landiter != landmarks.end()) {
         //TODO: Refactor logic
@@ -37,7 +39,7 @@ std::vector<Landmark>::iterator LandmarkArray::getLandmark(unsigned int pos) {
     return landiter;
 }
 
-std::vector<Landmark>::iterator LandmarkArray::getLandmarkAfter(unsigned int pos) {
+LandmarkArray::LmPointer LandmarkArray::getLandmarkAfter(unsigned int pos) {
     auto landiter = landmarks.begin();
     while(landiter != landmarks.end()) {
         if(landiter->pos >= pos) {
@@ -55,26 +57,25 @@ std::vector<Landmark>::iterator LandmarkArray::getLandmarkAfter(unsigned int pos
     return landiter;
 }
 
-std::vector<Landmark>::iterator LandmarkArray::getNextLandmark(std::vector<Landmark>::iterator curiter) {
+LandmarkArray::LmPointer LandmarkArray::getNextLandmark(LmPointer curiter) {
     int index = curiter->nextLandInd;
     if(index <= 0)
         return landmarks.end();
     return landmarks.begin() + index;
 }
 
-std::vector<Landmark>::iterator LandmarkArray::getPreviousLandmark(std::vector<Landmark>::iterator curiter) {
+LandmarkArray::LmPointer LandmarkArray::getPreviousLandmark(LmPointer curiter) {
     int index = curiter->prevLandInd;
     if(index <= 0)
         return curiter;
     return landmarks.begin() + index;
 }
 
-
-std::vector<std::vector<Landmark>::iterator>
+std::vector<LandmarkArray::LmPointer>
 LandmarkArray::getLandmarkRange(unsigned int start, unsigned int end) {
-    std::vector<Landmark>::iterator landiter = getLandmark(start);
+    LmPointer landiter = getLandmark(start);
 
-    std::vector<std::vector<Landmark>::iterator> landmarkiters;
+    std::vector<LmPointer> landmarkiters;
 
     // Get all landmarks that fall in range
     while(landiter != landmarks.end() && landiter->pos <= end) {
@@ -85,6 +86,58 @@ LandmarkArray::getLandmarkRange(unsigned int start, unsigned int end) {
     return landmarkiters;
 }
 
-std::vector<Landmark>::iterator LandmarkArray::getEnd() {
+void LandmarkArray::refreshLandmark(LmPointer landiter) {
+    landiter->landID = nextID;
+    nextID++;
+}
+
+void LandmarkArray::shiftLandmarks(LmPointer landiter, int amount) {
+    while(landiter != landmarks.end()) {
+        landiter->pos += amount;
+        landiter = getNextLandmark(landiter);
+    }
+}
+
+void LandmarkArray::deleteLandmarks(std::vector<LmPointer>& landitervec) {
+
+    for(LmPointer landiter : landitervec) {
+        if(landitervec.empty())
+            throw std::runtime_error("Error: trying to delete from empty landmark array");
+
+        size_t landindex = landiter - landmarks.begin();
+        // Update swapped element's prev and next index references
+        // do this before actually swapping
+        auto itertoswap = std::prev(landmarks.end());
+
+        auto before = getPreviousLandmark(itertoswap);
+        if(before != landmarks.end())
+            before->nextLandInd = landindex;
+
+        auto after = getNextLandmark(itertoswap);
+        if(after != landmarks.end())
+            after->prevLandInd = landindex;
+        
+        // Update deleted element's prev and next index references
+        auto beforetodelete = getPreviousLandmark(landiter);
+        auto aftertodelete = getNextLandmark(landiter);
+        if(beforetodelete != landmarks.end() && aftertodelete != landmarks.end()) {
+            beforetodelete->nextLandInd = aftertodelete - landmarks.begin();
+            aftertodelete->prevLandInd = beforetodelete - landmarks.begin();
+        }
+        else if(beforetodelete != landmarks.end()) {
+            beforetodelete->nextLandInd = -1;
+        }
+        else if(aftertodelete != landmarks.end()){
+            aftertodelete->prevLandInd = -1;
+        }
+
+        // Swap with last element
+        std::swap(landmarks[landindex], landmarks.back());
+        // Pop last element
+        landmarks.pop_back();
+    }
+}
+
+LandmarkArray::LmPointer LandmarkArray::getEnd() {
     return landmarks.end();
 }

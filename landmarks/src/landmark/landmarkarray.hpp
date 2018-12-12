@@ -6,6 +6,8 @@
 
 class LandmarkArray {
 public:
+    using LmPointer = std::vector<Landmark>::iterator;
+
     LandmarkArray() : nextID(0) {};
 
     void insertLandmark();
@@ -14,23 +16,28 @@ public:
     unsigned int getAndIncrNextID();
     void incrNextID();
     
-    //TODO: typedef this
     // Gets the landmark associated with the given position
     // Both versions are inclusive
-    std::vector<Landmark>::iterator getLandmark(unsigned int pos);
-    std::vector<Landmark>::iterator getLandmarkAfter(unsigned int pos);
+    LmPointer getLandmark(unsigned int pos);
+    LmPointer getLandmarkAfter(unsigned int pos);
 
-    std::vector<Landmark>::iterator getNextLandmark(std::vector<Landmark>::iterator curiter);
-    std::vector<Landmark>::iterator getPreviousLandmark(std::vector<Landmark>::iterator curiter);
+    LmPointer getNextLandmark(LmPointer curiter);
+    LmPointer getPreviousLandmark(LmPointer curiter);
 
     // Gets all landmarks that fall between start and end
     // Any landmark within this range will be returned
-    std::vector<std::vector<Landmark>::iterator> getLandmarkRange(
+    std::vector<LmPointer> getLandmarkRange(
         unsigned int start,
         unsigned int end
     );
 
-    std::vector<Landmark>::iterator getEnd();
+    // Updates the given landmark to get a new landmark. Increments nextID
+    void refreshLandmark(LmPointer landiter);
+    void shiftLandmarks(LmPointer landiter, int amount);
+    // All pointers in vec will be invalid after deletion
+    void deleteLandmarks(std::vector<LmPointer>& landitervec);
+
+    LmPointer getEnd();
 
 private:
     std::vector<Landmark> landmarks;
