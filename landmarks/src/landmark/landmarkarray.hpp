@@ -11,6 +11,9 @@ public:
     void insertLandmark();
 
     unsigned int getNextID();
+    unsigned int getAndIncrNextID();
+    void incrNextID();
+    
     //TODO: typedef this
     // Gets the landmark associated with the given position
     // Both versions are inclusive

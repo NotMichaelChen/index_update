@@ -4,6 +4,16 @@ unsigned int LandmarkArray::getNextID() {
     return nextID;
 }
 
+void LandmarkArray::incrNextID() {
+    nextID++;
+}
+
+unsigned int LandmarkArray::getAndIncrNextID() {
+    unsigned int tmp = nextID;
+    ++nextID;
+    return tmp;
+}
+
 std::vector<Landmark>::iterator LandmarkArray::getLandmark(unsigned int pos) {
     auto landiter = landmarks.begin();
     while(landiter != landmarks.end()) {
