@@ -1,11 +1,9 @@
-#include "util.hpp"
-
-#include "dirent.h"
+#include "string_util.hpp"
 #include <iomanip>
 #include <cstring>
 #include <sstream>
 
-namespace Utility
+namespace StringUtil
 {
 
 //Get timestamp, https://stackoverflow.com/a/16358111
@@ -26,33 +24,6 @@ unsigned int hashVector(const std::vector<int>& v) {
         hc = hc*314159 + v[i];
     }
     return hc;
-}
-
-//Gets all files inside the given directory
-//Returns a vector of *only* the file names
-//http://forum.codecall.net/topic/60157-read-all-files-in-a-folder/
-std::vector<std::string> readDirectory(std::string path = ".") {
-    DIR*    dir;
-    dirent* pdir;
-    std::vector<std::string> files;
-
-    dir = opendir( path.empty() ? "." : path.c_str() );
-
-    if( dir ){
-        while (true){
-  			pdir = readdir( dir );
-  			if (pdir == NULL) break;
-            std::string d_n(pdir->d_name);
-            //ignore ". and .."
-            if(d_n == "." || d_n == "..")
-                continue;
-  			files.push_back( d_n );
-      	}
-    	closedir( dir );
-    }
-    else throw std::runtime_error("Directory not opened.");
-
-    return files;
 }
 
 //https://stackoverflow.com/a/10058725
@@ -102,6 +73,15 @@ bool isAlnum(const std::string& s) {
             return false;
     }
     return true;
+}
+
+std::string vecToString(const std::vector<std::string>& vecString) {
+    std::string res;
+    for (auto w : vecString) {
+        res += w;
+        res += ' ';
+    }
+    return res;
 }
 
 }

@@ -4,98 +4,30 @@
 #include <functional>
 #include "document_readers/WETreader.hpp"
 #include "utility/morph.hpp"
-#include "utility/util.hpp"
-using namespace std;
-
-const unsigned int B_WINNOW = 50;
-const unsigned int W_WINNOW = 100;
+#include "doc_partitioner/partitioner.hpp"
 
 template<typename T>
-void printVec(const vector<T>& v) {
+void printVec(const std::vector<T>& v) {
     for (const T& e : v) {
-        cout << e << ' ';
+        std::cout << e << "\n\n";
     }
-    cout << endl;
-}
-
-vector<size_t> hashFile(const vector<unsigned char>& file) {
-    vector<size_t> hashResult(file.size() - B_WINNOW);
-    hash<string> strHash;
-    for (size_t i = 0; i < hashResult.size(); ++i) {
-        string s_i = string(file.begin()+i, file.begin()+i+B_WINNOW-1);
-        hashResult[i] = strHash(s_i);
-    }
-    return hashResult;
-}
-
-vector<size_t> cutFile(const vector<size_t>& hashedFile) {
-    vector<size_t> cutResults(hashedFile.size(), 0);
-    for (size_t w = 0; w < cutResults.size() - W_WINNOW; ++w) {
-        vector<size_t> possibleCuts;
-        for (size_t i = w; i < w + W_WINNOW; ++i) {
-            bool cut = true;
-            for (size_t j = w; j < w + W_WINNOW; ++j) {
-                if (i == j) { continue; }
-                if (hashedFile[i] > hashedFile[j]) {
-                    cut = false;
-                    break;
-                }
-            }
-            if (cut) { possibleCuts.push_back(i); }
-        }
-        if (possibleCuts.size() == 1) { cutResults[possibleCuts[0]] = 1; }
-        else {
-            bool alreadyCut = false;
-            for (size_t c : possibleCuts) {
-                if (cutResults[c] == 1) {
-                    alreadyCut = true;
-                }
-            }
-            if (!alreadyCut) { cutResults[possibleCuts.back()] = 1; }
-        }
-    }
-
-    return cutResults;
-}
-
-vector<unsigned char> processFile(const string& origFile) {
-    vector<unsigned char> processResult;
-    hash<string> strHash;
-    vector<string> words = Utility::splitString(origFile, " \n\t\r\f!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
-    for(const string& w : words) {
-        if (!Utility::isAlnum(w)) { continue; }
-        processResult.push_back((unsigned char) strHash(w));
-    }
-    return processResult;
+    std::cout << '\n';
 }
 
 int main(int argc, char **argv) {
     WETReader wr("wet_files");
-    vector<string> vs;
+    std::vector<std::string> vs;
     int n = 1;
     while (n-- && wr.isValid()) {
         vs.push_back(wr.getCurrentDocument());
         wr.nextDocument();
     }
-    // cout << vs.size() << endl;
-    // printVec(vs);
-    string testPage = vs[0];
-    vector<unsigned char> processed = processFile(testPage);
-    vector<size_t> hashed = hashFile(processed);
-    vector<size_t> cut = cutFile(hashed);
-    size_t lastCut = 0;
-    size_t cutSz = 0;
-    size_t cutNo = 0;
-    for (size_t i = 0; i < cut.size(); ++i) {
-        if (cut[i]) {
-            cout << "Cut #" << (++cutNo) << ' ' << (i - lastCut) << endl;
-            cutSz += (i - lastCut);
-            lastCut = i;
-        }
-    }
-    cout << processed.size() << endl;
-    cout << cutSz / cutNo << endl;
 
+    // std::cout << vs[0] << '\n';
+
+    Partitioner docpart(50, 100);
+    std::vector<std::string> partitioned = docpart.partitionPage(vs[0]);
+    printVec(partitioned);
 
     // DocumentMorpher dm(vs[0], vs[1], 100);
     // while (dm.isValid()) {

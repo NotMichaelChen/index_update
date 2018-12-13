@@ -2,15 +2,16 @@
 
 #include <algorithm>
 
-#include "utility/util.hpp"
+#include "utility/fs_util.hpp"
+#include "utility/string_util.hpp"
 
 WETReader::WETReader(std::string dir) : docdir(dir), doc_index(0) {
-    doc_collection = Utility::readDirectory(dir);
+    doc_collection = FSUtil::readDirectory(dir);
     std::sort(doc_collection.begin(), doc_collection.end());
     file.open("./" + dir + "/" + doc_collection[doc_index]);
     if(!file)
         throw std::runtime_error("Error opening file in document collection");
-    
+
     //Skip first 18 lines
     std::string line;
     for(int i = 0; i < 18; i++)
@@ -34,7 +35,7 @@ std::string WETReader::getURL() {
     //Advance beyond the first colon
     splitloc++;
 
-    return Utility::trim(header[2].substr(splitloc, header[2].size()-splitloc));
+    return StringUtil::trim(header[2].substr(splitloc, header[2].size()-splitloc));
 }
 
 bool WETReader::nextDocument() {
@@ -56,10 +57,10 @@ bool WETReader::nextDocument() {
     std::getline(file, line);
 
     //Get number of bytes to read
-    std::vector<std::string> splitstr = Utility::splitString(header[8], ':');
+    std::vector<std::string> splitstr = StringUtil::splitString(header[8], ':');
     if(splitstr.size() != 2)
         throw std::runtime_error("Error parsing WET header");
-    
+
     int docsize = std::stoi(splitstr[1]);
 
     std::vector<char> buf(docsize);
@@ -82,11 +83,11 @@ bool WETReader::nextDocument() {
         doc_index++;
         if(doc_index >= doc_collection.size())
             return false;
-        
+
         file.open("./" + docdir + "/" + doc_collection[doc_index]);
         if(!file)
             throw std::runtime_error("Error opening file in document collection, " + doc_collection[doc_index]);
-        
+
         //Skip first 18 lines
         std::string line;
         for(int i = 0; i < 18; i++)

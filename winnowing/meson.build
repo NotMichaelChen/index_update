@@ -10,10 +10,11 @@ thread_dep = dependency('threads')
 
 src = [
 'src/main.cpp',
-'./src/document_readers/WETreader.cpp',
-'src/utility/timer.cpp',
-'src/utility/morph.cpp',
-'src/utility/util.cpp',
+'src/document_readers/WETreader.cpp',
+'src/utility/fs_util.cpp',
+'src/utility/string_util.cpp',
+'src/doc_partitioner/partitioner.cpp',
+'src/index/index.cpp',
 ]
 
 dep = [

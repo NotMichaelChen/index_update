@@ -41,6 +41,7 @@ for w = 0..n-b-WB:
 ```
 
 ## Index building
+```py
 for each page in the collection:
     split the page into fragments using the winnowing approach
 
@@ -57,3 +58,4 @@ for each page in the collection:
         add a new entry (fragID, hash value, fragSize) to FragmentHashTable
         for each term in the fragment:
             generate the posting following the format (fragID, freq in fragment, vector of positions in the fragment)
+```
