@@ -25,7 +25,7 @@ public:
 private:
     void applyDiff(const std::vector<int>& olddoc, const std::vector<int>& newdoc,
     LandmarkArray& landarray, std::vector<DiffRange>& editscript);
-
+    std::vector<ExternPposting> pospostings;
 
     std::unique_ptr<StringEncoder> se;
     unsigned int docID;

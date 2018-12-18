@@ -11,6 +11,8 @@ DocumentParser::DocumentParser(std::string& url, std::string& newpage, std::stri
         this->docID = olddoc.docID;
     }
 
+    // TODO: handle new document case
+
     se = std::make_unique<StringEncoder>(olddoc.doc, newpage);
 
     std::vector<DiffRange> diffscript = makeDiffRange(se->getOldEncoded(), se->getNewEncoded());
@@ -49,8 +51,8 @@ unsigned int DocumentParser::getDocID() {
 }
 
 void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector<int>& newdoc,
-    LandmarkArray& landarray, std::vector<DiffRange>& editscript) {
-    // TODO: Actually perform the operations so we have access to the latest landmarks
+    LandmarkArray& landarray, std::vector<DiffRange>& editscript)
+{
     std::vector<EditEntry> transformedscript;
 
     for(DiffRange entry : editscript) {
@@ -61,14 +63,13 @@ void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector
             // We always shift every landmark after the current one
             auto nextlanditer = landarray.getNextLandmark(landiter);
             if(nextlanditer != landarray.getEnd()) {
-                transformedscript.emplace_back(true, EditEntry::shift, nextlanditer->landID, entry.len, -1);
+                landarray.shiftLandmarks(nextlanditer, entry.len);
             }
             unsigned int posend = (nextlanditer == landarray.getEnd()) ? olddoc.size() : nextlanditer->pos;
 
             // Invalidate old landmark and insert new one
-            transformedscript.emplace_back(true, EditEntry::deletion, landiter->landID, 0, -1);
-            unsigned int newlandmarkid = landarray.getAndIncrNextID();
-            transformedscript.emplace_back(true, EditEntry::insertion, newlandmarkid, landiter->pos, -1);
+            landarray.refreshLandmark(landiter);
+            unsigned int newlandmarkid = landiter->landID;
 
             // If associated landmark with range overlaps range beginning
             // Don't subtract 1 since this means insertions happen at beginning of landmark
@@ -76,11 +77,11 @@ void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector
                 unsigned int posinlandmark = 0;
                 // Issue new postings starting with new words then old words in the landmark
                 for(int i : entry.terms) {
-                    transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, posinlandmark, i);
+                    pospostings.emplace_back(se->decodeNum(i), docID, newlandmarkid, posinlandmark);
                     posinlandmark++;
                 }
                 for(unsigned int i = landiter->pos; i < posend; i++) {
-                    transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, posinlandmark, olddoc[i]);
+                    pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
                     posinlandmark++;
                 }
             }
@@ -88,17 +89,17 @@ void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector
                 unsigned int posinlandmark = 0;
                 // Issue old postings until insertion range
                 for(unsigned int i = landiter->pos; i < entry.start; i++) {
-                    transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, posinlandmark, olddoc[i]);
+                    pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
                     posinlandmark++;
                 }
                 // Issue new postings
                 for(int i : entry.terms) {
-                    transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, posinlandmark, i);
+                    pospostings.emplace_back(se->decodeNum(i), docID, newlandmarkid, posinlandmark);
                     posinlandmark++;
                 }
                 // Issue old postings until end of landmark
                 for(unsigned int i = entry.start; i < posend; i++) {
-                    transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, posinlandmark, olddoc[i]);
+                    pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
                     posinlandmark++;
                 }
             }
@@ -109,33 +110,35 @@ void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector
             if(overlappedlandmarks.empty())
                 throw std::runtime_error("Error: landmark range in deletion is empty");
 
-            for(auto iter : overlappedlandmarks) {
-                transformedscript.emplace_back(true, EditEntry::deletion, iter->landID, 0, -1);
-            }
+            landarray.deleteLandmarks(overlappedlandmarks);
 
             // Shift all landmarks past the deletion range
             auto nextlanditer = landarray.getLandmarkAfter(entry.start + entry.len);
             if(nextlanditer != landarray.getEnd()) {
-                // Only need to add one entry since it is implied that the other landmarks will be shifted
-                transformedscript.emplace_back(true, EditEntry::shift, nextlanditer->landID, -entry.len, -1);
+                landarray.shiftLandmarks(nextlanditer, -entry.len);
             }
 
             // Reinsert landmark at position of first landmark that was invalidated
             auto firstinvalidlandmark = overlappedlandmarks[0]; // Guaranteed to exist, otherwise we'd throw exception
-            unsigned int newlandmarkid = landarray.getAndIncrNextID();
-            transformedscript.emplace_back(true, EditEntry::insertion, newlandmarkid, firstinvalidlandmark->pos, -1);
+            unsigned int newlandmarkid = landarray.insertLandmark(firstinvalidlandmark->pos);
+
 
             // Reinsert terms before deletion range then after deletion range until next landmark
+            unsigned int posinlandmark = 0;
             for(unsigned int i = firstinvalidlandmark->pos; i < entry.start; i++) {
-                transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, i - firstinvalidlandmark->pos, olddoc[i]);
+                pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
+                ++posinlandmark;
             }
 
             // represents the landmark after the end of the deletion block
             unsigned int posend = (nextlanditer == landarray.getEnd()) ? olddoc.size() : nextlanditer->pos;
 
             for(unsigned int i = entry.start+entry.len; i < posend; i++) {
-                transformedscript.emplace_back(false, EditEntry::insertion, newlandmarkid, firstinvalidlandmark->pos, olddoc[i]);
+                pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
+                ++posinlandmark;
             }
         }
     }
+
+    // TODO: fill in nonpositional data
 }

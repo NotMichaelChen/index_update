@@ -10,8 +10,6 @@ public:
 
     LandmarkArray() : nextID(0) {};
 
-    void insertLandmark();
-
     unsigned int getNextID();
     unsigned int getAndIncrNextID();
     void incrNextID();
@@ -31,6 +29,8 @@ public:
         unsigned int end
     );
 
+    // Returns the ID of the new landmark
+    unsigned int insertLandmark(unsigned int position);
     // Updates the given landmark to get a new landmark. Increments nextID
     void refreshLandmark(LmPointer landiter);
     void shiftLandmarks(LmPointer landiter, int amount);

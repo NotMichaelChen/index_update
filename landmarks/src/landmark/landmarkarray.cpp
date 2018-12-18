@@ -86,6 +86,25 @@ LandmarkArray::getLandmarkRange(unsigned int start, unsigned int end) {
     return landmarkiters;
 }
 
+unsigned int LandmarkArray::insertLandmark(unsigned int position) {
+    landmarks.emplace_back(this->getAndIncrNextID(), position, -1, -1);
+    auto& curlandmark = landmarks.back();
+
+    auto prevlandmark = this->getLandmark(position);
+    if(prevlandmark != landmarks.end()) {
+        curlandmark.prevLandInd = prevlandmark - landmarks.begin();
+        prevlandmark->nextLandInd = landmarks.size() - 1;
+    }
+
+    auto nextlandmark = this->getNextLandmark(prevlandmark);
+    if(nextlandmark != landmarks.end()) {
+        curlandmark.nextLandInd = nextlandmark - landmarks.begin();
+        nextlandmark->prevLandInd = landmarks.size()-1;
+    }
+
+    return curlandmark.landID;
+}
+
 void LandmarkArray::refreshLandmark(LmPointer landiter) {
     landiter->landID = nextID;
     nextID++;
