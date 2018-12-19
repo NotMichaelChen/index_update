@@ -12,11 +12,11 @@ size_t DocumentVersionTable::addDocVersion(const std::vector<Fragment>& fragment
     return did;
 }
 
-bool DocumentVersionTable::updateDocVersion(size_t docid, const std::vector<Fragment>& fragments) {
-    if (docid >= this->dvtable.size()) { return false; }
-
-    this->dvtable[docid].versions.push_back(VersionInfo(fragments));
-    return true;
+size_t DocumentVersionTable::updateDocVersion(size_t docid, const std::vector<Fragment>& fragments) {
+    if (docid < this->dvtable.size()) {
+        this->dvtable[docid].versions.push_back(VersionInfo(fragments));
+    }
+    return this->dvtable[docid].versions.size();
 }
 
 size_t DocumentVersionTable::size() const {

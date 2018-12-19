@@ -11,15 +11,15 @@
 class IndexBuilder {
 private:
     // DocumentStore docstore;
-    PageTable pagetable;
     // Lexicon lex;
     // DynamicIndex dynamicindex;
     // StaticIndex staticwriter;
 
-    // FragmentHashTable
     DocumentVersionTable dvtable;
-
     Partitioner winnower;
+
+    std::unordered_map<std::string, FragID> fragmenthashtable;
+    std::unordered_map<std::string, size_t>  pagetable;
 
     // insertFragment
 

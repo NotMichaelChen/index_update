@@ -22,7 +22,7 @@ public:
     // Add new page with the returned docid. Caller must check if the new docid in DVT matches with PageTable
     size_t addDocVersion(const std::vector<Fragment>& fragments);
 
-    bool updateDocVersion(size_t docid, const std::vector<Fragment>& fragments);
+    size_t updateDocVersion(size_t docid, const std::vector<Fragment>& fragments);
 
     size_t size() const;
 };

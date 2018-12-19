@@ -2,18 +2,16 @@
 
 #include <algorithm>
 
-#include "utility/util.hpp"
-
 //Advances the iterator, obtaining a valid token and the whitespace that follows it
 std::string getTokenWhitespace(std::string::iterator& iter, std::string::iterator end) {
     auto tokenstart = iter;
 
     while(iter != end && !std::isspace(*iter))
         iter++;
-    
+
     while(iter != end && std::isspace(*iter))
         iter++;
-    
+
     //This works since iter is pointing past the end of the string we want
     return std::string(tokenstart, iter);
 }

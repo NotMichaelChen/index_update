@@ -20,11 +20,20 @@ int main() {
 
     WETReader wr("wet_files");
     int numdocstoread = 0;
-    while (numdocstoread++ < 10 && wr.isValid()) {
-        std::string adoc = wr.getCurrentDocument();
-        std::string aurl = wr.getURL();
-        std::cout << "==========\n" << aurl << '\n';
-        indexer.insertDocument(aurl, adoc);
+    std::string lastdoc = wr.getCurrentDocument();
+    std::string lasturl = wr.getURL();
+    wr.nextDocument();
+    while (numdocstoread++ < 1 && wr.isValid()) {
+        std::string currdoc = wr.getCurrentDocument();
+        std::string currurl = wr.getURL();
+        DocumentMorpher dm(lastdoc, currdoc, 100);
+        std::cout << "==========\n" << currurl << '\n';
+        while (dm.isValid()) {
+            indexer.insertDocument(currurl, dm.getDocument());
+            dm.nextVersion();
+        }
+        lastdoc = currdoc;
+        lasturl = currurl;
         wr.nextDocument();
     }
 
