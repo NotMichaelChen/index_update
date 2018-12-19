@@ -61,6 +61,12 @@ std::vector<size_t> Partitioner::hashFile(const std::vector<unsigned char>& file
 
 std::vector<size_t> Partitioner::cutFile(const std::vector<size_t>& hashedFile) {
     std::vector<size_t> cutResults(hashedFile.size(), 0);
+
+    if (cutResults.size() <= W_WINNOW) {
+        cutResults.back() = 1;
+        return cutResults;
+    }
+
     for (size_t w = 0; w < cutResults.size() - W_WINNOW; ++w) {
         std::vector<size_t> possibleCuts;
         for (size_t i = w; i < w + W_WINNOW; ++i) {
