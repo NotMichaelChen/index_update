@@ -15,7 +15,7 @@ public:
     //Unknown ints are replaced with ??
     std::vector<std::string> decodeStream(std::vector<unsigned int>& stream);
     //Decodes an individual integer into a single word
-    std::string decodeNum(unsigned int num);
+    std::string decodeNum(int num);
 
     //Get the count of a word in the new document
     int getNewCount(std::string word);

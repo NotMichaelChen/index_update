@@ -113,7 +113,7 @@ vector<string> StringEncoder::decodeStream(vector<unsigned int>& stream) {
 
 //Decode an individual int
 //An unknown int returns ??
-string StringEncoder::decodeNum(unsigned int num) {
+string StringEncoder::decodeNum(int num) {
     if(num < lookup.size())
         return lookup[num];
     else return "??";
