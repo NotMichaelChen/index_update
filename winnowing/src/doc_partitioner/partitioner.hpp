@@ -1,6 +1,8 @@
 #ifndef PARTITIONER_H
 #define PARTITIONER_H
 
+#include "global_types.hpp"
+
 #include <vector>
 #include <string>
 
@@ -20,7 +22,7 @@ private:
 public:
     Partitioner(const unsigned int b, const unsigned int w);
 
-    std::vector<std::string> partitionPage(const std::string& origPage);
+    std::vector<Fragment> partitionPage(size_t did, const std::string& origPage);
 };
 
 #endif

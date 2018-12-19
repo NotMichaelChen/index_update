@@ -5,6 +5,7 @@
 #include "document_readers/WETreader.hpp"
 #include "utility/morph.hpp"
 #include "doc_partitioner/partitioner.hpp"
+#include "index/index_builder.hpp"
 
 template<typename T>
 void printVec(const std::vector<T>& v) {
@@ -14,20 +15,20 @@ void printVec(const std::vector<T>& v) {
     std::cout << '\n';
 }
 
-int main(int argc, char **argv) {
+int main() {
+    IndexBuilder indexer(50, 100);
+
     WETReader wr("wet_files");
-    std::vector<std::string> vs;
-    int n = 1;
-    while (n-- && wr.isValid()) {
-        vs.push_back(wr.getCurrentDocument());
+    int numdocstoread = 0;
+    while (numdocstoread++ < 10 && wr.isValid()) {
+        std::string adoc = wr.getCurrentDocument();
+        std::string aurl = wr.getURL();
+        std::cout << "==========\n" << aurl << '\n';
+        indexer.insertDocument(aurl, adoc);
         wr.nextDocument();
     }
 
     // std::cout << vs[0] << '\n';
-
-    Partitioner docpart(50, 100);
-    std::vector<std::string> partitioned = docpart.partitionPage(vs[0]);
-    printVec(partitioned);
 
     // DocumentMorpher dm(vs[0], vs[1], 100);
     // while (dm.isValid()) {

@@ -14,7 +14,9 @@ src = [
 'src/utility/fs_util.cpp',
 'src/utility/string_util.cpp',
 'src/doc_partitioner/partitioner.cpp',
-'src/index/index.cpp',
+'src/index/index_builder.cpp',
+'src/index/document_store.cpp',
+'src/index/document_version_table.cpp',
 ]
 
 dep = [

@@ -7,8 +7,8 @@
 
 Partitioner::Partitioner(const unsigned int b, const unsigned int w) : B_WINNOW(b), W_WINNOW(w) {}
 
-std::vector<std::string> Partitioner::partitionPage(const std::string& origPage) {
-    std::vector<std::string> partitionRes;
+std::vector<Fragment> Partitioner::partitionPage(size_t did, const std::string& origPage) {
+    std::vector<Fragment> partitionres;
     std::vector<std::string> normalized = normalizeFile(origPage);
     std::vector<unsigned char> wordHashed = wordHashFile(normalized);
     std::vector<size_t> hashed = hashFile(wordHashed);
@@ -20,14 +20,18 @@ std::vector<std::string> Partitioner::partitionPage(const std::string& origPage)
         if (cut[i]) {
             std::cout << "Cut #" << (++cutNo) << " - size: " << (i - lastCut) << '\n';
             cutSz += (i - lastCut);
-            partitionRes.push_back(StringUtil::vecToString(std::vector<std::string>(
+            Fragment newfrag;
+            newfrag.docid = did;
+            newfrag.startpos = lastCut;
+            newfrag.fragcontent = StringUtil::vecToString(std::vector<std::string>(
                                     normalized.begin() + lastCut,
-                                    normalized.begin() + i)));
+                                    normalized.begin() + i));
+            partitionres.push_back(newfrag);
             lastCut = i;
         }
     }
 
-    return partitionRes;
+    return partitionres;
 }
 
 std::vector<std::string> Partitioner::normalizeFile(const std::string& origFile) {
