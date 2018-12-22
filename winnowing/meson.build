@@ -19,6 +19,15 @@ src = [
 'src/index/index_builder.cpp',
 'src/index/document_store.cpp',
 'src/index/document_version_table.cpp',
+'src/index/lexicon.cpp',
+'src/index/posting.cpp',
+'src/index/sparse_lexicon.cpp',
+'src/index/dynamic_index.cpp',
+'src/index/static_index.cpp',
+'src/static_functions/compression_functions/varbyte.cpp',
+'src/static_functions/compression.cpp',
+'src/static_functions/bytesIO.cpp',
+'src/static_functions/postingIO.cpp',
 ]
 
 dep = [

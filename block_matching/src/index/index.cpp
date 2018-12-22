@@ -71,7 +71,7 @@ void Index::insertNPPostings(MatcherInfo& results) {
             else if(!results.se.inOld(np_iter->second.term) && results.se.inNew(np_iter->second.term))
                 entry.f_t++;
             //Don't change in other cases
-        
+
         dynamicindex.insertPostingNP(entry.termid, np_iter->second.docID, np_iter->second.freq);
     }
 

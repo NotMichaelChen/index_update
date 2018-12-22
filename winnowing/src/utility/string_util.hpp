@@ -13,7 +13,7 @@ namespace StringUtil {
     //Not guaranteed to be optimal
     unsigned int hashVector(const std::vector<int>& v);
 
-    std::vector<std::string> splitString(std::string& str, char c);
+    std::vector<std::string> splitString(const std::string& str, char c);
     std::vector<std::string> splitString(const std::string& str, const std::string& delim);
 
     std::string trim(std::string const& str);

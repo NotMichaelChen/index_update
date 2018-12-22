@@ -27,7 +27,7 @@ unsigned int hashVector(const std::vector<int>& v) {
 }
 
 //https://stackoverflow.com/a/10058725
-std::vector<std::string> splitString(std::string& str, char c) {
+std::vector<std::string> splitString(const std::string& str, char c) {
     std::stringstream stream(str);
     std::string segment;
     std::vector<std::string> seglist;

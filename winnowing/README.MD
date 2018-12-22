@@ -55,7 +55,18 @@ for each page in the collection:
         calculate the MD5 hash of the fragment content
         if the hash exists in the FragmentHashTable:
             continue
-        add a new entry (fragID, hash value, fragSize) to FragmentHashTable
+        add the hash to FragmentHashTable
         for each term in the fragment:
-            generate the posting following the format (fragID, freq in fragment, vector of positions in the fragment)
+            insertFragment
+```
+
+Generate all positional and nonpositional postings
+```py
+insertFragment(fragment):
+    tokenize fragment into words
+    for each word:
+        add to lexicon
+        dynamicindex: insert positional and non positional postings
+    if posting_limit reached:
+        staticindex: flush
 ```
