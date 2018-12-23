@@ -25,6 +25,8 @@ public:
     size_t updateDocVersion(size_t docid, const std::vector<Fragment>& fragments);
 
     size_t size() const;
+
+    void displayStat() const;
 };
 
 #endif

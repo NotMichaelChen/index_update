@@ -15,6 +15,7 @@ src = [
 'src/utility/string_util.cpp',
 'src/utility/morph.cpp',
 'src/utility/md5.cpp',
+'src/utility/timer.cpp',
 'src/doc_partitioner/partitioner.cpp',
 'src/index/index_builder.cpp',
 'src/index/document_store.cpp',

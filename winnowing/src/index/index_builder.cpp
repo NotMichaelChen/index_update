@@ -86,3 +86,12 @@ void IndexBuilder::insertFragment(const Fragment& currfrag) {
         dynamicindex.clearNonPos();
     }
 }
+
+size_t IndexBuilder::numFragHash() const {
+    return fragmenthashtable.size();
+}
+
+void IndexBuilder::displayStat() const {
+    std::cout << "Number of fragments: " << this->numFragHash() << '\n';
+    this->dvtable.displayStat();
+}
