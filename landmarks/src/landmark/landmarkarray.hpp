@@ -9,6 +9,7 @@ public:
     using LmPointer = std::vector<Landmark>::iterator;
 
     LandmarkArray() : nextID(0) {};
+    size_t size();
 
     unsigned int getNextID();
     unsigned int getAndIncrNextID();

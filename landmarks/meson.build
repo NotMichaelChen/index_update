@@ -10,6 +10,7 @@ thread_dep = dependency('threads')
 
 # find [directory] -name ["pattern"]
 src = [
+    'src/document_readers/WETreader.cpp',
     'src/redis_interfaces/documentstore.cpp',
     'src/doc_parsing/docparser.cpp',
     'src/doc_parsing/transform.cpp',

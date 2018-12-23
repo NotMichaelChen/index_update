@@ -57,14 +57,14 @@ void DocumentParser::initializeDocument(const std::vector<int>& newdoc, Landmark
     for(size_t i = 0; i < newdoc.size(); ++i) {
         std::string term = se->decodeNum(newdoc[i]);
 
-        p_postings.emplace_back(term, this->docID, lmID, i % 64);
+        p_postings.emplace_back(term, this->docID, lmID, i % 128);
 
         if(np_postingmap.find(term) == np_postingmap.end()) {
             np_postingmap.emplace(std::make_pair(term, ExternNPposting(term, this->docID, se->getNewCount(term))));
         }
 
         // TODO: add to global parameters
-        if(i % 64 == 0) {
+        if(i % 128 == 0) {
             lmID = landarray.insertLandmark(i);
         }
     }

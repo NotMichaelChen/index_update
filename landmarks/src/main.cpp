@@ -1,17 +1,40 @@
 #include <iostream>
 
-#include "doc_parsing/diff.hpp"
+#include "document_readers/WETreader.hpp"
+#include "index/index.hpp"
+#include "utility/redis.hpp"
+#include "utility/morph.hpp"
+#include "utility/timer.hpp"
 
 int main(int argc, char const *argv[])
 {
+    redis_flushDB();
+    Index index("index_files");
+    WETReader wr("CC");
+    Utility::Timer timer;
 
-    std::cout << "Hello World!" << std::endl;
-    std::vector<int> a = {1, 2, 3, 4, 5};
-    std::vector<int> b = {1, 7, 8, 9, 5};
+    std::string lastdoc = wr.getCurrentDocument();
+    std::string lasturl = wr.getURL();
+    wr.nextDocument();
+    timer.start();
+    while (wr.isValid()) {
+        std::string currdoc = wr.getCurrentDocument();
+        std::string currurl = wr.getURL();
+        DocumentMorpher dm(lastdoc, currdoc, 100);
+        std::cout << "==========\n" << currurl << '\n';
+        while (dm.isValid()) {
+            std::string doc = dm.getDocument();
+            index.insert_document(currurl, doc);
+            dm.nextVersion();
+        }
+        lastdoc = currdoc;
+        lasturl = currurl;
+        wr.nextDocument();
+    }
+    timer.stop();
 
-    auto res = diff(a, b);
-    for(auto i : res)
-        std::cout << i.isIns << ' ' << i.oldpos << ' ' << i.newpos << std::endl;
+    std::cerr << timer.getCumulative() << "ms" << std::endl;
+    index.printSize();
 
     return 0;
 }

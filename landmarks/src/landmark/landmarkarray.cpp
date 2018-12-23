@@ -2,6 +2,10 @@
 
 #include <stdexcept>
 
+size_t LandmarkArray::size() {
+    return landmarks.size();
+}
+
 unsigned int LandmarkArray::getNextID() {
     return nextID;
 }

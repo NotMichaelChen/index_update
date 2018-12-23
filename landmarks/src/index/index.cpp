@@ -35,7 +35,8 @@ void Index::insert_document(std::string& url, std::string& newpage) {
 
 void Index::insertNPPostings(DocumentParser& results) {
     //Insert NP postings
-    for(auto np_iter = results.getNPPostings().begin(); np_iter != results.getNPPostings().end(); np_iter++) {
+    std::vector<ExternNPposting> nppostings = results.getNPPostings();
+    for(auto np_iter = nppostings.begin(); np_iter != nppostings.end(); np_iter++) {
         Lex_data& entry = lex.getEntry(np_iter->term);
 
         //Update entry freq
@@ -64,7 +65,8 @@ void Index::insertNPPostings(DocumentParser& results) {
 
 void Index::insertPPostings(DocumentParser& results) {
     //Insert P postings
-    for(auto p_iter = results.getPPostings().begin(); p_iter != results.getPPostings().end(); p_iter++) {
+    std::vector<ExternPposting> ppostings = results.getPPostings();
+    for(auto p_iter = ppostings.begin(); p_iter != ppostings.end(); p_iter++) {
         Lex_data entry = lex.getEntry(p_iter->term);
 
         this->dynamicindex.insertPostingP(entry.termid, p_iter->docID, p_iter->landID, p_iter->offset);
@@ -132,4 +134,6 @@ void Index::printSize() {
     staticwriter.getExLexPointer()->printSize();
 
     std::cerr << "redis avgdoclength: " << docstore.getAverageDocLength() << std::endl;
+
+    std::cerr << "landmark directory: " << landdir.totalSize() << std::endl;
 }
