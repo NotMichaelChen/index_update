@@ -1,5 +1,7 @@
 #include "docparser.hpp"
 
+#include <unordered_map>
+
 #include "diff.hpp"
 #include "transform.hpp"
 
@@ -11,13 +13,15 @@ DocumentParser::DocumentParser(std::string& url, std::string& newpage, std::stri
         this->docID = olddoc.docID;
     }
 
-    // TODO: handle new document case
-
     se = std::make_unique<StringEncoder>(olddoc.doc, newpage);
 
-    std::vector<DiffRange> diffscript = makeDiffRange(se->getOldEncoded(), se->getNewEncoded());
-    // std::vector<EditEntry> transformedscript = transformDiff(se->getOldEncoded(), se->getNewEncoded(), landdir.getLandmarkArray(this->docID), diffscript);
-    this->applyDiff(se->getOldEncoded(), se->getNewEncoded(), landdir.getLandmarkArray(this->docID), diffscript);
+    if(olddoc.doc.empty()) {
+        this->initializeDocument(se->getNewEncoded(), landdir.getLandmarkArray(this->docID));
+    }
+    else {
+        std::vector<DiffRange> diffscript = makeDiffRange(se->getOldEncoded(), se->getNewEncoded());
+        this->applyDiff(se->getOldEncoded(), se->getNewEncoded(), landdir.getLandmarkArray(this->docID), diffscript);
+    }
 
     docstore.insertDocument(url, newpage, se->getNewSize(), timestamp);
 }
@@ -35,25 +39,45 @@ bool DocumentParser::termInNew(std::string& term) {
 }
 
 std::vector<ExternPposting> DocumentParser::getPPostings() {
-
+    return p_postings;
 }
 
 std::vector<ExternNPposting> DocumentParser::getNPPostings() {
-
-}
-
-std::vector<Landmark> DocumentParser::getLandmarks() {
-
+    return np_postings;
 }
 
 unsigned int DocumentParser::getDocID() {
     return docID;
 }
 
+void DocumentParser::initializeDocument(const std::vector<int>& newdoc, LandmarkArray& landarray) {
+    std::unordered_map<std::string, ExternNPposting> np_postingmap;
+
+    unsigned int lmID = landarray.insertLandmark(0);
+    for(size_t i = 0; i < newdoc.size(); ++i) {
+        std::string term = se->decodeNum(newdoc[i]);
+
+        p_postings.emplace_back(term, this->docID, lmID, i % 64);
+
+        if(np_postingmap.find(term) == np_postingmap.end()) {
+            np_postingmap.emplace(std::make_pair(term, ExternNPposting(term, this->docID, se->getNewCount(term))));
+        }
+
+        // TODO: add to global parameters
+        if(i % 64 == 0) {
+            lmID = landarray.insertLandmark(i);
+        }
+    }
+
+    for(auto iter : np_postingmap) {
+        np_postings.push_back(iter.second);
+    }
+}
+
 void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector<int>& newdoc,
     LandmarkArray& landarray, std::vector<DiffRange>& editscript)
 {
-    std::vector<EditEntry> transformedscript;
+    std::unordered_map<std::string, ExternNPposting> np_postingmap;
 
     for(DiffRange entry : editscript) {
         auto landiter = landarray.getLandmark(entry.start);
@@ -77,11 +101,21 @@ void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector
                 unsigned int posinlandmark = 0;
                 // Issue new postings starting with new words then old words in the landmark
                 for(int i : entry.terms) {
-                    pospostings.emplace_back(se->decodeNum(i), docID, newlandmarkid, posinlandmark);
+                    std::string term = se->decodeNum(i);
+
+                    p_postings.emplace_back(term, docID, newlandmarkid, posinlandmark);
+                    if(np_postingmap.find(term) == np_postingmap.end()) {
+                        np_postingmap.emplace(std::make_pair(term, ExternNPposting(term, this->docID, se->getNewCount(term))));
+                    }
                     posinlandmark++;
                 }
                 for(unsigned int i = landiter->pos; i < posend; i++) {
-                    pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
+                    std::string term = se->decodeNum(olddoc[i]);
+
+                    p_postings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
+                    if(np_postingmap.find(term) == np_postingmap.end()) {
+                        np_postingmap.emplace(std::make_pair(term, ExternNPposting(term, this->docID, se->getNewCount(term))));
+                    }
                     posinlandmark++;
                 }
             }
@@ -89,17 +123,34 @@ void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector
                 unsigned int posinlandmark = 0;
                 // Issue old postings until insertion range
                 for(unsigned int i = landiter->pos; i < entry.start; i++) {
-                    pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
+                    std::string term = se->decodeNum(olddoc[i]);
+
+                    p_postings.emplace_back(term, docID, newlandmarkid, posinlandmark);
+
+                    if(np_postingmap.find(term) == np_postingmap.end()) {
+                        np_postingmap.emplace(std::make_pair(term, ExternNPposting(term, this->docID, se->getNewCount(term))));
+                    }
                     posinlandmark++;
                 }
                 // Issue new postings
                 for(int i : entry.terms) {
-                    pospostings.emplace_back(se->decodeNum(i), docID, newlandmarkid, posinlandmark);
+                    std::string term = se->decodeNum(i);
+
+                    p_postings.emplace_back(term, docID, newlandmarkid, posinlandmark);
+                    if(np_postingmap.find(term) == np_postingmap.end()) {
+                        np_postingmap.emplace(std::make_pair(term, ExternNPposting(term, this->docID, se->getNewCount(term))));
+                    }
                     posinlandmark++;
                 }
                 // Issue old postings until end of landmark
                 for(unsigned int i = entry.start; i < posend; i++) {
-                    pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
+                    std::string term = se->decodeNum(olddoc[i]);
+
+                    p_postings.emplace_back(term, docID, newlandmarkid, posinlandmark);
+
+                    if(np_postingmap.find(term) == np_postingmap.end()) {
+                        np_postingmap.emplace(std::make_pair(term, ExternNPposting(term, this->docID, se->getNewCount(term))));
+                    }
                     posinlandmark++;
                 }
             }
@@ -122,11 +173,17 @@ void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector
             auto firstinvalidlandmark = overlappedlandmarks[0]; // Guaranteed to exist, otherwise we'd throw exception
             unsigned int newlandmarkid = landarray.insertLandmark(firstinvalidlandmark->pos);
 
-
             // Reinsert terms before deletion range then after deletion range until next landmark
             unsigned int posinlandmark = 0;
             for(unsigned int i = firstinvalidlandmark->pos; i < entry.start; i++) {
-                pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
+                std::string term = se->decodeNum(olddoc[i]);
+
+                p_postings.emplace_back(term, docID, newlandmarkid, posinlandmark);
+
+                if(np_postingmap.find(term) == np_postingmap.end()) {
+                    np_postingmap.emplace(std::make_pair(term, ExternNPposting(term, this->docID, se->getNewCount(term))));
+                }
+                
                 ++posinlandmark;
             }
 
@@ -134,11 +191,19 @@ void DocumentParser::applyDiff(const std::vector<int>& olddoc, const std::vector
             unsigned int posend = (nextlanditer == landarray.getEnd()) ? olddoc.size() : nextlanditer->pos;
 
             for(unsigned int i = entry.start+entry.len; i < posend; i++) {
-                pospostings.emplace_back(se->decodeNum(olddoc[i]), docID, newlandmarkid, posinlandmark);
+                std::string term = se->decodeNum(olddoc[i]);
+
+                p_postings.emplace_back(term, docID, newlandmarkid, posinlandmark);
+
+                if(np_postingmap.find(term) == np_postingmap.end()) {
+                    np_postingmap.emplace(std::make_pair(term, ExternNPposting(term, this->docID, se->getNewCount(term))));
+                }
                 ++posinlandmark;
             }
         }
     }
 
-    // TODO: fill in nonpositional data
+    for(auto iter : np_postingmap) {
+        np_postings.push_back(iter.second);
+    }
 }
