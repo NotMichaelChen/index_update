@@ -8,8 +8,9 @@
 class DocumentVersionTable {
 private:
     struct VersionInfo {
-        VersionInfo(const std::vector<Fragment>& f);
-        std::vector<Fragment> fragments;
+        VersionInfo(const std::vector<Fragment>& fragments);
+        std::vector<FragID> allfragids;
+        std::vector<size_t> allfragsizes;
     };
 
     struct DVTEntry {
@@ -25,6 +26,8 @@ public:
     size_t updateDocVersion(size_t docid, const std::vector<Fragment>& fragments);
 
     size_t size() const;
+
+    void displayStat() const;
 };
 
 #endif

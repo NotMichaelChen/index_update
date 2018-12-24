@@ -34,6 +34,9 @@ public:
     // Partition the page by winnowing and index the fragments
     void insertDocument(const std::string& pageurl, const std::string& pagecontent);
 
+    size_t numFragHash() const;
+
+    void displayStat() const;
 };
 
 #endif
