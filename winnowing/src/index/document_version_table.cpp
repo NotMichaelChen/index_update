@@ -2,8 +2,14 @@
 
 #include <iostream>
 #include <vector>
+#include <utility>
 
-DocumentVersionTable::VersionInfo::VersionInfo(const std::vector<Fragment>& f) : fragments(f) {}
+DocumentVersionTable::VersionInfo::VersionInfo(const std::vector<Fragment>& fragments) {
+    for (auto f : fragments) {
+        allfragids.push_back(std::make_pair(f.docid, f.startpos));
+        allfragsizes.push_back(f.fragcontent.size());
+    }
+}
 
 size_t DocumentVersionTable::addDocVersion(const std::vector<Fragment>& fragments) {
     size_t did = this->dvtable.size();
@@ -39,11 +45,11 @@ void DocumentVersionTable::displayStat() const {
         minvercnt = std::min(minvercnt, e.versions.size());
         maxvercnt = std::min(maxvercnt, e.versions.size());
         for (auto vi : e.versions) {
-            totalfragcount += vi.fragments.size();
-            for (auto f : vi.fragments) {
-                totalfragsize += f.fragcontent.size();
-                minfragize = std::min(minfragize, f.fragcontent.size());
-                maxfragize = std::max(maxfragize, f.fragcontent.size());
+            totalfragcount += vi.allfragids.size();
+            for (auto f : vi.allfragsizes) {
+                totalfragsize += f;
+                minfragize = std::min(minfragize, f);
+                maxfragize = std::max(maxfragize, f);
             }
         }
     }

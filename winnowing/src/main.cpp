@@ -24,11 +24,10 @@ int main() {
     std::string lastdoc = wr.getCurrentDocument();
     std::string lasturl = wr.getURL();
     wr.nextDocument();
-    size_t i = 1;
-    while (i-- && wr.isValid()) {
+    while (wr.isValid()) {
         std::string currdoc = wr.getCurrentDocument();
         std::string currurl = wr.getURL();
-        DocumentMorpher dm(lastdoc, currdoc, 100);
+        DocumentMorpher dm(lastdoc, currdoc, 10);
         std::cout << "==========\n" << currurl << '\n';
         while (dm.isValid()) {
             indexer.insertDocument(currurl, dm.getDocument());
