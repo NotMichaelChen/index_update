@@ -5,7 +5,7 @@ LandmarkArray& LandmarkDirectory::getLandmarkArray(unsigned int docID) {
 }
 
 size_t LandmarkDirectory::totalSize() {
-    size_t size;
+    size_t size = 0;
     for(auto iter : directory) {
         size += iter.second.size();
     }

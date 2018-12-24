@@ -20,7 +20,7 @@ int main(int argc, char const *argv[])
     while (wr.isValid()) {
         std::string currdoc = wr.getCurrentDocument();
         std::string currurl = wr.getURL();
-        DocumentMorpher dm(lastdoc, currdoc, 100);
+        DocumentMorpher dm(lastdoc, currdoc, 10);
         std::cout << "==========\n" << currurl << '\n';
         while (dm.isValid()) {
             std::string doc = dm.getDocument();

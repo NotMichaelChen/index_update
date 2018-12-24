@@ -4,7 +4,7 @@
 #define MIN_BLOCK_SIZE 10
 #define MAX_BLOCK_COUNT 100
 
-#define POSTING_LIMIT 10000000 //make sure doesn't exceed memory limit
+#define POSTING_LIMIT 50000000 //make sure doesn't exceed memory limit
 #define BLOCKSIZE 128
 
 #define DAAT_SIZE 10
