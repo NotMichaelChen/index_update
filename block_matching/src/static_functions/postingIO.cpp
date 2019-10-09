@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-// #include "global_parameters.hpp"
+#include "global_parameters.hpp"
 #include "compression_functions/varbyte.hpp"
 #include "compression.hpp"
 #include "bytesIO.hpp"

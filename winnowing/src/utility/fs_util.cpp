@@ -1,6 +1,7 @@
 #include "fs_util.hpp"
 
 #include "dirent.h"
+#include <stdexcept>
 
 namespace FSUtil {
 

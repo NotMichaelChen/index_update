@@ -1,6 +1,6 @@
 # Implementation for "Efficient Index Updates for Web Search Engines"
 
-## Build instructions
+## Build instructions (Outdated, see root directory's README)
 Requirements:
 
 * [Redis](https://redis.io/)
