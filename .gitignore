@@ -10,6 +10,7 @@ release/
 build/
 
 todo
+.DS_Store
 
 # Prerequisites
 *.d
